@@ -1,6 +1,9 @@
-type User = {
+type Profile = {
 	roles: Role[];
 	full_name: string;
+	mobile_number: string;
+	photo_url: string;
+	deleted: boolean;
 }
 
 enum Role {
@@ -8,7 +11,8 @@ enum Role {
 	PASSENGER = 'passenger',
 }
 
+
 export {
-	User,
+	Profile,
 	Role,
 }

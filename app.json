@@ -4,7 +4,7 @@
 		"slug": "IICPool",
 		"version": "1.0.0",
 		"orientation": "portrait",
-		"icon": "./assets/icon.png",
+		"icon": "./assets/logo.png",
 		"userInterfaceStyle": "light",
 		"splash": {
 			"image": "./assets/splash.png",
@@ -19,7 +19,12 @@
 				"foregroundImage": "./assets/adaptive-icon.png",
 				"backgroundColor": "#ffffff"
 			},
-			"package": "com.xytrix.iicpool"
+			"package": "com.xytrix.iicpool",
+			"config": {
+				"googleMaps": {
+					"apiKey": "AIzaSyAZJLOFhRAzXUdviZBokuuKv4pfqyEpyxs"
+				}
+			}
 		},
 		"web": {
 			"favicon": "./assets/favicon.png"
@@ -33,7 +38,23 @@
 			[
 				"expo-location",
 				{
-					"locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+					"locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location",
+					"locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location",
+					"isAndroidForegroundServiceEnabled": true
+				}
+			],
+			[
+				"expo-notifications",
+				{
+					"icon": "./assets/VLJejak_lg.jpeg",
+					"color": "#ffffff",
+					"defaultChannel": "default"
+				}
+			],
+			[
+				"expo-image-picker",
+				{
+					"cameraPermission": "$(PRODUCT_NAME) needs access to your camera to take photos while filing a complain."
 				}
 			]
 		]
