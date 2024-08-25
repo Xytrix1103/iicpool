@@ -6,7 +6,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { Linking, LogBox, Platform, StyleSheet } from 'react-native'
 
-import { AuthContext, AuthProvider } from './components/AuthContext'
+import { AuthContext, AuthProvider } from './components/contexts/AuthContext'
 import Loading from './screens/Loading'
 import Home from './screens/Home'
 import Login from './screens/Login'
@@ -14,6 +14,8 @@ import Register from './screens/Register'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import RideToCampus from './screens/RideToCampus'
 import Profile from './screens/Profile'
+import { PermissionProvider } from './components/contexts/PermissionContext'
+import NotificationSettingsProvider from './components/contexts/NotificationContext'
 
 const Stack = createNativeStackNavigator()
 
@@ -45,6 +47,8 @@ const theme = {
 const style = StyleSheet.create({
 	safeArea: {
 		flex: 1,
+		width: '100%',
+		height: '100%',
 	},
 })
 
@@ -89,26 +93,33 @@ const App = (): ReactElement => {
 	}
 	
 	return (
-		<SafeAreaView style={style.safeArea}>
-			<SafeAreaProvider>
-				<PaperProvider theme={theme}>
-					<QueryClientProvider client={queryClient}>
-						<AuthProvider>
-							<NavigationContainer
-								initialState={initialState}
-								onStateChange={state => {
-									AsyncStorage.setItem(
-										PERSISTENCE_KEY,
-										JSON.stringify(state),
-									).then(r => r)
-								}}>
-								<Routes />
-							</NavigationContainer>
-						</AuthProvider>
-					</QueryClientProvider>
-				</PaperProvider>
-			</SafeAreaProvider>
-		</SafeAreaView>
+		<SafeAreaProvider>
+			<PaperProvider theme={theme}>
+				<PermissionProvider>
+					<NotificationSettingsProvider>
+						<QueryClientProvider client={queryClient}>
+							<AuthProvider>
+								<NavigationContainer
+									initialState={initialState}
+									onStateChange={(state) => {
+										AsyncStorage.setItem(
+											PERSISTENCE_KEY,
+											JSON.stringify(state),
+										).then((r) => r)
+									}}
+								>
+									<SafeAreaView
+										style={style.safeArea}
+									>
+										<Routes />
+									</SafeAreaView>
+								</NavigationContainer>
+							</AuthProvider>
+						</QueryClientProvider>
+					</NotificationSettingsProvider>
+				</PermissionProvider>
+			</PaperProvider>
+		</SafeAreaProvider>
 	)
 }
 

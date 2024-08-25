@@ -22,6 +22,6 @@ const auth = initializeAuth(app, {
 auth.useDeviceLanguage()
 const db = getFirestore(app)
 const storage = getStorage(app)
-const functions = getFunctions(app)
+const functions = getFunctions(app, 'asia-southeast1')
 
 export default { auth, db, storage, functions }
