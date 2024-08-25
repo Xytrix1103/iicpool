@@ -1,7 +1,7 @@
 import { Button, useTheme } from 'react-native-paper'
 import React, { ReactElement } from 'react'
 
-const SolidButton = ({ children, onPress }: { children: ReactElement | string, onPress: () => void }) => {
+const CustomSolidButton = ({ children, onPress }: { children: ReactElement | string, onPress: () => void }) => {
 	const { colors } = useTheme()
 	
 	return (
@@ -21,4 +21,4 @@ const SolidButton = ({ children, onPress }: { children: ReactElement | string, o
 	)
 }
 
-export default SolidButton
+export default CustomSolidButton

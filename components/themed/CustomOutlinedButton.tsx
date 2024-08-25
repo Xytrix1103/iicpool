@@ -2,7 +2,7 @@ import { Button, useTheme } from 'react-native-paper'
 import React, { ReactElement } from 'react'
 import { GestureResponderEvent } from 'react-native'
 
-const OutlinedButton = ({ children, onPress }: {
+const CustomOutlinedButton = ({ children, onPress }: {
 	children: ReactElement | string,
 	onPress: ((e: GestureResponderEvent) => void) | undefined
 }) => {
@@ -24,4 +24,4 @@ const OutlinedButton = ({ children, onPress }: {
 	)
 }
 
-export default OutlinedButton
+export default CustomOutlinedButton
