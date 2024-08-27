@@ -2,10 +2,11 @@
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { FC, ReactNode } from 'react'
 import { useTheme } from 'react-native-paper'
+import CustomAppbar from './CustomAppbar'
 
 type LayoutProps = {
 	header?: ReactNode
-	footer?: ReactNode
+	hasAppBar?: boolean
 	scrollable?: boolean
 	children: ReactNode
 	contentPadding?: number
@@ -15,11 +16,11 @@ type LayoutProps = {
 const CustomLayout: FC<LayoutProps> = (
 	{
 		header,
-		footer,
+		hasAppBar = false,
 		scrollable = false,
 		children,
 		containerPadding = 0,
-		contentPadding = 0,
+		contentPadding = 20,
 	}) => {
 	const { colors } = useTheme()
 	
@@ -33,20 +34,18 @@ const CustomLayout: FC<LayoutProps> = (
 			}
 			{
 				scrollable ?
-					<ScrollView style={[style.scrollViewContent, { padding: contentPadding }]}>
-						<View style={style.container}>
+					<ScrollView style={style.scrollViewContent}>
+						<View style={[style.container, { padding: contentPadding }]}>
 							{children}
 						</View>
 					</ScrollView> :
-					<View style={style.container}>
+					<View style={[style.container, { padding: contentPadding }]}>
 						{children}
 					</View>
 			}
 			{
-				footer &&
-				<View style={{ width: '100%' }}>
-					{footer}
-				</View>
+				hasAppBar &&
+				<CustomAppbar />
 			}
 		</View>
 	)

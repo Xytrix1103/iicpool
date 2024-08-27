@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps'
+import * as Location from 'expo-location'
 
 const RideToCampus = () => {
 	const [location, setLocation] = useState({ latitude: 0, longitude: 0 })
 	
 	useEffect(() => {
-		// Geolocation.getCurrentPosition(
-		// 	(position) => {
-		// 		const {latitude, longitude} = position.coords;
-		// 		console.log(latitude, longitude);
-		// 		setLocation({latitude, longitude});
-		// 	},
-		// 	(error) => {
-		// 		console.log(error);
-		// 	},
-		// 	{enableHighAccuracy: true}, // increased timeout to 20000ms
-		// );
+		(async () => {
+			let { status } = await Location.requestForegroundPermissionsAsync()
+			if (status !== 'granted') {
+				console.log('Permission to access location was denied')
+				return
+			}
+			
+			let location = await Location.getCurrentPositionAsync({})
+			setLocation(location ? location.coords : { latitude: 0, longitude: 0 })
+		})()
 	}, [])
 	
 	return (
