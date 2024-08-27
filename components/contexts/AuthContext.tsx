@@ -60,7 +60,7 @@ const AuthProvider = ({ children }: any) => {
 	
 	useEffect(() => {
 		setLoading(false)
-	}, [user, profile])
+	}, [profile])
 	
 	return (
 		<AuthContext.Provider value={{ loading, user, profile }}>
