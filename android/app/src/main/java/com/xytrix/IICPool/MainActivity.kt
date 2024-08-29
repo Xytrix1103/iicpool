@@ -1,4 +1,4 @@
-package com.xytrix.IICPool
+package com.xytrix.iicpool
 
 import android.os.Build
 import android.os.Bundle
