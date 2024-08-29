@@ -15,7 +15,7 @@ const CustomText = (
 		children,
 		bold = false,
 		color = 'black',
-		width = '100%',
+		width = 'auto',
 		align = 'left',
 	}: CustomTextProps) => {
 	return (

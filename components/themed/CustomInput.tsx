@@ -1,5 +1,5 @@
 import React, { ReactNode, useEffect, useRef, useState } from 'react'
-import { StyleSheet, Text, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native'
+import { Platform, StyleSheet, Text, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native'
 import { useTheme } from 'react-native-paper'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import { FieldError, FieldErrorsImpl } from 'react-hook-form'
@@ -16,6 +16,8 @@ interface FloatingLabelInputProps extends TextInputProps {
 	rightIcon?: ReactNode;
 	limit?: number;
 	isAutofill?: boolean;
+	onCustomFocus?: () => void;
+	onCustomBlur?: () => void;
 }
 
 const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
@@ -24,11 +26,13 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 		secureTextEntry,
 		value,
 		onChangeText,
-		multiline,
-		numberOfLines,
+		multiline = false,
+		numberOfLines = 1,
 		editable = true,
 		errorMessage,
 		limit,
+		onCustomFocus,
+		onCustomBlur,
 		...props
 	}) => {
 	const inputRef = useRef<TextInput>(null)
@@ -74,6 +78,7 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 				</Text>
 				<View style={styles.inputWrapper}>
 					<TextInput
+						autoFocus={props.autoFocus}
 						{...props}
 						ref={inputRef}
 						value={usedValue}
@@ -92,10 +97,17 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 								height: multiline ? 100 : 'auto',
 							},
 						]}
-						onFocus={() => setIsFocused(true)}
-						onBlur={() => setIsFocused(false)}
+						onFocus={() => {
+							onCustomFocus && onCustomFocus()
+							setIsFocused(true)
+						}}
+						onBlur={() => {
+							onCustomBlur && onCustomBlur()
+							setIsFocused(false)
+						}}
 						editable={editable}
 						defaultValue={value}
+						textAlign="left"
 					/>
 					{props.rightIcon && (
 						<TouchableOpacity style={styles.icon}>
@@ -166,6 +178,8 @@ const styles = StyleSheet.create({
 		fontSize: 15,
 		paddingVertical: 7,
 		textAlignVertical: 'center',
+		overflow: Platform.OS === 'android' && Platform.Version >= 21 ? 'hidden'
+			: 'visible',
 	},
 	icon: {
 		padding: 5,
