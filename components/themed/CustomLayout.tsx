@@ -11,6 +11,7 @@ type LayoutProps = {
 	children: ReactNode
 	contentPadding?: number
 	containerPadding?: number
+	centered?: boolean
 }
 
 const CustomLayout: FC<LayoutProps> = (
@@ -21,6 +22,7 @@ const CustomLayout: FC<LayoutProps> = (
 		children,
 		containerPadding = 0,
 		contentPadding = 20,
+		centered = false,
 	}) => {
 	const { colors } = useTheme()
 	
@@ -28,18 +30,25 @@ const CustomLayout: FC<LayoutProps> = (
 		<View style={[style.root, { backgroundColor: colors.background, padding: containerPadding }]}>
 			{
 				header &&
-				<View style={style.container}>
+				<View style={style.headerContainer}>
 					{header}
 				</View>
 			}
 			{
 				scrollable ?
-					<ScrollView style={style.scrollViewContent}>
-						<View style={[style.container, { padding: contentPadding }]}>
+					<ScrollView
+						style={[style.scrollViewContent]}>
+						<View style={[style.container, {
+							padding: contentPadding,
+							justifyContent: centered ? 'center' : 'flex-start',
+						}]}>
 							{children}
 						</View>
 					</ScrollView> :
-					<View style={[style.container, { padding: contentPadding }]}>
+					<View style={[style.container, {
+						padding: contentPadding,
+						justifyContent: centered ? 'center' : 'flex-start',
+					}]}>
 						{children}
 					</View>
 			}
@@ -56,7 +65,6 @@ const style = StyleSheet.create({
 		width: '100%',
 		height: '100%',
 		alignItems: 'center',
-		justifyContent: 'center',
 	},
 	scrollViewContent: {
 		width: '100%',
@@ -64,9 +72,12 @@ const style = StyleSheet.create({
 	},
 	container: {
 		width: '100%',
-		height: '100%',
+		flex: 1,
 		alignItems: 'center',
-		justifyContent: 'center',
+	},
+	headerContainer: {
+		width: '100%',
+		alignItems: 'center',
 	},
 })
 

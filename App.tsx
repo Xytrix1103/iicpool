@@ -5,6 +5,13 @@ import NavigationContainer from '@react-navigation/native/src/NavigationContaine
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { Linking, LogBox, Platform, StyleSheet } from 'react-native'
+import {
+	Poppins_400Regular as Poppins,
+	Poppins_500Medium as Poppins_Medium,
+	Poppins_600SemiBold as Poppins_SemiBold,
+	Poppins_700Bold as Poppins_Bold,
+	useFonts,
+} from '@expo-google-fonts/poppins'
 
 import { AuthContext, AuthProvider } from './components/contexts/AuthContext'
 import Loading from './screens/Loading'
@@ -16,6 +23,7 @@ import RideToCampus from './screens/RideToCampus'
 import Profile from './screens/Profile'
 import { PermissionProvider } from './components/contexts/PermissionContext'
 import NotificationSettingsProvider from './components/contexts/NotificationContext'
+import { LoadingOverlayProvider } from './components/contexts/LoadingOverlayContext'
 
 const Stack = createNativeStackNavigator()
 
@@ -59,6 +67,13 @@ const App = (): ReactElement => {
 	const [initialState, setInitialState] = useState()
 	LogBox.ignoreAllLogs()
 	
+	const [fontsLoaded] = useFonts({
+		Poppins,
+		Poppins_Medium,
+		Poppins_SemiBold,
+		Poppins_Bold,
+	})
+	
 	useEffect(() => {
 		const restoreState = async () => {
 			try {
@@ -88,7 +103,7 @@ const App = (): ReactElement => {
 	}, [isReady])
 	
 	
-	if (!isReady) {
+	if (!isReady || !fontsLoaded) {
 		return <ActivityIndicator />
 	}
 	
@@ -98,23 +113,25 @@ const App = (): ReactElement => {
 				<PermissionProvider>
 					<NotificationSettingsProvider>
 						<QueryClientProvider client={queryClient}>
-							<AuthProvider>
-								<NavigationContainer
-									initialState={initialState}
-									onStateChange={(state) => {
-										AsyncStorage.setItem(
-											PERSISTENCE_KEY,
-											JSON.stringify(state),
-										).then((r) => r)
-									}}
-								>
-									<SafeAreaView
-										style={style.safeArea}
+							<LoadingOverlayProvider>
+								<AuthProvider>
+									<NavigationContainer
+										initialState={initialState}
+										onStateChange={(state) => {
+											AsyncStorage.setItem(
+												PERSISTENCE_KEY,
+												JSON.stringify(state),
+											).then((r) => r)
+										}}
 									>
-										<Routes />
-									</SafeAreaView>
-								</NavigationContainer>
-							</AuthProvider>
+										<SafeAreaView
+											style={style.safeArea}
+										>
+											<Routes />
+										</SafeAreaView>
+									</NavigationContainer>
+								</AuthProvider>
+							</LoadingOverlayProvider>
 						</QueryClientProvider>
 					</NotificationSettingsProvider>
 				</PermissionProvider>
@@ -127,7 +144,7 @@ const Routes = () => {
 	const { loading, user } = useContext(AuthContext)
 	
 	return (
-		<Stack.Navigator screenOptions={{ headerShown: false }}>
+		<Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
 			{loading ? (
 				<Stack.Screen name="Loading" component={Loading} />
 			) : user ? (

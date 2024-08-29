@@ -1,26 +1,17 @@
 import CustomLayout from '../components/themed/CustomLayout'
 import CustomFlex from '../components/themed/CustomFlex'
-import CustomText from '../components/themed/CustomText'
-import { Button } from 'react-native-paper'
-import { logout } from '../api/auth'
-import React from 'react'
-import { useNavigation } from '@react-navigation/native'
+import CustomHeading from '../components/themed/CustomHeading'
 
 const Profile = () => {
-	const navigation = useNavigation()
-	
 	return (
 		<CustomLayout
 			hasAppBar={true}
 			scrollable={true}
 		>
 			<CustomFlex>
-				<CustomText>Profile</CustomText>
-				<Button onPress={() => {
-					// @ts-ignore
-					navigation.navigate('RideToCampus')
-				}}>Ride to Campus</Button>
-				<Button onPress={logout}>Logout</Button>
+				<CustomHeading>
+					Profile
+				</CustomHeading>
 			</CustomFlex>
 		</CustomLayout>
 	)

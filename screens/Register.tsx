@@ -1,10 +1,12 @@
 import React, { ReactElement, useEffect, useState } from 'react'
 import { Controller, useForm, UseFormTrigger } from 'react-hook-form'
 import { Appbar, Button, HelperText, TextInput } from 'react-native-paper'
-import { Alert, StyleSheet, View } from 'react-native'
+import { Alert, Platform, StyleSheet, View } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import CustomText from '../components/themed/CustomText'
 import { register } from '../api/auth'
+import CustomLayout from '../components/themed/CustomLayout'
+import CustomFlex from '../components/themed/CustomFlex'
 
 const handleNext = (step: number, setStep: (step: number) => void, trigger: UseFormTrigger<RegisterProps>, steps: StepProps[]) => {
 	console.log('Next')
@@ -79,33 +81,36 @@ const Register = () => {
 	]
 	
 	return (
-		<View style={style.container}>
-			<Appbar.Header style={style.appbar}>
-				<Appbar.BackAction onPress={() => {
-					Alert.alert(
-						'Cancel Registration',
-						'Are you sure you want to cancel the registration?',
-						[
-							{
-								text: 'No',
-								style: 'cancel',
-							},
-							{
-								text: 'Yes',
-								onPress: () => navigation.goBack(),
-							},
-						],
-					)
-				}} />
-				<Appbar.Content
-					title={steps?.[step - 1]?.header}
-					titleStyle={{
-						fontSize: 20,
-						fontWeight: 'bold',
-					}}
-				/>
-			</Appbar.Header>
-			<View style={style.content}>
+		<CustomLayout
+			header={
+				<Appbar.Header style={style.appbar} statusBarHeight={Platform.OS !== 'ios' ? 0 : undefined}>
+					<Appbar.BackAction onPress={() => {
+						Alert.alert(
+							'Cancel Registration',
+							'Are you sure you want to cancel the registration?',
+							[
+								{
+									text: 'No',
+									style: 'cancel',
+								},
+								{
+									text: 'Yes',
+									onPress: () => navigation.goBack(),
+								},
+							],
+						)
+					}} />
+					<Appbar.Content
+						title={steps?.[step - 1]?.header}
+						titleStyle={{
+							fontSize: 20,
+							fontWeight: 'bold',
+						}}
+					/>
+				</Appbar.Header>
+			}
+		>
+			<CustomFlex>
 				<View style={style.stepContainer}>
 					{steps?.[step - 1]?.component}
 				</View>
@@ -139,8 +144,8 @@ const Register = () => {
 							</Button>
 					}
 				</View>
-			</View>
-		</View>
+			</CustomFlex>
+		</CustomLayout>
 	)
 }
 
@@ -302,10 +307,6 @@ const style = StyleSheet.create({
 	container: {
 		width: '100%',
 		height: '100%',
-	},
-	content: {
-		flex: 1,
-		padding: 20,
 	},
 	appbar: {
 		width: '100%',
