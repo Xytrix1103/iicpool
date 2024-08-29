@@ -1,17 +1,21 @@
-import React, { createContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import { onAuthStateChanged, User } from 'firebase/auth'
 import FirebaseApp from '../FirebaseApp'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { Profile } from '../../database/schema'
+import { LoadingOverlayContext } from './LoadingOverlayContext'
 
 const AuthContext = createContext<AuthContextType>({
 	loading: true,
+	setLoading: () => {
+	},
 	user: null,
 	profile: null,
 })
 
 type AuthContextType = {
 	loading: boolean;
+	setLoading: (loading: boolean) => void;
 	user: User | null;
 	profile: Profile | null;
 }
@@ -20,12 +24,16 @@ const AuthProvider = ({ children }: any) => {
 	const [loading, setLoading] = useState<boolean>(true)
 	const [user, setUser] = useState<User | null>(null)
 	const [profile, setProfile] = useState<Profile | null>(null)
+	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	
 	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(
 			auth,
 			async (newUser) => {
-				console.log('AuthProvider -> newUser', newUser)
+				if (!loading) {
+					setLoadingOverlay({ show: true, message: 'Signing you in...' })
+				}
+				
 				setUser(newUser)
 			},
 			(error) => {
@@ -59,11 +67,19 @@ const AuthProvider = ({ children }: any) => {
 	}, [user])
 	
 	useEffect(() => {
-		setLoading(false)
+		if (!loading) {
+			setLoadingOverlay({ show: false, message: '' })
+		} else {
+			setLoading(false)
+		}
 	}, [profile])
 	
+	useEffect(() => {
+		console.log('AuthProvider -> user', !!user, 'profile', profile, 'loading', loading)
+	}, [user, profile, loading])
+	
 	return (
-		<AuthContext.Provider value={{ loading, user, profile }}>
+		<AuthContext.Provider value={{ loading, setLoading, user, profile }}>
 			{children}
 		</AuthContext.Provider>
 	)

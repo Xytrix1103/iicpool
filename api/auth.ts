@@ -50,7 +50,7 @@ const register = (data: RegisterProps) => {
 			console.log('Register -> error', error)
 			
 			if (error.code === 'auth/email-already-in-use') {
-				Alert.alert('Error', 'Email already in use.')
+				Alert.alert('Error', 'This email is already in use. Please use another email.')
 			} else {
 				Alert.alert('Error', 'An error occurred. Please try again later.')
 			}
@@ -69,7 +69,7 @@ const login = (email: string, password: string) => {
 		})
 }
 
-const googleLogin = async () => {
+const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; message: string; }) => void) => {
 	const { auth, db, functions } = FirebaseApp
 	
 	try {
@@ -88,11 +88,15 @@ const googleLogin = async () => {
 			return
 		}
 		
+		setLoadingOverlay({
+			show: true,
+			message: 'Signing you in...',
+		})
+		
 		const checkUser = httpsCallable(functions, 'checkEmailGoogleSignIn')
 		
 		const checkResult = await checkUser({ email: userInfo.user.email })
 			.then(result => {
-				console.log('Google login -> result', result)
 				return !!result.data
 			})
 			.catch(error => {
@@ -111,8 +115,6 @@ const googleLogin = async () => {
 		// Sign-in the user with the credential
 		await signInWithCredential(auth, googleCredential)
 			.then(async userCredential => {
-				console.log('Google login -> userCredential', userCredential)
-				
 				// If document does not exist, create a new document in the users collection
 				const docSnap = await getDoc(doc(db, 'users', userCredential.user.uid))
 				
