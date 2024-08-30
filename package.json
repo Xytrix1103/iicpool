@@ -40,6 +40,8 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@types/google.maps": "^3.57.0",
+    "@types/googlemaps": "^3.43.3",
     "@types/react": "~18.2.45",
     "typescript": "~5.3.3"
   },
