@@ -1,19 +1,18 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import MapView, { LatLng, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps'
 import * as Location from 'expo-location'
 import CustomLayout from '../components/themed/CustomLayout'
-import { Controller, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import CustomInput from '../components/themed/CustomInput'
 import { GooglePlaceDetail, GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete'
 import { Switch, TextInput, useTheme } from 'react-native-paper'
 import axios from 'axios'
-import { CAMPUS_NAME, getDirections, GMAPS_API_KEY } from '../api/location'
+import { CAMPUS_NAME, decodePolyline, getDirections, GMAPS_API_KEY } from '../api/location'
 import CustomText from '../components/themed/CustomText'
 
 type RideFormTypeSingle = {
 	place_id: string
-	name: string
 	formatted_address: string
 	geometry: {
 		location: {
@@ -33,9 +32,8 @@ const RideToCampus = () => {
 	const [location, setLocation] = useState({ latitude: 0, longitude: 0 })
 	const [toCampus, setToCampus] = useState(true)
 	const [showMap, setShowMap] = useState(true)
-	const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null)
+	const [directions, setDirections] = useState<LatLng[] | null>(null)
 	const { colors } = useTheme()
-	const autocompleteRef = useRef()
 	
 	const fetchCampusLocation = useCallback(
 		async (address: string) => {
@@ -53,7 +51,6 @@ const RideToCampus = () => {
 					
 					setValue('campus', {
 						place_id: response.data.results[0].place_id,
-						name: response.data.results[0].name,
 						formatted_address: address,
 						geometry: {
 							location: {
@@ -105,7 +102,6 @@ const RideToCampus = () => {
 		
 		setValue('not_campus', {
 			place_id: details.place_id,
-			name: details.name,
 			formatted_address: details.formatted_address,
 			geometry: {
 				location: {
@@ -118,9 +114,12 @@ const RideToCampus = () => {
 		setShowMap(true)
 	}
 	
-	const AutoComplete = (details: RideFormTypeSingle) => {
+	const AutoComplete = ({ details }: { details: RideFormTypeSingle }) => {
+		const autocompleteRef = useRef()
+		
 		return (
 			<GooglePlacesAutocomplete
+				//@ts-expect-error ref
 				ref={autocompleteRef}
 				placeholder=""
 				listViewDisplayed={true}
@@ -140,9 +139,9 @@ const RideToCampus = () => {
 					label: (toCampus ? 'Origin' : 'Destination'),
 					autoFocus: true,
 					editable: true,
-					isAutofill: true,
 					value: details.formatted_address,
-					rightIcon: details.formatted_address ? (
+					//@ts-expect-error onChangeText error
+					rightIcon: autocompleteRef.current?.getAddressText() ? (
 						<TextInput.Icon
 							icon="close"
 							//@ts-expect-error onPress error
@@ -200,8 +199,15 @@ const RideToCampus = () => {
 					origin: toCampus ? watchNotCampus.place_id : watchCampus.place_id,
 					destination: toCampus ? watchCampus.place_id : watchNotCampus.place_id,
 				},
-			).then((r) => {
-				setDirections(r)
+			).then(async (r) => {
+				console.log('Directions:', r)
+				if (r) {
+					console.log('Directions:', r)
+					console.log('Decoded:', decodePolyline(r.routes[0].overview_polyline.points))
+					setDirections(decodePolyline(r.routes[0].overview_polyline.points))
+				} else {
+					setDirections(null)
+				}
 			})
 		}
 	}, [watchNotCampus, watchCampus])
@@ -217,7 +223,6 @@ const RideToCampus = () => {
 					value={toCampus}
 					onValueChange={() => {
 						setToCampus(!toCampus)
-						setShowMap(true)
 					}}
 					color={colors.primary}
 				/>
@@ -225,44 +230,43 @@ const RideToCampus = () => {
 			</View>
 			<View style={style.row}>
 				{
-					showMap && <Controller
-						control={control}
-						name={toCampus ? 'not_campus' : 'campus'}
-						render={({ field: { onChange, value } }) => (
+					showMap ?
+						<Pressable
+							style={{ width: '100%' }}
+							onPress={() => toCampus ? setShowMap(false) : null}
+						>
 							<CustomInput
-								isAutofill={true}
-								editable={showMap}
+								editable={false}
+								onPressIn={() => setShowMap(false)}
 								label="Origin"
-								value={toCampus ? value.name : CAMPUS_NAME}
-								onChangeText={onChange}
+								value={(toCampus ? watchNotCampus : watchCampus).formatted_address}
+								onChangeText={() => null}
 								onPress={() => setShowMap(false)}
 							/>
-						)}
-					/>
-				}
-				{
-					(toCampus && !showMap) && <AutoComplete />
+						</Pressable> : toCampus ?
+							<AutoComplete details={watchNotCampus} /> :
+							null
 				}
 			</View>
 			<View style={style.row}>
 				{
-					showMap && <Controller
-						control={control}
-						name={toCampus ? 'campus' : 'not_campus'}
-						render={({ field: { onChange, value } }) => (
+					showMap ?
+						<Pressable
+							style={{ width: '100%' }}
+							onPress={() => toCampus ? null : setShowMap(false)}
+						>
 							<CustomInput
-								isAutofill={true}
-								editable={showMap}
+								editable={false}
+								onPressIn={() => setShowMap(false)}
 								label="Destination"
-								value={toCampus ? CAMPUS_NAME : value.name}
-								onChangeText={onChange}
+								value={(toCampus ? watchCampus : watchNotCampus).formatted_address}
+								onChangeText={() => null}
 								onPress={() => setShowMap(false)}
 							/>
-						)}
-					/>
-				}
-				{
-					(!toCampus && !showMap) && <AutoComplete />
+						</Pressable> : toCampus ?
+							null :
+							<AutoComplete details={watchCampus} />
+					
 				}
 			</View>
 			{
@@ -283,32 +287,32 @@ const RideToCampus = () => {
 					loadingEnabled={true}
 				>
 					{
-						(watchCampus.geometry.location.lng !== 0 && watchCampus.geometry.location.lat !== 0) &&
+						watchCampus.place_id &&
 						<Marker
 							coordinate={{
 								latitude: watchCampus.geometry.location.lat,
 								longitude: watchCampus.geometry.location.lng,
 							}}
-							title={watchCampus.name}
-							description={watchCampus.formatted_address}
+							title={watchCampus.formatted_address}
 						/>
 					}
 					{
-						(watchNotCampus.geometry.location.lng !== 0 && watchNotCampus.geometry.location.lat !== 0) &&
+						watchNotCampus.place_id &&
 						<Marker
 							coordinate={{
 								latitude: watchNotCampus.geometry.location.lat,
 								longitude: watchNotCampus.geometry.location.lng,
 							}}
-							title={watchNotCampus.name}
-							description={watchNotCampus.formatted_address}
+							title={watchNotCampus.formatted_address}
 						/>
 					}
 					{
-						directions?.routes[0].overview_path &&
-						<Polyline coordinates={directions?.routes[0].overview_path as unknown as LatLng[]}
-						          strokeWidth={5}
-						          strokeColor={colors.primary} />
+						directions &&
+						<Polyline
+							coordinates={directions}
+							strokeColor={colors.primary}
+							strokeWidth={2}
+						/>
 					}
 				</MapView>
 			}

@@ -15,7 +15,6 @@ interface FloatingLabelInputProps extends TextInputProps {
 	errorMessage?: string | FieldError | FieldErrorsImpl;
 	rightIcon?: ReactNode;
 	limit?: number;
-	isAutofill?: boolean;
 	onCustomFocus?: () => void;
 	onCustomBlur?: () => void;
 }
