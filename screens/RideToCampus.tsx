@@ -1,15 +1,22 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { RefObject, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 import MapView, { LatLng, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps'
 import * as Location from 'expo-location'
 import CustomLayout from '../components/themed/CustomLayout'
 import { useForm } from 'react-hook-form'
 import CustomInput from '../components/themed/CustomInput'
-import { GooglePlaceDetail, GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete'
-import { Switch, TextInput, useTheme } from 'react-native-paper'
+import {
+	GooglePlaceDetail,
+	GooglePlacesAutocomplete,
+	GooglePlacesAutocompleteRef,
+} from 'react-native-google-places-autocomplete'
+import { Switch, useTheme } from 'react-native-paper'
 import axios from 'axios'
 import { CAMPUS_NAME, decodePolyline, getDirections, GMAPS_API_KEY } from '../api/location'
 import CustomText from '../components/themed/CustomText'
+import Icon from '@expo/vector-icons/MaterialCommunityIcons'
+import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
+import { PermissionContext } from '../components/contexts/PermissionContext'
 
 type RideFormTypeSingle = {
 	place_id: string
@@ -28,12 +35,83 @@ type RideFormType = {
 	not_campus: RideFormTypeSingle
 }
 
+type DirectionsObject = {
+	path: LatLng[]
+	bounds: DirectionsBounds
+}
+
+type DirectionsBounds = {
+	northeast: LatLngLiteral
+	southwest: LatLngLiteral
+}
+
+type LatLngLiteral = {
+	lat: number
+	lng: number
+}
+
+const CustomInputAutoComplete = (
+	{
+		autocompleteRef,
+		details,
+		toCampus,
+		handleLocationSelect,
+	}: {
+		autocompleteRef: RefObject<GooglePlacesAutocompleteRef>,
+		details: RideFormTypeSingle,
+		toCampus: boolean,
+		handleLocationSelect: (details: GooglePlaceDetail | null) => void,
+	},
+) => {
+	const { colors } = useTheme()
+	
+	return (
+		<GooglePlacesAutocomplete
+			ref={autocompleteRef}
+			placeholder=""
+			listViewDisplayed={true}
+			onPress={(_data, details = null) => {
+				console.log('onPress autocomplete', details)
+				handleLocationSelect(details)
+			}}
+			query={{
+				key: GMAPS_API_KEY,
+				language: 'en',
+				components: 'country:my',
+			}}
+			enableHighAccuracyLocation={true}
+			fetchDetails={true}
+			textInputProps={{
+				InputComp: CustomInput,
+				label: (toCampus ? 'Origin' : 'Destination'),
+				editable: true,
+				value: details.formatted_address,
+			}}
+			styles={{
+				container: style.autoCompleteContainer,
+				textInput: [
+					style.textInput,
+					{ borderColor: colors.primary },
+				],
+				listView: style.listView,
+				predefinedPlacesDescription: {
+					color: colors.primary,
+				},
+			}}
+		/>
+	)
+}
+
 const RideToCampus = () => {
 	const [location, setLocation] = useState({ latitude: 0, longitude: 0 })
 	const [toCampus, setToCampus] = useState(true)
 	const [showMap, setShowMap] = useState(true)
-	const [directions, setDirections] = useState<LatLng[] | null>(null)
+	const [directions, setDirections] = useState<DirectionsObject | null>(null)
 	const { colors } = useTheme()
+	const autocompleteRef = useRef<GooglePlacesAutocompleteRef | null>(null)
+	const mapRef = useRef<MapView | null>(null)
+	const { loadingOverlay, setLoadingOverlay } = useContext(LoadingOverlayContext)
+	const { wrapPermissions } = useContext(PermissionContext)
 	
 	const fetchCampusLocation = useCallback(
 		async (address: string) => {
@@ -114,85 +192,38 @@ const RideToCampus = () => {
 		setShowMap(true)
 	}
 	
-	const AutoComplete = ({ details }: { details: RideFormTypeSingle }) => {
-		const autocompleteRef = useRef()
-		
-		return (
-			<GooglePlacesAutocomplete
-				//@ts-expect-error ref
-				ref={autocompleteRef}
-				placeholder=""
-				listViewDisplayed={true}
-				onPress={(_data, details = null) => {
-					console.log('onPress autocomplete', details)
-					handleLocationSelect(details)
-				}}
-				query={{
-					key: GMAPS_API_KEY,
-					language: 'en',
-					components: 'country:my',
-				}}
-				enableHighAccuracyLocation={true}
-				fetchDetails={true}
-				textInputProps={{
-					InputComp: CustomInput,
-					label: (toCampus ? 'Origin' : 'Destination'),
-					autoFocus: true,
-					editable: true,
-					value: details.formatted_address,
-					//@ts-expect-error onChangeText error
-					rightIcon: autocompleteRef.current?.getAddressText() ? (
-						<TextInput.Icon
-							icon="close"
-							//@ts-expect-error onPress error
-							onPress={autocompleteRef.current?.clear()}
-						/>
-					) : null,
-				}}
-				styles={{
-					container: style.autoCompleteContainer,
-					textInput: [
-						style.textInput,
-						{ borderColor: colors.primary },
-					],
-					listView: style.listView,
-					predefinedPlacesDescription: {
-						color: colors.primary,
-					},
-				}}
-			/>
-		)
-	}
 	
 	useEffect(() => {
 		(async () => {
-			let { status } = await Location.requestForegroundPermissionsAsync()
-			
-			if (status !== 'granted') {
-				console.log('Permission to access location was denied')
-				return
-			}
-			
-			Location.getCurrentPositionAsync({
-				accuracy: Location.Accuracy.Highest,
+			setLoadingOverlay({
+				show: true,
+				message: 'Fetching location...',
 			})
-				.then((r) => {
-					setLocation({
-						latitude: r.coords.latitude,
-						longitude: r.coords.longitude,
-					})
-				})
-				.catch((error) => {
-					console.error('Error fetching location:', error)
-				})
 			
-			fetchCampusLocation(CAMPUS_NAME).then((r) => r)
+			await fetchCampusLocation(CAMPUS_NAME)
+			
+			await wrapPermissions({
+				operation: async () => {
+					Location.getCurrentPositionAsync({
+						accuracy: Location.Accuracy.Highest,
+					})
+						.then((r) => {
+							setLocation({
+								latitude: r.coords.latitude,
+								longitude: r.coords.longitude,
+							})
+						})
+						.catch((error) => {
+							console.error('Error fetching location:', error)
+						})
+				},
+				type: 'location',
+				message: 'Please enable location access for this app to get your current location',
+			})
 		})()
 	}, [])
 	
 	useEffect(() => {
-		console.log('watchCampus:', watchCampus)
-		console.log('watchNotCampus:', watchNotCampus)
 		if (watchNotCampus.place_id !== '' && watchCampus.place_id !== '') {
 			getDirections(
 				{
@@ -202,19 +233,56 @@ const RideToCampus = () => {
 			).then(async (r) => {
 				console.log('Directions:', r)
 				if (r) {
-					console.log('Directions:', r)
-					console.log('Decoded:', decodePolyline(r.routes[0].overview_polyline.points))
-					setDirections(decodePolyline(r.routes[0].overview_polyline.points))
+					setDirections({
+						path: decodePolyline(r.routes[0].overview_polyline.points),
+						bounds: r.routes[0].bounds,
+					})
 				} else {
 					setDirections(null)
 				}
 			})
+		} else {
+			if (location.latitude !== 0 && location.longitude !== 0) {
+				mapRef.current?.animateToRegion({
+					latitude: location.latitude,
+					longitude: location.longitude,
+					latitudeDelta: 0.01,
+					longitudeDelta: 0.01,
+				}, 1000)
+				
+				setDirections(null)
+				
+				setLoadingOverlay({
+					show: false,
+					message: '',
+				})
+			}
 		}
-	}, [watchNotCampus, watchCampus])
+	}, [watchNotCampus, watchCampus, location])
 	
 	useEffect(() => {
 		console.log('showMap:', showMap, 'toCampus:', toCampus)
 	}, [showMap, toCampus])
+	
+	useEffect(() => {
+		if (directions) {
+			const { northeast, southwest } = directions.bounds
+			
+			const centerLatitude = (northeast.lat + southwest.lat) / 2
+			const centerLongitude = (northeast.lng + southwest.lng) / 2
+			
+			const paddingFactor = 0.5 // Adjust this value to add more space around the bounds
+			const latitudeDelta = Math.abs(northeast.lat - southwest.lat) * (1 + paddingFactor)
+			const longitudeDelta = Math.abs(northeast.lng - southwest.lng) * (1 + paddingFactor)
+			
+			mapRef.current?.animateToRegion({
+				latitude: centerLatitude,
+				longitude: centerLongitude,
+				latitudeDelta,
+				longitudeDelta,
+			}, 1000)
+		}
+	}, [directions])
 	
 	return (
 		<CustomLayout scrollable={false}>
@@ -242,10 +310,34 @@ const RideToCampus = () => {
 								value={(toCampus ? watchNotCampus : watchCampus).formatted_address}
 								onChangeText={() => null}
 								onPress={() => setShowMap(false)}
+								rightIcon={
+									(toCampus && watchNotCampus.place_id !== '') &&
+									<Icon
+										onPress={() => {
+											setValue('not_campus', {
+												place_id: '',
+												formatted_address: '',
+												geometry: {
+													location: {
+														lat: 0,
+														lng: 0,
+													},
+												},
+											})
+										}}
+										name="close"
+										size={20}
+										// @ts-expect-error colors
+										color={colors.text}
+									/>
+								}
 							/>
 						</Pressable> : toCampus ?
-							<AutoComplete details={watchNotCampus} /> :
-							null
+							<CustomInputAutoComplete
+								autocompleteRef={autocompleteRef}
+								details={watchNotCampus} toCampus={toCampus}
+								handleLocationSelect={handleLocationSelect}
+							/> : null
 				}
 			</View>
 			<View style={style.row}>
@@ -262,10 +354,35 @@ const RideToCampus = () => {
 								value={(toCampus ? watchCampus : watchNotCampus).formatted_address}
 								onChangeText={() => null}
 								onPress={() => setShowMap(false)}
+								rightIcon={
+									(!toCampus && watchNotCampus.place_id !== '') &&
+									<Icon
+										onPress={() => {
+											setValue('not_campus', {
+												place_id: '',
+												formatted_address: '',
+												geometry: {
+													location: {
+														lat: 0,
+														lng: 0,
+													},
+												},
+											})
+										}}
+										name="close"
+										size={20}
+										// @ts-expect-error colors
+										color={colors.text}
+									/>
+								}
 							/>
 						</Pressable> : toCampus ?
 							null :
-							<AutoComplete details={watchCampus} />
+							<CustomInputAutoComplete
+								autocompleteRef={autocompleteRef}
+								details={watchNotCampus} toCampus={toCampus}
+								handleLocationSelect={handleLocationSelect}
+							/>
 					
 				}
 			</View>
@@ -276,9 +393,10 @@ const RideToCampus = () => {
 					style={style.map}
 					showsBuildings={true}
 					showsUserLocation={true}
-					region={{
-						latitude: location.latitude,
-						longitude: location.longitude,
+					ref={mapRef}
+					initialRegion={{
+						latitude: 0,
+						longitude: 0,
 						latitudeDelta: 0.01,
 						longitudeDelta: 0.01,
 					}}
@@ -309,7 +427,7 @@ const RideToCampus = () => {
 					{
 						directions &&
 						<Polyline
-							coordinates={directions}
+							coordinates={directions.path}
 							strokeColor={colors.primary}
 							strokeWidth={2}
 						/>
