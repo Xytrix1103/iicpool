@@ -6,6 +6,7 @@ import CustomAppbar from './CustomAppbar'
 
 type LayoutProps = {
 	header?: ReactNode
+	footer?: ReactNode
 	hasAppBar?: boolean
 	scrollable?: boolean
 	children: ReactNode
@@ -17,6 +18,7 @@ type LayoutProps = {
 const CustomLayout: FC<LayoutProps> = (
 	{
 		header,
+		footer,
 		hasAppBar = false,
 		scrollable = false,
 		children,
@@ -39,18 +41,28 @@ const CustomLayout: FC<LayoutProps> = (
 					<ScrollView
 						style={[style.scrollViewContent]}>
 						<View style={[style.container, {
-							padding: contentPadding,
+							paddingTop: header && contentPadding > 0 ? 10 : contentPadding,
+							paddingBottom: hasAppBar && contentPadding > 0 ? 10 : contentPadding,
+							paddingHorizontal: contentPadding,
 							justifyContent: centered ? 'center' : 'flex-start',
 						}]}>
 							{children}
 						</View>
 					</ScrollView> :
 					<View style={[style.container, {
-						padding: contentPadding,
+						paddingTop: header && contentPadding > 0 ? 10 : contentPadding,
+						paddingBottom: hasAppBar && contentPadding > 0 ? 10 : contentPadding,
+						paddingHorizontal: contentPadding,
 						justifyContent: centered ? 'center' : 'flex-start',
 					}]}>
 						{children}
 					</View>
+			}
+			{
+				footer &&
+				<View style={style.footerContainer}>
+					{footer}
+				</View>
 			}
 			{
 				hasAppBar &&
@@ -62,22 +74,32 @@ const CustomLayout: FC<LayoutProps> = (
 
 const style = StyleSheet.create({
 	root: {
+		flex: 1,
 		width: '100%',
 		height: '100%',
 		alignItems: 'center',
 	},
 	scrollViewContent: {
+		flex: 1,
 		width: '100%',
-		height: '100%',
 	},
 	container: {
-		width: '100%',
 		flex: 1,
+		width: '100%',
 		alignItems: 'center',
+		gap: 10,
 	},
 	headerContainer: {
 		width: '100%',
+		flexShrink: 0,
 		alignItems: 'center',
+	},
+	footerContainer: {
+		width: '100%',
+		flexShrink: 0,
+		alignItems: 'center',
+		paddingHorizontal: 20,
+		paddingBottom: 20,
 	},
 })
 

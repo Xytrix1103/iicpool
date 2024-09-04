@@ -19,7 +19,7 @@ import Home from './screens/Home'
 import Login from './screens/Login'
 import Register from './screens/Register'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import RideToCampus from './screens/RideToCampus'
+import AddRide from './screens/AddRide'
 import Profile from './screens/Profile'
 import { PermissionProvider } from './components/contexts/PermissionContext'
 import NotificationSettingsProvider from './components/contexts/NotificationContext'
@@ -150,7 +150,7 @@ const Routes = () => {
 			) : user ? (
 				<>
 					<Stack.Screen name="Home" component={Home} />
-					<Stack.Screen name="RideToCampus" component={RideToCampus} />
+					<Stack.Screen name="AddRide" component={AddRide} />
 					<Stack.Screen name="Profile" component={Profile} />
 				</>
 			) : (

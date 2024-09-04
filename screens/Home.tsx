@@ -19,7 +19,7 @@ const Home = () => {
 				<CustomText>Home</CustomText>
 				<Button onPress={() => {
 					// @ts-ignore
-					navigation.navigate('RideToCampus')
+					navigation.navigate('AddRide')
 				}}>Ride to Campus</Button>
 				<Button onPress={logout}>Logout</Button>
 			</CustomFlex>
