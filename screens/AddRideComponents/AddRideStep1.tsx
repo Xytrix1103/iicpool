@@ -3,7 +3,7 @@ import CustomInput from '../../components/themed/CustomInput'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import { IconButton } from 'react-native-paper'
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { MutableRefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { UseFormReturn } from 'react-hook-form'
 import { MD3Colors } from 'react-native-paper/lib/typescript/types'
 import { GooglePlaceDetail, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete'
@@ -22,25 +22,32 @@ const AddRideStep1 = (
 		colors,
 		toCampus,
 		setToCampus,
+		showMap,
+		setShowMap,
 		setLoadingOverlay,
 		wrapPermissions,
+		directions,
+		setDirections,
+		autocompleteRef,
 	}: {
 		style: any,
-		form: UseFormReturn<RideFormType>
+		form: UseFormReturn<RideFormType>,
 		colors: MD3Colors,
 		toCampus: boolean,
 		setToCampus: (toCampus: boolean) => void,
+		showMap: boolean,
+		setShowMap: (showMap: boolean) => void,
 		setLoadingOverlay: ({ show, message }: { show: boolean, message: string }) => void,
 		wrapPermissions: ({ operation, type, message }: {
 			operation: () => Promise<void>;
 			type: 'notifications' | 'location' | 'camera';
 			message: string;
-		}) => Promise<void>
+		}) => Promise<void>,
+		directions: DirectionsObject | null,
+		setDirections: (directions: DirectionsObject | null) => void,
+		autocompleteRef: MutableRefObject<GooglePlacesAutocompleteRef | null>
 	}) => {
 	const [location, setLocation] = useState({ latitude: 0, longitude: 0 })
-	const [showMap, setShowMap] = useState(true)
-	const [directions, setDirections] = useState<DirectionsObject | null>(null)
-	const autocompleteRef = useRef<GooglePlacesAutocompleteRef | null>(null)
 	const mapRef = useRef<MapView | null>(null)
 	const { setValue, watch } = form
 	
@@ -193,7 +200,7 @@ const AddRideStep1 = (
 	return (
 		<CustomLayout scrollable={false} contentPadding={0}>
 			<View style={style.row}>
-				<View style={[style.column, { flex: 9 }]}>
+				<View style={[style.column, { flex: showMap ? 9 : 1 }]}>
 					{
 						showMap ?
 							<Pressable
@@ -203,7 +210,7 @@ const AddRideStep1 = (
 								<CustomInput
 									editable={false}
 									onPressIn={() => setShowMap(false)}
-									label="Origin"
+									label={toCampus ? 'Pick-Up Location' : 'Campus'}
 									value={(toCampus ? watchNotCampus : watchCampus).formatted_address}
 									onChangeText={() => null}
 									onPress={() => setShowMap(false)}
@@ -246,7 +253,7 @@ const AddRideStep1 = (
 								<CustomInput
 									editable={false}
 									onPressIn={() => setShowMap(false)}
-									label="Destination"
+									label={toCampus ? 'Campus' : 'Drop-Off Location'}
 									value={(toCampus ? watchCampus : watchNotCampus).formatted_address}
 									onChangeText={() => null}
 									onPress={() => setShowMap(false)}
@@ -282,14 +289,17 @@ const AddRideStep1 = (
 								/>
 					}
 				</View>
-				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-					<IconButton
-						icon="swap-vertical"
-						iconColor={colors.primary}
-						size={30}
-						onPress={() => setToCampus(!toCampus)}
-					/>
-				</View>
+				{
+					showMap &&
+					<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+						<IconButton
+							icon="swap-vertical"
+							iconColor={colors.primary}
+							size={30}
+							onPress={() => setToCampus(!toCampus)}
+						/>
+					</View>
+				}
 			</View>
 			<View style={[style.row, { flex: 1 }]}>
 				{
@@ -311,24 +321,23 @@ const AddRideStep1 = (
 						loadingEnabled={true}
 					>
 						{
-							watchCampus.place_id &&
-							<Marker
-								coordinate={{
-									latitude: watchCampus.geometry.location.lat,
-									longitude: watchCampus.geometry.location.lng,
-								}}
-								title={watchCampus.formatted_address}
-							/>
-						}
-						{
-							watchNotCampus.place_id &&
-							<Marker
-								coordinate={{
-									latitude: watchNotCampus.geometry.location.lat,
-									longitude: watchNotCampus.geometry.location.lng,
-								}}
-								title={watchNotCampus.formatted_address}
-							/>
+							(watchCampus.place_id && watchNotCampus.place_id) &&
+							<>
+								<Marker
+									coordinate={{
+										latitude: watchCampus.geometry.location.lat,
+										longitude: watchCampus.geometry.location.lng,
+									}}
+									title={watchCampus.formatted_address}
+								/>
+								<Marker
+									coordinate={{
+										latitude: watchNotCampus.geometry.location.lat,
+										longitude: watchNotCampus.geometry.location.lng,
+									}}
+									title={watchNotCampus.formatted_address}
+								/>
+							</>
 						}
 						{
 							directions &&

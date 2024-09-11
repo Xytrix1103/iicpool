@@ -1,62 +1,62 @@
 {
-  "expo": {
-    "name": "IICPool",
-    "slug": "IICPool",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.xytrix.iicpool",
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyAZJLOFhRAzXUdviZBokuuKv4pfqyEpyxs"
-        }
-      }
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "21c40398-4692-4046-ae2a-9bc540e7b445"
-      }
-    },
-    "plugins": [
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location",
-          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location",
-          "isAndroidForegroundServiceEnabled": true
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/icon.jpeg",
-          "color": "#ffffff",
-          "defaultChannel": "default"
-        }
-      ],
-      [
-        "expo-image-picker",
-        {
-          "cameraPermission": "$(PRODUCT_NAME) needs access to your camera to take photos while filing a complain."
-        }
-      ]
-    ]
-  }
+	"expo": {
+		"name": "IICPool",
+		"slug": "IICPool",
+		"version": "1.0.0",
+		"orientation": "portrait",
+		"icon": "./assets/icon.png",
+		"userInterfaceStyle": "light",
+		"splash": {
+			"image": "./assets/splash.png",
+			"resizeMode": "contain",
+			"backgroundColor": "#ffffff"
+		},
+		"ios": {
+			"supportsTablet": true
+		},
+		"android": {
+			"adaptiveIcon": {
+				"foregroundImage": "./assets/adaptive-icon.png",
+				"backgroundColor": "#ffffff"
+			},
+			"package": "com.xytrix.iicpool",
+			"config": {
+				"googleMaps": {
+					"apiKey": "AIzaSyAZJLOFhRAzXUdviZBokuuKv4pfqyEpyxs"
+				}
+			}
+		},
+		"web": {
+			"favicon": "./assets/favicon.png"
+		},
+		"extra": {
+			"eas": {
+				"projectId": "21c40398-4692-4046-ae2a-9bc540e7b445"
+			}
+		},
+		"plugins": [
+			[
+				"expo-location",
+				{
+					"locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location",
+					"locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location",
+					"isAndroidForegroundServiceEnabled": true
+				}
+			],
+			[
+				"expo-notifications",
+				{
+					"icon": "./assets/logo.png",
+					"color": "#ffffff",
+					"defaultChannel": "default"
+				}
+			],
+			[
+				"expo-image-picker",
+				{
+					"cameraPermission": "$(PRODUCT_NAME) needs access to your camera to take photos while filing a complain."
+				}
+			]
+		]
+	}
 }

@@ -1,25 +1,33 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useRef, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import CustomLayout from '../components/themed/CustomLayout'
-import { Button, useTheme } from 'react-native-paper'
+import { useTheme } from 'react-native-paper'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import { PermissionContext } from '../components/contexts/PermissionContext'
 import CustomBackBtnHeader from '../components/themed/CustomBackBtnHeader'
 import { useNavigation } from '@react-navigation/native'
 import AddRideStep1 from './AddRideComponents/AddRideStep1'
 import { useForm } from 'react-hook-form'
-import { RideFormType } from './AddRideComponents/types'
+import { DirectionsObject, RideFormType } from './AddRideComponents/types'
+import CustomSolidButton from '../components/themed/CustomSolidButton'
+import CustomOutlinedButton from '../components/themed/CustomOutlinedButton'
+import { GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete'
+import AddRideStep2 from './AddRideComponents/AddRideStep2'
 
 const AddRide = () => {
 	const [toCampus, setToCampus] = useState(true)
 	const navigation = useNavigation()
 	const { colors } = useTheme()
-	const { loadingOverlay, setLoadingOverlay } = useContext(LoadingOverlayContext)
+	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	const { wrapPermissions } = useContext(PermissionContext)
+	const autocompleteRef = useRef<GooglePlacesAutocompleteRef | null>(null)
 	const [step, setStep] = useState(1)
+	const [showMap, setShowMap] = useState(true)
+	const [directions, setDirections] = useState<DirectionsObject | null>(null)
 	
 	const form = useForm<RideFormType>({
 		defaultValues: {
+			to_campus: true,
 			campus: {
 				place_id: '',
 				formatted_address: '',
@@ -40,6 +48,8 @@ const AddRide = () => {
 					},
 				},
 			},
+			departure_time: undefined,
+			available_seats: undefined,
 		},
 	})
 	
@@ -47,29 +57,24 @@ const AddRide = () => {
 		<CustomLayout
 			scrollable={false}
 			header={
-				<CustomBackBtnHeader
+				showMap ? <CustomBackBtnHeader
 					title="Add Ride"
 					navigation={navigation}
+				/> : <CustomBackBtnHeader
+					title="Back to Ride"
+					onPress={() => setShowMap(true)}
 				/>
 			}
 			footer={
-				<View style={style.row}>
+				<View style={[style.row, { gap: 20 }]}>
 					{step > 1 && (
-						<Button
-							mode="contained"
-							onPress={() => setStep(step - 1)}
-							style={{ flex: 1 }}
-						>
+						<CustomOutlinedButton onPress={() => setStep(step - 1)}>
 							Back
-						</Button>
+						</CustomOutlinedButton>
 					)}
-					<Button
-						mode="contained"
-						onPress={() => setStep(step + 1)}
-						style={{ flex: 1 }}
-					>
-						{step > 1 ? 'Next' : 'Start'}
-					</Button>
+					<CustomSolidButton onPress={() => setStep(step + 1)}>
+						{step === 1 ? 'Next' : 'Submit'}
+					</CustomSolidButton>
 				</View>
 			}
 		>
@@ -83,6 +88,21 @@ const AddRide = () => {
 						setLoadingOverlay={setLoadingOverlay}
 						wrapPermissions={wrapPermissions}
 						colors={colors}
+						directions={directions}
+						setDirections={setDirections}
+						showMap={showMap}
+						setShowMap={setShowMap}
+						autocompleteRef={autocompleteRef}
+					/>
+				)}
+				{step === 2 && (
+					<AddRideStep2
+						form={form}
+						style={style}
+						colors={colors}
+						setLoadingOverlay={setLoadingOverlay}
+						wrapPermissions={wrapPermissions}
+						directions={directions}
 					/>
 				)}
 			</View>
