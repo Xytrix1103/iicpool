@@ -8,7 +8,7 @@ import { RideFormTypeSingle } from './types'
 import { GMAPS_API_KEY } from '../../api/location'
 import CustomInput from '../../components/themed/CustomInput'
 import { MD3Colors } from 'react-native-paper/lib/typescript/types'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 const CustomInputAutoComplete = (
 	{
@@ -26,46 +26,47 @@ const CustomInputAutoComplete = (
 	},
 ) => {
 	return (
-		<GooglePlacesAutocomplete
-			ref={autocompleteRef}
-			placeholder=""
-			listViewDisplayed={true}
-			onPress={(_data, details = null) => {
-				console.log('onPress autocomplete', details)
-				handleLocationSelect(details)
-			}}
-			query={{
-				key: GMAPS_API_KEY,
-				language: 'en',
-				components: 'country:my',
-			}}
-			enableHighAccuracyLocation={true}
-			fetchDetails={true}
-			textInputProps={{
-				InputComp: CustomInput,
-				label: (toCampus ? 'Origin' : 'Destination'),
-				editable: true,
-				value: details.formatted_address,
-			}}
-			styles={{
-				container: style.autoCompleteContainer,
-				textInput: [
-					style.textInput,
-					{ borderColor: colors.primary },
-				],
-				listView: style.listView,
-				predefinedPlacesDescription: {
-					color: colors.primary,
-				},
-			}}
-		/>
+		<View style={{ width: '100%', height: '100%' }}>
+			<GooglePlacesAutocomplete
+				ref={autocompleteRef}
+				placeholder=""
+				listViewDisplayed={true}
+				onPress={(_data, details = null) => {
+					console.log('onPress autocomplete', details)
+					handleLocationSelect(details)
+				}}
+				query={{
+					key: GMAPS_API_KEY,
+					language: 'en',
+					components: 'country:my',
+				}}
+				enableHighAccuracyLocation={true}
+				fetchDetails={true}
+				textInputProps={{
+					InputComp: CustomInput,
+					label: (toCampus ? 'Pick-Up Location' : 'Drop-Off Location'),
+					editable: true,
+					value: details.formatted_address,
+				}}
+				styles={{
+					container: style.autoCompleteContainer,
+					textInput: [
+						style.textInput,
+						{ borderColor: colors.primary },
+					],
+					listView: style.listView,
+					predefinedPlacesDescription: {
+						color: colors.primary,
+					},
+				}}
+			/>
+		</View>
 	)
 }
 
 const style = StyleSheet.create({
 	autoCompleteContainer: {
 		width: '100%',
-		height: '100%',
 	},
 	textInput: {
 		backgroundColor: '#fff',
@@ -74,6 +75,7 @@ const style = StyleSheet.create({
 		padding: 10,
 		marginVertical: 10,
 		fontSize: 16,
+		height: '100%',
 	},
 	listView: {
 		backgroundColor: '#fff',
