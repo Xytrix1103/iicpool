@@ -3,7 +3,7 @@ import CustomLayout from '../../components/themed/CustomLayout'
 import { Controller, UseFormReturn } from 'react-hook-form'
 import { DirectionsObject, RideFormType } from './types'
 import { MD3Colors } from 'react-native-paper/lib/typescript/types'
-import { View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import CustomInput from '../../components/themed/CustomInput'
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 
@@ -40,12 +40,10 @@ const AddRideStep2 = (
 						control={form.control}
 						name="departure_time"
 						render={({ field: { onChange, value } }) => (
-							<CustomInput
-								label="Departure Time"
-								editable={true}
-								value={value?.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }) ?? ''}
-								onChangeText={() => null}
+							<Pressable
+								style={{ width: '100%' }}
 								onPress={() => {
+									console.log('onPressIn')
 									DateTimePickerAndroid.open({
 										mode: 'time',
 										is24Hour: true,
@@ -57,7 +55,17 @@ const AddRideStep2 = (
 										},
 									})
 								}}
-							/>
+							>
+								<CustomInput
+									label="Departure Time"
+									editable={false}
+									value={
+										value?.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' })
+										?? new Date().toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' })
+									}
+									onChangeText={() => null}
+								/>
+							</Pressable>
 						)}
 					/>
 				</View>
