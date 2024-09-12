@@ -48,7 +48,7 @@ const AddRide = () => {
 					},
 				},
 			},
-			departure_time: undefined,
+			datetime: undefined,
 			available_seats: undefined,
 		},
 	})
@@ -100,6 +100,7 @@ const AddRide = () => {
 						form={form}
 						style={style}
 						colors={colors}
+						toCampus={toCampus}
 						setLoadingOverlay={setLoadingOverlay}
 						wrapPermissions={wrapPermissions}
 						directions={directions}

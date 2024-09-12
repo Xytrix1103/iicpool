@@ -12,6 +12,7 @@ const AddRideStep2 = (
 		style,
 		form,
 		colors,
+		toCampus,
 		setLoadingOverlay,
 		wrapPermissions,
 		directions,
@@ -19,6 +20,7 @@ const AddRideStep2 = (
 		style: any,
 		form: UseFormReturn<RideFormType>
 		colors: MD3Colors,
+		toCampus: boolean,
 		setLoadingOverlay: ({ show, message }: { show: boolean, message: string }) => void,
 		wrapPermissions: ({ operation, type, message }: {
 			operation: () => Promise<void>;
@@ -30,42 +32,110 @@ const AddRideStep2 = (
 	return (
 		<CustomLayout scrollable={false} contentPadding={0}>
 			<View style={[style.column, { gap: 10 }]}>
-				<View style={style.row}>
-					<CustomText size={18} color={colors.secondary}>
-						Configure your ride
-					</CustomText>
+				<View style={[style.column, { gap: 10 }]}>
+					<View style={style.row}>
+						<CustomText size={16} color={colors.secondary}>
+							{`Step 2: ${toCampus ? 'Pick-Up' : 'Drop-Off'} Date & Time`}
+						</CustomText>
+					</View>
+					<View style={[style.row, { gap: 10 }]}>
+						<Controller
+							control={form.control}
+							name="datetime"
+							render={({ field: { onChange, value } }) => (
+								<Pressable
+									style={{ flex: 1 }}
+									onPress={() => {
+										DateTimePickerAndroid.open({
+											mode: 'date',
+											value: value ?? new Date(),
+											onChange: (event, selectedDate) => {
+												if (event.type === 'set') {
+													onChange(selectedDate)
+												}
+											},
+										})
+									}}
+								>
+									<CustomInput
+										label={toCampus ? 'Pick-Up Date' : 'Drop-Off Date'}
+										editable={false}
+										value={
+											value?.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }).split(', ')[0]
+											?? new Date().toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }).split(', ')[0]
+										}
+										onChangeText={() => null}
+									/>
+								</Pressable>
+							)}
+						/>
+						<Controller
+							control={form.control}
+							name="datetime"
+							render={({ field: { onChange, value } }) => (
+								<Pressable
+									style={{ flex: 1 }}
+									onPress={() => {
+										DateTimePickerAndroid.open({
+											mode: 'time',
+											is24Hour: true,
+											value: value ?? new Date(),
+											onChange: (event, selectedDate) => {
+												if (event.type === 'set') {
+													onChange(selectedDate)
+												}
+											},
+										})
+									}}
+								>
+									<CustomInput
+										label={toCampus ? 'Pick-Up Time' : 'Drop-Off Time'}
+										editable={false}
+										value={
+											value?.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }).split(', ')[1]
+											?? new Date().toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }).split(', ')[1]
+										}
+										onChangeText={() => null}
+									/>
+								</Pressable>
+							)}
+						/>
+					</View>
 				</View>
-				<View style={style.row}>
+				<View style={[style.column, { gap: 10 }]}>
+					<View style={[style.row, { gap: 10 }]}>
+						<CustomText size={16} color={colors.secondary}>
+							{`Step 3: Select Vehicle`}
+						</CustomText>
+					</View>
 					<Controller
 						control={form.control}
-						name="departure_time"
+						name="vehicle"
 						render={({ field: { onChange, value } }) => (
-							<Pressable
-								style={{ width: '100%' }}
-								onPress={() => {
-									console.log('onPressIn')
-									DateTimePickerAndroid.open({
-										mode: 'time',
-										is24Hour: true,
-										value: value ?? new Date(),
-										onChange: (event, selectedDate) => {
-											if (event.type === 'set') {
-												onChange(selectedDate)
-											}
-										},
-									})
-								}}
-							>
-								<CustomInput
-									label="Departure Time"
-									editable={false}
-									value={
-										value?.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' })
-										?? new Date().toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' })
-									}
-									onChangeText={() => null}
-								/>
-							</Pressable>
+							<CustomInput
+								label="Vehicle"
+								onChangeText={onChange}
+								value={value}
+							/>
+						)}
+					/>
+				</View>
+				<View style={[style.column, { gap: 10 }]}>
+					<View style={[style.row, { gap: 10 }]}>
+						<CustomText size={16} color={colors.secondary}>
+							{`Step 3: Available Seats`}
+						</CustomText>
+					</View>
+					<Controller
+						control={form.control}
+						name="available_seats"
+						render={({ field: { onChange, value } }) => (
+							<CustomInput
+								label="Available Seats"
+								keyboardType="number-pad"
+								onChangeText={onChange}
+								value={value?.toString()}
+							/>
 						)}
 					/>
 				</View>

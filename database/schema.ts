@@ -12,6 +12,10 @@ type Ride = {
 	driver: DocumentReference
 	passengers: DocumentReference[]
 	to_campus: boolean
+	vehicle: DocumentReference
+	available_seats: number
+	datetime: Timestamp
+	created_at: Timestamp
 	location?: {
 		place_id: string
 		formatted_address: string
@@ -22,9 +26,6 @@ type Ride = {
 			},
 		},
 	}
-	departure_time: Timestamp
-	available_seats: number
-	created_at: Timestamp
 }
 
 enum Role {
