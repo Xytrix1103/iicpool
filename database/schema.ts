@@ -4,8 +4,17 @@ type Profile = {
 	roles: Role[];
 	full_name: string;
 	mobile_number: string;
-	photo_url: string;
 	deleted: boolean;
+}
+
+type Vehicle = {
+	owner: DocumentReference
+	brand: string
+	model: string
+	color: string
+	license_plate: string
+	photo_url: string
+	created_at: Timestamp
 }
 
 type Ride = {
@@ -37,4 +46,6 @@ enum Role {
 export {
 	Profile,
 	Role,
+	Vehicle,
+	Ride,
 }
