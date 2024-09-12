@@ -1,7 +1,9 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin'
 import {
 	createUserWithEmailAndPassword,
+	EmailAuthProvider,
 	GoogleAuthProvider,
+	linkWithCredential,
 	signInWithCredential,
 	signInWithEmailAndPassword,
 } from 'firebase/auth'
@@ -32,7 +34,7 @@ const register = (data: RegisterProps) => {
 	const { auth } = FirebaseApp
 	
 	createUserWithEmailAndPassword(auth, email, password)
-		.then(async userCredential => {
+		.then(async (userCredential) => {
 			console.log('Register -> userCredential', userCredential)
 			
 			//add user to users collection
@@ -41,7 +43,10 @@ const register = (data: RegisterProps) => {
 			
 			if (!docSnap.exists()) {
 				await setDoc(doc(db, 'users', userCredential.user.uid), {
+					full_name: '',
+					mobile_number: '',
 					roles: [Role.PASSENGER],
+					photo_url: null,
 					deleted: false,
 				})
 			}
@@ -132,6 +137,40 @@ const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; 
 		console.error('Google login -> error', error)
 	} finally {
 		await GoogleSignin.signOut()
+	}
+}
+
+const linkEmailPassword = async (email: string, password: string) => {
+	const { auth } = FirebaseApp
+	
+	const credential = EmailAuthProvider.credential(email, password)
+	
+	if (auth.currentUser) {
+		await linkWithCredential(auth.currentUser, credential)
+			.then(userCredential => {
+				console.log('Link Email Password -> userCredential', userCredential)
+			})
+			.catch(error => {
+				console.log('Link Email Password -> error', error)
+			})
+	}
+}
+
+const linkGoogle = async () => {
+	const { auth } = FirebaseApp
+	
+	const userInfo = await GoogleSignin.signIn()
+	
+	const googleCredential = GoogleAuthProvider.credential(userInfo.idToken)
+	
+	if (auth.currentUser) {
+		await linkWithCredential(auth.currentUser, googleCredential)
+			.then(userCredential => {
+				console.log('Link Google -> userCredential', userCredential)
+			})
+			.catch(error => {
+				console.log('Link Google -> error', error)
+			})
 	}
 }
 

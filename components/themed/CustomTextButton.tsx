@@ -1,8 +1,14 @@
 import { StyleSheet, TouchableOpacity } from 'react-native'
 import { useTheme } from 'react-native-paper'
 import CustomText from './CustomText'
+import { FC } from 'react'
 
-const CustomTextButton = ({ children, ...props }: any) => {
+type CustomTextButtonProps = {
+	onPress: () => void
+	children: string
+}
+
+const CustomTextButton: FC<CustomTextButtonProps> = ({ children, onPress, ...props }) => {
 	const { colors } = useTheme()
 	
 	return (
@@ -10,12 +16,10 @@ const CustomTextButton = ({ children, ...props }: any) => {
 			{...props}
 			style={[
 				styles.button,
-				{
-					backgroundColor: colors.primary,
-				},
 			]}
+			onPress={onPress}
 		>
-			<CustomText size={16} bold color={colors.background}>
+			<CustomText size={16} bold color={colors.primary}>
 				{children}
 			</CustomText>
 		</TouchableOpacity>
@@ -28,7 +32,6 @@ const styles = StyleSheet.create({
 		borderRadius: 8,
 		justifyContent: 'center',
 		alignItems: 'center',
-		marginBottom: 5,
 	},
 })
 

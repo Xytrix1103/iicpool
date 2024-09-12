@@ -5,7 +5,7 @@ import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import { FieldError, FieldErrorsImpl } from 'react-hook-form'
 
 interface FloatingLabelInputProps extends TextInputProps {
-	label: string;
+	label?: string;
 	secureTextEntry?: boolean;
 	value?: string;
 	onChangeText: (text: string) => void;
@@ -17,6 +17,7 @@ interface FloatingLabelInputProps extends TextInputProps {
 	limit?: number;
 	onCustomFocus?: () => void;
 	onCustomBlur?: () => void;
+	hideLabelOnFocus?: boolean;
 }
 
 const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
@@ -32,6 +33,7 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 		limit,
 		onCustomFocus,
 		onCustomBlur,
+		hideLabelOnFocus = false,
 		...props
 	}) => {
 	const inputRef = useRef<TextInput>(null)
@@ -64,17 +66,19 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 					},
 				]}
 			>
-				<Text
-					style={[
-						styles.label,
-						{
-							top: isFocused || usedValue ? 0 : 18,
-							color: isFocused ? colors.primary : '#aaa',
-						},
-					]}
-				>
-					{label}
-				</Text>
+				{!(isFocused && hideLabelOnFocus && label) && (
+					<Text
+						style={[
+							styles.label,
+							{
+								top: isFocused || usedValue ? 0 : 18,
+								color: isFocused ? colors.primary : '#aaa',
+							},
+						]}
+					>
+						{label}
+					</Text>
+				)}
 				<View style={styles.inputWrapper}>
 					<TextInput
 						autoFocus={props.autoFocus}

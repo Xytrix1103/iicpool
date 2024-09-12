@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { Image, StyleSheet, View } from 'react-native'
 import { Button, TextInput, useTheme } from 'react-native-paper'
@@ -32,7 +32,6 @@ const Login = () => {
 		},
 	})
 	
-	const [showPassword, setShowPassword] = useState(false)
 	const navigation = useNavigation()
 	
 	// Reset form state when navigating to the page

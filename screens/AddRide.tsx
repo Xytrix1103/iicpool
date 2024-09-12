@@ -4,7 +4,7 @@ import CustomLayout from '../components/themed/CustomLayout'
 import { useTheme } from 'react-native-paper'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import { PermissionContext } from '../components/contexts/PermissionContext'
-import CustomBackBtnHeader from '../components/themed/CustomBackBtnHeader'
+import CustomHeader from '../components/themed/CustomHeader'
 import { useNavigation } from '@react-navigation/native'
 import AddRideStep1 from './AddRideComponents/AddRideStep1'
 import { useForm } from 'react-hook-form'
@@ -57,10 +57,10 @@ const AddRide = () => {
 		<CustomLayout
 			scrollable={false}
 			header={
-				showMap ? <CustomBackBtnHeader
+				showMap ? <CustomHeader
 					title="Add Ride"
 					navigation={navigation}
-				/> : <CustomBackBtnHeader
+				/> : <CustomHeader
 					title="Back to Ride"
 					onPress={() => setShowMap(true)}
 				/>
