@@ -51,10 +51,6 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 		}
 	}, [value, editable])
 	
-	useEffect(() => {
-		console.log('FloatingLabelInput rendered')
-	}, [isFocused, isPasswordVisible])
-	
 	return (
 		<>
 			<View

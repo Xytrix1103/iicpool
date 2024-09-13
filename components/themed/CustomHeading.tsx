@@ -16,7 +16,7 @@ const CustomHeading = ({ children }: {
 
 const style = {
 	heading: {
-		fontSize: 30,
+		fontSize: 24,
 		fontFamily: 'Poppins',
 	},
 }

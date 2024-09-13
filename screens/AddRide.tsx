@@ -56,10 +56,13 @@ const AddRide = () => {
 	return (
 		<CustomLayout
 			scrollable={false}
+			headerPaddingHorizontal={0}
 			header={
 				showMap ? <CustomHeader
 					title="Add Ride"
-					navigation={navigation}
+					onPress={() => {
+						step === 1 ? navigation.goBack() : setStep(step - 1)
+					}}
 				/> : <CustomHeader
 					title="Back to Ride"
 					onPress={() => setShowMap(true)}

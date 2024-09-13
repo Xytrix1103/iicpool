@@ -28,8 +28,6 @@ const CustomTextButton: FC<CustomTextButtonProps> = ({ children, onPress, ...pro
 
 const styles = StyleSheet.create({
 	button: {
-		padding: 10,
-		borderRadius: 8,
 		justifyContent: 'center',
 		alignItems: 'center',
 	},

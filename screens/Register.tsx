@@ -252,7 +252,11 @@ const RegisterStep2 = ({ form }: { form: any }) => {
 						required: 'Password is required',
 						minLength: {
 							value: 8,
-							message: 'Password must be at least 8 characters long.',
+							message: 'Password must be at least 8 characters',
+						},
+						pattern: {
+							value: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/,
+							message: 'Password must contain both letters and numbers, and be at least 8 characters',
 						},
 					}}
 				/>

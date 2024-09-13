@@ -1,41 +1,33 @@
 import CustomLayout from '../components/themed/CustomLayout'
-import { StyleSheet, View } from 'react-native'
+import { Alert, StyleSheet, ToastAndroid, View } from 'react-native'
 import { Controller, useForm } from 'react-hook-form'
 import CustomInput from '../components/themed/CustomInput'
 import { useContext, useEffect, useState } from 'react'
 import { AuthContext } from '../components/contexts/AuthContext'
 import FirebaseApp from '../components/FirebaseApp'
 import { doc, updateDoc } from 'firebase/firestore'
-import CustomHeading from '../components/themed/CustomHeading'
 import { Avatar, IconButton } from 'react-native-paper'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import CustomText from '../components/themed/CustomText'
-import CustomTextButton from '../components/themed/CustomTextButton'
-import { httpsCallable } from 'firebase/functions'
 import { useNavigation } from '@react-navigation/native'
+import CustomHeader from '../components/themed/CustomHeader'
+import { linkGoogle, unlinkEmailPassword, unlinkGoogle } from '../api/auth'
 
 type ProfileData = {
 	full_name: string
 	mobile_number: string
 }
 
-type ProviderObject = {
-	displayName: string
-	email: string
-	phoneNumber: string
-	photoURL: string
-	providerId: string
-	uid: string
-}
-
-const { db, functions } = FirebaseApp
+const { db } = FirebaseApp
 
 const Profile = () => {
-	const { profile, user } = useContext(AuthContext)
+	const { profile, user, userRecord, refreshUserRecord } = useContext(AuthContext)
 	const userRef = doc(db, 'users', user?.uid || '')
 	const [isEditing, setIsEditing] = useState(false)
-	const [providerData, setProviderData] = useState<ProviderObject[]>([])
 	const navigation = useNavigation()
+	
+	const linkedPassword = userRecord?.providerData.some((provider) => provider.providerId === 'password')
+	const linkedGoogle = userRecord?.providerData.some((provider) => provider.providerId === 'google.com')
 	
 	const form = useForm<ProfileData>({
 		defaultValues: {
@@ -53,6 +45,8 @@ const Profile = () => {
 		})
 			.then(() => {
 				console.log('Profile Updated')
+				ToastAndroid.show('Profile Updated', ToastAndroid.SHORT)
+				navigation.goBack()
 			})
 			.catch((error) => {
 				console.error('Error updating profile: ', error)
@@ -70,40 +64,39 @@ const Profile = () => {
 		setValue('mobile_number', profile?.mobile_number || '')
 	}, [profile])
 	
-	useEffect(() => {
-		(async () => {
-			const res = await httpsCallable<{
-				email: string
-			}>(functions, 'checkEmailGoogleSignIn')({ email: user?.email || '' })
-			
-			console.log('checkEmailGoogleSignIn', res)
-			
-			if (res.data) {
-				// @ts-ignore
-				setProviderData(res.data.providerData as ProviderObject[])
-			}
-		})()
-	}, [])
-	
 	return (
 		<CustomLayout
 			hasAppBar={!isEditing}
 			scrollable={true}
+			header={
+				// <View style={[style.row, {
+				// 	justifyContent: 'space-between',
+				// }]}>
+				// 	<CustomHeading>
+				// 		{isEditing ? 'Edit Profile' : 'Profile'}
+				// 	</CustomHeading>
+				// 	<IconButton icon={isEditing ? 'check' : 'pencil-outline'} onPress={() => {
+				// 		if (isEditing) {
+				// 			console.log('submitting')
+				// 		}
+				// 		setIsEditing(!isEditing)
+				// 	}} size={30} />
+				// </View>
+				<CustomHeader
+					title={isEditing ? 'Edit Profile' : 'Profile'}
+					justifyContent="space-between"
+					rightNode={
+						<IconButton
+							icon={isEditing ? 'check' : 'pencil-outline'}
+							onPress={handleSubmit(updateProfile)}
+						/>
+					}
+				/>
+			}
 		>
 			<View style={style.mainContent}>
-				<View style={[style.column, { gap: 10 }]}>
-					<View style={[style.row, { justifyContent: 'space-between' }]}>
-						<CustomHeading>
-							{isEditing ? 'Edit Profile' : 'Profile'}
-						</CustomHeading>
-						<IconButton icon={isEditing ? 'check' : 'pencil-outline'} onPress={() => {
-							if (isEditing) {
-								console.log('submitting')
-							}
-							setIsEditing(!isEditing)
-						}} size={30} />
-					</View>
-					<View style={[style.row, { justifyContent: 'center' }]}>
+				<View style={[style.column, { gap: 20 }]}>
+					<View style={[style.row, { justifyContent: 'center', marginBottom: 20 }]}>
 						<Avatar.Image source={
 							profile?.photo_url ? { uri: profile.photo_url } :
 								user?.photoURL ? { uri: user.photoURL } :
@@ -126,7 +119,7 @@ const Profile = () => {
 					{/*</View>*/}
 					<View style={style.row}>
 						<View style={[style.column, { gap: 10 }]}>
-							<CustomText size={14}>
+							<CustomText bold size={14}>
 								Full Name
 							</CustomText>
 							<Controller
@@ -146,7 +139,7 @@ const Profile = () => {
 					</View>
 					<View style={style.row}>
 						<View style={[style.column, { gap: 10 }]}>
-							<CustomText size={14}>
+							<CustomText bold size={14}>
 								Mobile Number
 							</CustomText>
 							<Controller
@@ -176,20 +169,18 @@ const Profile = () => {
 						!isEditing &&
 						<View style={[style.row, { gap: 10 }]}>
 							<View style={[style.column, { gap: 10 }]}>
-								<CustomText size={14}>
+								<CustomText bold size={14}>
 									Sign-in Methods
 								</CustomText>
 								<View
 									style={[style.row, {
-										justifyContent: 'space-between',
 										gap: 10,
-										alignItems: 'center',
+										justifyContent: 'space-between',
 									}]}
 								>
 									<View style={{
 										flexDirection: 'row',
 										alignItems: 'center',
-										flex: 1,
 										gap: 10,
 									}}>
 										<Icon name="email" size={30} />
@@ -197,18 +188,60 @@ const Profile = () => {
 											E-mail
 										</CustomText>
 									</View>
-									{
-										providerData.some((provider) => provider.providerId === 'password') ?
-											<IconButton
-												icon="check-circle"
-												size={30}
-												iconColor="green"
-												onPress={() => null}
-											/> :
-											<CustomTextButton onPress={() => null}>
-												Link
-											</CustomTextButton>
-									}
+									<View
+										style={{
+											flexDirection: 'row',
+											alignItems: 'center',
+										}}
+									>
+										<CustomText size={14} color={linkedPassword ? 'green' : 'grey'}>
+											{linkedPassword ? 'Linked' : 'Not Linked'}
+										</CustomText>
+										<IconButton
+											icon={linkedPassword ? 'link' : 'link-off'}
+											containerColor={linkedPassword ? 'green' : 'grey'}
+											size={20}
+											iconColor="white"
+											onPress={() => {
+												if (!linkedPassword) {
+													//@ts-ignore
+													navigation.navigate('UpdatePassword', { type: 'link' })
+												} else {
+													if ((userRecord?.providerData.length ?? 0) > 1) {
+														Alert.alert(
+															'Unlink Email Sign-In',
+															'Are you sure you want to unlink your email sign-in?',
+															[
+																{
+																	text: 'Cancel',
+																	style: 'cancel',
+																},
+																{
+																	text: 'Unlink',
+																	onPress: () => {
+																		unlinkEmailPassword()
+																			.then(() => {
+																				ToastAndroid.show('Email unlinked successfully', ToastAndroid.SHORT)
+																			})
+																			.catch((error) => {
+																				console.error('Error unlinking email: ', error)
+																				ToastAndroid.show('An error occurred. Please try again later.', ToastAndroid.SHORT)
+																			})
+																			.finally(() => {
+																				refreshUserRecord()
+																			})
+																	},
+																},
+															],
+															{ cancelable: true },
+														)
+													} else {
+														ToastAndroid.show('You must have at least one sign-in method.', ToastAndroid.SHORT)
+													}
+												}
+											}}
+										/>
+									</View>
 								</View>
 								<View style={[style.row, {
 									gap: 10,
@@ -220,18 +253,65 @@ const Profile = () => {
 											Google
 										</CustomText>
 									</View>
-									{
-										providerData.some((provider) => provider.providerId === 'google.com') ?
-											<IconButton
-												icon="check-circle"
-												size={30}
-												iconColor="green"
-												onPress={() => null}
-											/> :
-											<CustomTextButton onPress={() => null}>
-												Link
-											</CustomTextButton>
-									}
+									<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+										<CustomText size={14} color={linkedGoogle ? 'green' : 'grey'}>
+											{linkedGoogle ? 'Linked' : 'Not Linked'}
+										</CustomText>
+										<IconButton
+											icon={linkedGoogle ? 'link' : 'link-off'}
+											containerColor={linkedGoogle ? 'green' : 'grey'}
+											size={20}
+											iconColor="white"
+											//@ts-ignore
+											onPress={() => {
+												if (!linkedPassword) {
+													linkGoogle()
+														.then(() => {
+															ToastAndroid.show('Google linked successfully', ToastAndroid.SHORT)
+														})
+														.catch((error) => {
+															console.error('Error linking Google: ', error)
+															ToastAndroid.show('An error occurred. Please try again later.', ToastAndroid.SHORT)
+														})
+														.finally(() => {
+															refreshUserRecord()
+														})
+												} else {
+													if ((userRecord?.providerData.length ?? 0) > 1) {
+														Alert.alert(
+															'Unlink Google Sign-In',
+															'Are you sure you want to unlink your Google sign-in?',
+															[
+																{
+																	text: 'Cancel',
+																	style: 'cancel',
+																},
+																{
+																	text: 'Unlink',
+																	onPress: () => {
+																		unlinkGoogle()
+																			.then(() => {
+																				ToastAndroid.show('Google unlinked successfully', ToastAndroid.SHORT)
+																			})
+																			.catch((error) => {
+																				console.error('Error unlinking Google: ', error)
+																				ToastAndroid.show('An error occurred. Please try again later.', ToastAndroid.SHORT)
+																			})
+																			.finally(() => {
+																				refreshUserRecord()
+																			})
+																	},
+																},
+															],
+															{ cancelable: true },
+														)
+													} else {
+														ToastAndroid.show('You must have at least one sign-in method.', ToastAndroid.SHORT)
+													}
+												}
+											}}
+										/>
+									</View>
 								</View>
 							</View>
 						</View>

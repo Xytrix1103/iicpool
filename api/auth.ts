@@ -6,6 +6,7 @@ import {
 	linkWithCredential,
 	signInWithCredential,
 	signInWithEmailAndPassword,
+	unlink,
 } from 'firebase/auth'
 import FirebaseApp from '../components/FirebaseApp'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
@@ -46,7 +47,7 @@ const register = (data: RegisterProps) => {
 					full_name: '',
 					mobile_number: '',
 					roles: [Role.PASSENGER],
-					photo_url: null,
+					photo_url: userCredential.user.photoURL,
 					deleted: false,
 				})
 			}
@@ -106,11 +107,20 @@ const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; 
 			})
 			.catch(error => {
 				const fbError = error as FirebaseError
+				console.log('Google login -> error', fbError)
+				// setLoadingOverlay({
+				// 	show: false,
+				// 	message: '',
+				// })
 				return fbError.code !== 'functions/not-found'
 			})
 		
 		if (!checkResult) {
 			Alert.alert('Error', 'Google account not linked to any account. Please sign in with your email and password.')
+			// setLoadingOverlay({
+			// 	show: false,
+			// 	message: '',
+			// })
 			return
 		}
 		
@@ -125,6 +135,9 @@ const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; 
 				
 				if (!docSnap.exists()) {
 					await setDoc(doc(db, 'users', userCredential.user.uid), {
+						full_name: userCredential.user.displayName,
+						mobile_number: userCredential.user.phoneNumber ?? '',
+						photo_url: userCredential.user.photoURL,
 						roles: [Role.PASSENGER],
 						deleted: false,
 					})
@@ -137,6 +150,10 @@ const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; 
 		console.error('Google login -> error', error)
 	} finally {
 		await GoogleSignin.signOut()
+		setLoadingOverlay({
+			show: false,
+			message: '',
+		})
 	}
 }
 
@@ -146,14 +163,10 @@ const linkEmailPassword = async (email: string, password: string) => {
 	const credential = EmailAuthProvider.credential(email, password)
 	
 	if (auth.currentUser) {
-		await linkWithCredential(auth.currentUser, credential)
-			.then(userCredential => {
-				console.log('Link Email Password -> userCredential', userCredential)
-			})
-			.catch(error => {
-				console.log('Link Email Password -> error', error)
-			})
+		return await linkWithCredential(auth.currentUser, credential)
 	}
+	
+	return null
 }
 
 const linkGoogle = async () => {
@@ -161,17 +174,41 @@ const linkGoogle = async () => {
 	
 	const userInfo = await GoogleSignin.signIn()
 	
+	//validate
+	if (!userInfo.user.email.endsWith('newinti.edu.my')) {
+		ToastAndroid.show('Please use your INTI email to login.', ToastAndroid.SHORT)
+		return null
+	}
+	
 	const googleCredential = GoogleAuthProvider.credential(userInfo.idToken)
 	
 	if (auth.currentUser) {
-		await linkWithCredential(auth.currentUser, googleCredential)
-			.then(userCredential => {
-				console.log('Link Google -> userCredential', userCredential)
-			})
-			.catch(error => {
-				console.log('Link Google -> error', error)
-			})
+		return await linkWithCredential(auth.currentUser, googleCredential)
 	}
+	
+	return null
 }
 
-export { login, logout, googleLogin, register }
+const unlinkEmailPassword = async () => {
+	const { auth } = FirebaseApp
+	
+	if (auth.currentUser) {
+		return await unlink(auth.currentUser, 'password')
+	}
+	
+	return null
+}
+
+const unlinkGoogle = async () => {
+	const { auth } = FirebaseApp
+	
+	if (auth.currentUser) {
+		return await unlink(auth.currentUser, 'google.com')
+	}
+	
+	return null
+}
+
+export {
+	login, logout, googleLogin, register, linkEmailPassword, linkGoogle, unlinkEmailPassword, unlinkGoogle,
+}

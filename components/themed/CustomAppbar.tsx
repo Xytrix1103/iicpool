@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native'
 import { Appbar } from 'react-native-paper'
-import React from 'react'
+import React, { useMemo } from 'react'
 import CustomText from './CustomText'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import { useNavigation } from '@react-navigation/native'
@@ -25,7 +25,7 @@ const CustomAppbarItem = ({ icon, text, onPress, active = false }: {
 const CustomAppbar = () => {
 	const navigation = useNavigation()
 	
-	const route = navigation?.getState()?.routes?.[navigation?.getState()?.index || 0]?.name
+	const route = useMemo(() => navigation?.getState()?.routes?.[navigation?.getState()?.index || 0]?.name, [navigation])
 	console.log(route)
 	
 	return (

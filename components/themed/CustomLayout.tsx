@@ -13,6 +13,8 @@ type LayoutProps = {
 	contentPadding?: number
 	containerPadding?: number
 	centered?: boolean
+	headerPaddingHorizontal?: number | 'auto'
+	headerPaddingVertical?: number
 }
 
 const CustomLayout: FC<LayoutProps> = (
@@ -25,6 +27,8 @@ const CustomLayout: FC<LayoutProps> = (
 		containerPadding = 0,
 		contentPadding = 20,
 		centered = false,
+		headerPaddingHorizontal = 'auto',
+		headerPaddingVertical = 10,
 	}) => {
 	const { colors } = useTheme()
 	
@@ -32,7 +36,10 @@ const CustomLayout: FC<LayoutProps> = (
 		<View style={[style.root, { backgroundColor: colors.background, padding: containerPadding }]}>
 			{
 				header &&
-				<View style={style.headerContainer}>
+				<View style={[style.headerContainer, {
+					paddingHorizontal: headerPaddingHorizontal === 'auto' ? contentPadding : headerPaddingHorizontal,
+					paddingVertical: headerPaddingVertical,
+				}]}>
 					{header}
 				</View>
 			}
