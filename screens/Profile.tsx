@@ -12,6 +12,7 @@ import CustomText from '../components/themed/CustomText'
 import { useNavigation } from '@react-navigation/native'
 import CustomHeader from '../components/themed/CustomHeader'
 import { linkGoogle, unlinkEmailPassword, unlinkGoogle } from '../api/auth'
+import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 
 type ProfileData = {
 	full_name: string
@@ -25,6 +26,7 @@ const Profile = () => {
 	const userRef = doc(db, 'users', user?.uid || '')
 	const [isEditing, setIsEditing] = useState(false)
 	const navigation = useNavigation()
+	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	
 	const linkedPassword = userRecord?.providerData.some((provider) => provider.providerId === 'password')
 	const linkedGoogle = userRecord?.providerData.some((provider) => provider.providerId === 'google.com')
@@ -39,17 +41,26 @@ const Profile = () => {
 	const updateProfile = async (data: ProfileData) => {
 		console.log(data)
 		
+		setLoadingOverlay({
+			show: true,
+			message: 'Updating Profile',
+		})
+		
 		await updateDoc(userRef, {
 			full_name: data.full_name,
 			mobile_number: data.mobile_number,
 		})
 			.then(() => {
 				console.log('Profile Updated')
-				ToastAndroid.show('Profile Updated', ToastAndroid.SHORT)
-				navigation.goBack()
+				Alert.alert('Profile Updated', 'Your profile has been updated successfully.')
+				setIsEditing(false)
 			})
 			.catch((error) => {
 				console.error('Error updating profile: ', error)
+			})
+			.finally(() => {
+				refreshUserRecord()
+				setLoadingOverlay({ show: false, message: '' })
 			})
 	}
 	
@@ -57,6 +68,7 @@ const Profile = () => {
 		handleSubmit,
 		formState: { errors },
 		setValue,
+		watch,
 	} = form
 	
 	useEffect(() => {
@@ -69,34 +81,35 @@ const Profile = () => {
 			hasAppBar={!isEditing}
 			scrollable={true}
 			header={
-				// <View style={[style.row, {
-				// 	justifyContent: 'space-between',
-				// }]}>
-				// 	<CustomHeading>
-				// 		{isEditing ? 'Edit Profile' : 'Profile'}
-				// 	</CustomHeading>
-				// 	<IconButton icon={isEditing ? 'check' : 'pencil-outline'} onPress={() => {
-				// 		if (isEditing) {
-				// 			console.log('submitting')
-				// 		}
-				// 		setIsEditing(!isEditing)
-				// 	}} size={30} />
-				// </View>
 				<CustomHeader
 					title={isEditing ? 'Edit Profile' : 'Profile'}
 					justifyContent="space-between"
 					rightNode={
-						<IconButton
-							icon={isEditing ? 'check' : 'pencil-outline'}
-							onPress={handleSubmit(updateProfile)}
-						/>
+						<View style={[style.row, { gap: 5, width: 'auto' }]}>
+							{
+								!isEditing && <IconButton
+									icon="car"
+									onPress={() => {
+										//@ts-ignore
+										navigation.navigate('Cars')
+									}}
+								/>
+							}
+							<IconButton
+								icon={isEditing ? 'check' : 'pencil-outline'}
+								onPress={
+									isEditing ?
+										handleSubmit(updateProfile) : () => setIsEditing(!isEditing)
+								}
+							/>
+						</View>
 					}
 				/>
 			}
 		>
 			<View style={style.mainContent}>
 				<View style={[style.column, { gap: 20 }]}>
-					<View style={[style.row, { justifyContent: 'center', marginBottom: 20 }]}>
+					<View style={[style.row, { justifyContent: 'center' }]}>
 						<Avatar.Image source={
 							profile?.photo_url ? { uri: profile.photo_url } :
 								user?.photoURL ? { uri: user.photoURL } :
@@ -105,18 +118,19 @@ const Profile = () => {
 									}
 						} size={160} />
 					</View>
-					{/*<View style={style.row}>*/}
-					{/*	<View style={[style.column, { gap: 10 }]}>*/}
-					{/*		<CustomText size={14}>*/}
-					{/*			Email*/}
-					{/*		</CustomText>*/}
-					{/*		<CustomInput*/}
-					{/*			editable={false}*/}
-					{/*			value={user?.email || ''}*/}
-					{/*			onChangeText={() => null}*/}
-					{/*		/>*/}
-					{/*	</View>*/}
-					{/*</View>*/}
+					<View style={style.row}>
+						<View style={[style.column, { gap: 10 }]}>
+							<CustomText bold size={14}>
+								Email
+							</CustomText>
+							<CustomInput
+								autoCapitalize="none"
+								editable={false}
+								value={user?.email || ''}
+								onChangeText={() => null}
+							/>
+						</View>
+					</View>
 					<View style={style.row}>
 						<View style={[style.column, { gap: 10 }]}>
 							<CustomText bold size={14}>
@@ -127,11 +141,11 @@ const Profile = () => {
 								name="full_name"
 								render={({ field: { onChange, value } }) => (
 									<CustomInput
+										autoCapitalize="words"
 										hideLabelOnFocus={true}
 										editable={isEditing}
 										value={value}
 										onChangeText={isEditing ? onChange : () => null}
-										errorMessage={errors.full_name}
 									/>
 								)}
 							/>
@@ -148,18 +162,20 @@ const Profile = () => {
 								rules={{
 									required: 'Mobile Number is required',
 									pattern: {
-										value: /^01[0-9]{9,10}$/,
+										// phone number pattern but in string format
+										value: /^01[0-9]{8,9}$/,
 										message: 'Invalid Mobile Number',
 									},
 								}}
 								render={({ field: { onChange, value } }) => (
 									<CustomInput
+										autoCapitalize="none"
 										hideLabelOnFocus={true}
 										editable={isEditing}
 										value={value}
 										keyboardType="phone-pad"
 										onChangeText={isEditing ? onChange : () => null}
-										errorMessage={errors.mobile_number}
+										errorMessage={errors.mobile_number && errors.mobile_number?.message}
 									/>
 								)}
 							/>
@@ -219,6 +235,11 @@ const Profile = () => {
 																{
 																	text: 'Unlink',
 																	onPress: () => {
+																		setLoadingOverlay({
+																			show: true,
+																			message: 'Unlinking Email...',
+																		})
+																		
 																		unlinkEmailPassword()
 																			.then(() => {
 																				ToastAndroid.show('Email unlinked successfully', ToastAndroid.SHORT)
@@ -229,6 +250,10 @@ const Profile = () => {
 																			})
 																			.finally(() => {
 																				refreshUserRecord()
+																				setLoadingOverlay({
+																					show: false,
+																					message: '',
+																				})
 																			})
 																	},
 																},
@@ -264,7 +289,12 @@ const Profile = () => {
 											iconColor="white"
 											//@ts-ignore
 											onPress={() => {
-												if (!linkedPassword) {
+												setLoadingOverlay({
+													show: true,
+													message: 'Linking Google...',
+												})
+												
+												if (!linkedGoogle) {
 													linkGoogle()
 														.then(() => {
 															ToastAndroid.show('Google linked successfully', ToastAndroid.SHORT)
@@ -275,6 +305,10 @@ const Profile = () => {
 														})
 														.finally(() => {
 															refreshUserRecord()
+															setLoadingOverlay({
+																show: false,
+																message: '',
+															})
 														})
 												} else {
 													if ((userRecord?.providerData.length ?? 0) > 1) {
@@ -299,6 +333,10 @@ const Profile = () => {
 																			})
 																			.finally(() => {
 																				refreshUserRecord()
+																				setLoadingOverlay({
+																					show: false,
+																					message: '',
+																				})
 																			})
 																	},
 																},
@@ -309,6 +347,11 @@ const Profile = () => {
 														ToastAndroid.show('You must have at least one sign-in method.', ToastAndroid.SHORT)
 													}
 												}
+												
+												setLoadingOverlay({
+													show: false,
+													message: '',
+												})
 											}}
 										/>
 									</View>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { onAuthStateChanged, User } from 'firebase/auth'
 import FirebaseApp from '../FirebaseApp'
 import { doc, onSnapshot } from 'firebase/firestore'
@@ -57,14 +57,20 @@ const AuthProvider = ({ children }: any) => {
 	const [profile, setProfile] = useState<Profile | null>(null)
 	const [userRecord, setUserRecord] = useState<UserRecord | null>(null)
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
+	const checkUser = httpsCallable(functions, 'getUserInfo')
 	
-	const refreshUserRecord = async () => {
-		const res = await httpsCallable<{
-			email: string
-		}>(functions, 'checkEmailGoogleSignIn')({ email: user?.email || '' })
+	const refreshUserRecord = useCallback(async () => {
+		const checkResult = await checkUser({ email: user?.email })
 		
-		setUserRecord(res.data as UserRecord)
-	}
+		console.log('AuthProvider -> checkResult', checkResult)
+		
+		if (!checkResult.data) {
+			setUserRecord(null)
+			return
+		} else {
+			setUserRecord(checkResult.data as UserRecord)
+		}
+	}, [functions, user])
 	
 	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(
@@ -88,12 +94,12 @@ const AuthProvider = ({ children }: any) => {
 	}, [auth])
 	
 	useEffect(() => {
+		let unsubscribe: () => void
+		
 		if (user) {
-			(async () => {
-				await refreshUserRecord()
-			})()
+			refreshUserRecord().then(r => r)
 			
-			const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
+			unsubscribe = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
 				if (snapshot.exists()) {
 					const data = snapshot.data() as Profile
 					setProfile(data)
@@ -102,14 +108,15 @@ const AuthProvider = ({ children }: any) => {
 					setUserRecord(null)
 				}
 			})
-			
-			return () => {
-				unsubscribe()
-			}
 		} else {
 			setProfile(null)
 			setUserRecord(null)
-			
+		}
+		
+		return () => {
+			if (unsubscribe) {
+				unsubscribe()
+			}
 		}
 	}, [user])
 	

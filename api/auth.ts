@@ -180,6 +180,11 @@ const linkGoogle = async () => {
 		return null
 	}
 	
+	if (auth.currentUser?.email !== userInfo.user.email) {
+		Alert.alert('Error', 'The Google account email does not match the current user email.')
+		return null
+	}
+	
 	const googleCredential = GoogleAuthProvider.credential(userInfo.idToken)
 	
 	if (auth.currentUser) {

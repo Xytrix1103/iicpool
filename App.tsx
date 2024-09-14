@@ -25,6 +25,7 @@ import { PermissionProvider } from './components/contexts/PermissionContext'
 import NotificationSettingsProvider from './components/contexts/NotificationContext'
 import { LoadingOverlayProvider } from './components/contexts/LoadingOverlayContext'
 import UpdatePassword from './screens/UpdatePassword'
+import Cars from './screens/Cars'
 
 const Stack = createNativeStackNavigator()
 
@@ -154,6 +155,7 @@ const Routes = () => {
 					<Stack.Screen name="AddRide" component={AddRide} />
 					<Stack.Screen name="Profile" component={Profile} />
 					<Stack.Screen name="UpdatePassword" component={UpdatePassword} initialParams={{ type: 'update' }} />
+					<Stack.Screen name="Cars" component={Cars} />
 				</>
 			) : (
 				<>

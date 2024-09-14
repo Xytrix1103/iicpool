@@ -95,6 +95,7 @@ const style = StyleSheet.create({
 		width: '100%',
 		alignItems: 'center',
 		gap: 10,
+		marginBottom: 20,
 	},
 	headerContainer: {
 		width: '100%',

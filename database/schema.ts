@@ -8,14 +8,15 @@ type Profile = {
 	deleted: boolean;
 }
 
-type Vehicle = {
-	owner: DocumentReference
+type Car = {
+	owner: string
 	brand: string
 	model: string
 	color: string
-	license_plate: string
+	plate: string
 	photo_url: string
 	created_at: Timestamp
+	deleted_at: Timestamp | null
 }
 
 type Ride = {
@@ -43,10 +44,4 @@ enum Role {
 	PASSENGER = 'passenger',
 }
 
-
-export {
-	Profile,
-	Role,
-	Vehicle,
-	Ride,
-}
+export { Profile, Car, Ride, Role }

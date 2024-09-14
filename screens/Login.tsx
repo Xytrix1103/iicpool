@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import React, { useContext, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { Image, StyleSheet, View } from 'react-native'
-import { Button, TextInput, useTheme } from 'react-native-paper'
+import { Button, useTheme } from 'react-native-paper'
 import { googleLogin, login } from '../api/auth'
 import CustomTextDivider from '../components/themed/CustomTextDivider'
 import CustomSolidButton from '../components/themed/CustomSolidButton'
@@ -10,6 +10,7 @@ import CustomOutlinedButton from '../components/themed/CustomOutlinedButton'
 import CustomLayout from '../components/themed/CustomLayout'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import CustomInput from '../components/themed/CustomInput'
+import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 
 const onSubmit = async (data: any) => {
 	const { email, password } = data
@@ -69,8 +70,9 @@ const Login = () => {
 										onChangeText={onChange}
 										rightIcon={
 											value ? (
-												<TextInput.Icon
-													icon="close"
+												<Icon
+													name="close"
+													size={24}
 													onPress={() => onChange('')}
 												/>
 											) : null
