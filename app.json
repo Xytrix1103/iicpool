@@ -54,7 +54,8 @@
 			[
 				"expo-image-picker",
 				{
-					"cameraPermission": "$(PRODUCT_NAME) needs access to your camera to take photos while filing a complain."
+					"cameraPermission": "$(PRODUCT_NAME) needs access to your camera to take photos of your license and vehicles.",
+					"photosPermission": "$(PRODUCT_NAME) needs access to your photos to easily upload your license and vehicle photos."
 				}
 			]
 		]

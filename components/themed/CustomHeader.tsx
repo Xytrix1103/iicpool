@@ -1,34 +1,55 @@
 import { View } from 'react-native'
-import { IconButton } from 'react-native-paper'
 import CustomHeading from './CustomHeading'
-import { ReactNode } from 'react'
+import { FC, ReactNode } from 'react'
+import CustomIconButton from './CustomIconButton'
 
-const CustomHeader = ({ title, navigation, onPress, hasBackButton = true, rightNode, justifyContent }: {
+type CustomHeaderProps = {
 	title: string,
 	navigation?: any,
 	onPress?: () => void
-	hasBackButton?: boolean
 	rightNode?: ReactNode
-	justifyContent?: 'space-between' | 'center' | 'flex-start' | 'flex-end'
-}) => {
+}
+
+const CustomHeader: FC<CustomHeaderProps> = (
+	{
+		title,
+		navigation,
+		onPress,
+		rightNode,
+	},
+) => {
 	return (
-		<View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', justifyContent }}>
-			{
-				((onPress || navigation) && hasBackButton) &&
-				<IconButton
-					icon="arrow-left"
-					onPress={() => {
-						if (onPress) {
-							onPress()
-						} else if (navigation) {
-							navigation.goBack()
-						}
-					}}
-				/>
-			}
-			<CustomHeading>
-				{title}
-			</CustomHeading>
+		<View style={{
+			flexDirection: 'row',
+			alignItems: 'center',
+			width: '100%',
+			justifyContent: rightNode ? 'space-between' : 'flex-start',
+		}}>
+			<View
+				style={{
+					flex: 1,
+					flexDirection: 'row',
+					alignItems: 'center',
+					gap: 10,
+				}}
+			>
+				{
+					(onPress || navigation) &&
+					<CustomIconButton
+						icon="arrow-left"
+						onPress={() => {
+							if (onPress) {
+								onPress()
+							} else if (navigation) {
+								navigation.goBack()
+							}
+						}}
+					/>
+				}
+				<CustomHeading>
+					{title}
+				</CustomHeading>
+			</View>
 			{rightNode}
 		</View>
 	)

@@ -6,13 +6,14 @@ import { useContext, useEffect, useState } from 'react'
 import { AuthContext } from '../components/contexts/AuthContext'
 import FirebaseApp from '../components/FirebaseApp'
 import { doc, updateDoc } from 'firebase/firestore'
-import { Avatar, IconButton } from 'react-native-paper'
+import { Avatar } from 'react-native-paper'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import CustomText from '../components/themed/CustomText'
 import { useNavigation } from '@react-navigation/native'
 import CustomHeader from '../components/themed/CustomHeader'
 import { linkGoogle, unlinkEmailPassword, unlinkGoogle } from '../api/auth'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
+import CustomIconButton from '../components/themed/CustomIconButton'
 
 type ProfileData = {
 	full_name: string
@@ -83,11 +84,15 @@ const Profile = () => {
 			header={
 				<CustomHeader
 					title={isEditing ? 'Edit Profile' : 'Profile'}
-					justifyContent="space-between"
 					rightNode={
-						<View style={[style.row, { gap: 5, width: 'auto' }]}>
+						<View style={[style.row, {
+							gap: 5,
+							width: 'auto',
+							justifyContent: 'flex-end',
+							alignItems: 'center',
+						}]}>
 							{
-								!isEditing && <IconButton
+								!isEditing && <CustomIconButton
 									icon="car"
 									onPress={() => {
 										//@ts-ignore
@@ -95,7 +100,7 @@ const Profile = () => {
 									}}
 								/>
 							}
-							<IconButton
+							<CustomIconButton
 								icon={isEditing ? 'check' : 'pencil-outline'}
 								onPress={
 									isEditing ?
@@ -208,15 +213,15 @@ const Profile = () => {
 										style={{
 											flexDirection: 'row',
 											alignItems: 'center',
+											gap: 10,
 										}}
 									>
 										<CustomText size={14} color={linkedPassword ? 'green' : 'grey'}>
 											{linkedPassword ? 'Linked' : 'Not Linked'}
 										</CustomText>
-										<IconButton
+										<CustomIconButton
 											icon={linkedPassword ? 'link' : 'link-off'}
 											containerColor={linkedPassword ? 'green' : 'grey'}
-											size={20}
 											iconColor="white"
 											onPress={() => {
 												if (!linkedPassword) {
@@ -268,24 +273,35 @@ const Profile = () => {
 										/>
 									</View>
 								</View>
-								<View style={[style.row, {
-									gap: 10,
-									justifyContent: 'space-between',
-								}]}>
-									<View style={{ alignItems: 'center', gap: 10, flexDirection: 'row' }}>
+								<View
+									style={[style.row, {
+										gap: 10,
+										justifyContent: 'space-between',
+									}]}
+								>
+									<View style={{
+										flexDirection: 'row',
+										alignItems: 'center',
+										gap: 10,
+									}}>
 										<Icon name="google" size={30} />
 										<CustomText size={16}>
 											Google
 										</CustomText>
 									</View>
-									<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+									<View
+										style={{
+											flexDirection: 'row',
+											alignItems: 'center',
+											gap: 10,
+										}}
+									>
 										<CustomText size={14} color={linkedGoogle ? 'green' : 'grey'}>
 											{linkedGoogle ? 'Linked' : 'Not Linked'}
 										</CustomText>
-										<IconButton
+										<CustomIconButton
 											icon={linkedGoogle ? 'link' : 'link-off'}
 											containerColor={linkedGoogle ? 'green' : 'grey'}
-											size={20}
 											iconColor="white"
 											//@ts-ignore
 											onPress={() => {

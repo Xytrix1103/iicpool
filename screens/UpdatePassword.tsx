@@ -1,7 +1,7 @@
 import { StyleSheet, ToastAndroid, View } from 'react-native'
 import CustomLayout from '../components/themed/CustomLayout'
 import CustomHeader from '../components/themed/CustomHeader'
-import { useNavigation } from '@react-navigation/native'
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import CustomSolidButton from '../components/themed/CustomSolidButton'
 import { Controller, useForm } from 'react-hook-form'
 import { AuthContext } from '../components/contexts/AuthContext'
@@ -13,8 +13,15 @@ import { linkEmailPassword } from '../api/auth'
 import firebase from 'firebase/compat'
 import FirebaseError = firebase.FirebaseError
 
+type UpdatePasswordRouteProp = RouteProp<{
+	UpdatePassword: {
+		type: 'update' | 'link'
+	}
+}, 'UpdatePassword'>;
+
 // @ts-ignore
-const UpdatePassword = ({ route }) => {
+const UpdatePassword = () => {
+	const route = useRoute<UpdatePasswordRouteProp>()
 	const type = route.params?.type as 'update' | 'link'
 	const { user, refreshUserRecord } = useContext(AuthContext)
 	const navigation = useNavigation()
@@ -61,7 +68,6 @@ const UpdatePassword = ({ route }) => {
 	return (
 		<CustomLayout
 			scrollable={false}
-			headerPaddingHorizontal={0}
 			header={
 				<CustomHeader
 					title={`${type === 'update' ? 'Update Password' : 'Link Email Sign-In'}`}

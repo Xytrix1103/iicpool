@@ -1,4 +1,4 @@
-import { DocumentReference, Timestamp } from '@firebase/firestore'
+import { Timestamp } from '@firebase/firestore'
 
 type Profile = {
 	roles: Role[];
@@ -9,21 +9,22 @@ type Profile = {
 }
 
 type Car = {
+	id?: string
 	owner: string
 	brand: string
 	model: string
 	color: string
 	plate: string
-	photo_url: string
+	photo_url: string | null
 	created_at: Timestamp
 	deleted_at: Timestamp | null
 }
 
 type Ride = {
-	driver: DocumentReference
-	passengers: DocumentReference[]
+	driver: string
+	passengers: string[]
 	to_campus: boolean
-	vehicle: DocumentReference
+	car: string
 	available_seats: number
 	datetime: Timestamp
 	created_at: Timestamp

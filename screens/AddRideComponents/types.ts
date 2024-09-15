@@ -16,7 +16,7 @@ type RideFormType = {
 	campus: RideFormTypeSingle
 	not_campus: RideFormTypeSingle
 	datetime?: Date
-	vehicle?: string
+	car?: string
 	available_seats?: number
 	to_campus: boolean
 }

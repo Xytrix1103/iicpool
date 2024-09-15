@@ -62,7 +62,7 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 					},
 				]}
 			>
-				{!(isFocused && hideLabelOnFocus && label) && (
+				{!((isFocused || (hideLabelOnFocus ? (usedValue?.length || 0) > 0 : true)) && hideLabelOnFocus && label) && (
 					<Text
 						style={[
 							styles.label,

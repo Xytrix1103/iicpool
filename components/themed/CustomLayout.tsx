@@ -1,11 +1,18 @@
 //custom layout component to handle screen layout with a header and a footer (both optional) and a main content area which may or may not be scrollable
 import { ScrollView, StyleSheet, View } from 'react-native'
-import { FC, ReactNode } from 'react'
+import { FC, ReactElement, ReactNode } from 'react'
 import { useTheme } from 'react-native-paper'
 import CustomAppbar from './CustomAppbar'
 
+type CustomHeaderProps = {
+	title: string,
+	navigation?: any,
+	onPress?: () => void
+	rightNode?: ReactNode
+}
+
 type LayoutProps = {
-	header?: ReactNode
+	header?: ReactElement<CustomHeaderProps>
 	footer?: ReactNode
 	hasAppBar?: boolean
 	scrollable?: boolean
@@ -13,8 +20,6 @@ type LayoutProps = {
 	contentPadding?: number
 	containerPadding?: number
 	centered?: boolean
-	headerPaddingHorizontal?: number | 'auto'
-	headerPaddingVertical?: number
 }
 
 const CustomLayout: FC<LayoutProps> = (
@@ -27,9 +32,8 @@ const CustomLayout: FC<LayoutProps> = (
 		containerPadding = 0,
 		contentPadding = 20,
 		centered = false,
-		headerPaddingHorizontal = 'auto',
-		headerPaddingVertical = 10,
-	}) => {
+	},
+) => {
 	const { colors } = useTheme()
 	
 	return (
@@ -37,8 +41,10 @@ const CustomLayout: FC<LayoutProps> = (
 			{
 				header &&
 				<View style={[style.headerContainer, {
-					paddingHorizontal: headerPaddingHorizontal === 'auto' ? contentPadding : headerPaddingHorizontal,
-					paddingVertical: headerPaddingVertical,
+					// paddingLeft: header.props.navigation ? 6 : contentPadding,
+					// paddingRight: header.props.rightNode ? 14 : contentPadding,
+					paddingHorizontal: 20,
+					paddingVertical: 10,
 				}]}>
 					{header}
 				</View>
@@ -52,6 +58,7 @@ const CustomLayout: FC<LayoutProps> = (
 							paddingBottom: hasAppBar && contentPadding > 0 ? 10 : contentPadding,
 							paddingHorizontal: contentPadding,
 							justifyContent: centered ? 'center' : 'flex-start',
+							marginBottom: footer ? 20 : 0,
 						}]}>
 							{children}
 						</View>
@@ -61,6 +68,7 @@ const CustomLayout: FC<LayoutProps> = (
 						paddingBottom: hasAppBar && contentPadding > 0 ? 10 : contentPadding,
 						paddingHorizontal: contentPadding,
 						justifyContent: centered ? 'center' : 'flex-start',
+						marginBottom: footer ? 20 : 0,
 					}]}>
 						{children}
 					</View>
@@ -95,7 +103,6 @@ const style = StyleSheet.create({
 		width: '100%',
 		alignItems: 'center',
 		gap: 10,
-		marginBottom: 20,
 	},
 	headerContainer: {
 		width: '100%',

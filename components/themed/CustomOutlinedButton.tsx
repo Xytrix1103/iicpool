@@ -1,12 +1,14 @@
 import { Button, useTheme } from 'react-native-paper'
-import React, { ReactElement } from 'react'
+import React, { ReactElement, useContext } from 'react'
 import { GestureResponderEvent } from 'react-native'
+import { LoadingOverlayContext } from '../contexts/LoadingOverlayContext'
 
 const CustomOutlinedButton = ({ children, onPress }: {
 	children: ReactElement | string,
 	onPress: ((e: GestureResponderEvent) => void) | undefined
 }) => {
 	const { colors } = useTheme()
+	const { loadingOverlay } = useContext(LoadingOverlayContext)
 	
 	return (
 		<Button
@@ -18,7 +20,9 @@ const CustomOutlinedButton = ({ children, onPress }: {
 			style={{
 				flex: 1,
 				borderColor: colors.primary,
-			}}>
+			}}
+			disabled={loadingOverlay.show}
+		>
 			{children}
 		</Button>
 	)

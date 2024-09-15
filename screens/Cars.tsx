@@ -3,12 +3,14 @@ import CustomHeader from '../components/themed/CustomHeader'
 import { useNavigation } from '@react-navigation/native'
 import { Image, StyleSheet, View } from 'react-native'
 import { useCallback, useContext, useEffect, useState } from 'react'
-import { IconButton, useTheme } from 'react-native-paper'
+import { useTheme } from 'react-native-paper'
 import CustomText from '../components/themed/CustomText'
 import { Car } from '../database/schema'
 import FirebaseApp from '../components/FirebaseApp'
-import { collection, onSnapshot, query, where } from 'firebase/firestore'
+import { collection, doc, onSnapshot, query, runTransaction, where } from 'firebase/firestore'
 import { AuthContext } from '../components/contexts/AuthContext'
+import CustomIconButton from '../components/themed/CustomIconButton'
+import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 
 const { db } = FirebaseApp
 
@@ -23,19 +25,45 @@ const Cars = () => {
 	const { user } = useContext(AuthContext)
 	const { colors } = useTheme()
 	const [isEditing, setIsEditing] = useState(false)
+	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	const [cars, setCars] = useState<Car[]>([])
 	const carsRef = query(collection(db, 'cars'), where('owner', '==', user?.uid), where('deleted_at', '==', null))
 	
-	const handleIconPress = useCallback(() => {
+	const handleIconPress = useCallback((id?: string) => {
 		// @ts-ignore
-		navigation.navigate('ManageCar', { isEditing: isEditing })
+		navigation.navigate('ManageCar', { id })
 	}, [navigation, isEditing])
+	
+	const handleDeleteCar = useCallback(async (id: string) => {
+		console.log('Delete car', id)
+		
+		setLoadingOverlay({ show: true, message: 'Deleting car...' })
+		
+		await runTransaction(db, async (transaction) => {
+			const carRef = doc(db, 'cars', id)
+			transaction.update(carRef, {
+				deleted_at: new Date(),
+			})
+		})
+			.then(() => {
+				console.log('Car deleted successfully')
+			})
+			.catch((error) => {
+				console.error('Error deleting car', error)
+			})
+			.finally(() => {
+				setLoadingOverlay({ show: false, message: '' })
+			})
+	}, [])
 	
 	useEffect(() => {
 		const unsubscribe = onSnapshot(carsRef, snapshot => {
 			const cars: Car[] = []
 			snapshot.forEach(doc => {
-				cars.push(doc.data() as Car)
+				cars.push({
+					...doc.data(),
+					id: doc.id,
+				} as Car)
 			})
 			setCars(cars)
 		})
@@ -48,13 +76,12 @@ const Cars = () => {
 			header={
 				<CustomHeader
 					title="My Cars"
-					justifyContent="space-between"
-					hasBackButton={true}
+					navigation={navigation}
 					rightNode={
 						!isEditing &&
-						<IconButton
+						<CustomIconButton
 							icon="plus"
-							onPress={handleIconPress}
+							onPress={() => handleIconPress()}
 						/>
 					}
 				/>
@@ -74,7 +101,7 @@ const Cars = () => {
 										alignItems: 'center',
 									}]}>
 										<Image
-											source={{ uri: car.photo_url }}
+											source={{ uri: car.photo_url || undefined }}
 											resizeMode="cover"
 											style={{
 												width: '100%',
@@ -117,18 +144,14 @@ const Cars = () => {
 											alignItems: 'center',
 											width: 'auto',
 										}]}>
-										<IconButton
+										<CustomIconButton
 											icon="pencil-outline"
-											onPress={handleIconPress}
-											animated={true}
-											style={{ margin: 0 }}
+											onPress={() => handleIconPress(car.id)}
 										/>
-										<IconButton
+										<CustomIconButton
 											icon="delete-outline"
-											onPress={() => console.log('Delete car')}
+											onPress={() => handleDeleteCar(car.id as string)}
 											iconColor={colors.error}
-											animated={true}
-											style={{ margin: 0 }}
 										/>
 									</View>
 								</View>
