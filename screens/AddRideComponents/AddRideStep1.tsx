@@ -1,7 +1,6 @@
 import { Pressable, View } from 'react-native'
 import CustomInput from '../../components/themed/CustomInput'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
-import { IconButton } from 'react-native-paper'
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps'
 import React, { MutableRefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { UseFormReturn } from 'react-hook-form'
@@ -13,6 +12,7 @@ import * as Location from 'expo-location'
 import { DirectionsObject, RideFormType } from './types'
 import CustomInputAutoComplete from './CustomInputAutoComplete'
 import CustomLayout from '../../components/themed/CustomLayout'
+import CustomIconButton from '../../components/themed/CustomIconButton'
 
 
 const AddRideStep1 = (
@@ -292,10 +292,9 @@ const AddRideStep1 = (
 				{
 					showMap &&
 					<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-						<IconButton
+						<CustomIconButton
 							icon="swap-vertical"
 							iconColor={colors.primary}
-							size={30}
 							onPress={() => setToCampus(!toCampus)}
 						/>
 					</View>

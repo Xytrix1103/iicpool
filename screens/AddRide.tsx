@@ -13,11 +13,19 @@ import CustomSolidButton from '../components/themed/CustomSolidButton'
 import CustomOutlinedButton from '../components/themed/CustomOutlinedButton'
 import { GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete'
 import AddRideStep2 from './AddRideComponents/AddRideStep2'
+import { doc, runTransaction } from 'firebase/firestore'
+import FirebaseApp from '../components/FirebaseApp'
+import { AuthContext } from '../components/contexts/AuthContext'
+import { Ride } from '../database/schema'
+import { Timestamp } from '@firebase/firestore'
+
+const { db } = FirebaseApp
 
 const AddRide = () => {
 	const [toCampus, setToCampus] = useState(true)
 	const navigation = useNavigation()
 	const { colors } = useTheme()
+	const { user } = useContext(AuthContext)
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	const { wrapPermissions } = useContext(PermissionContext)
 	const autocompleteRef = useRef<GooglePlacesAutocompleteRef | null>(null)
@@ -53,29 +61,58 @@ const AddRide = () => {
 		},
 	})
 	
+	const onSubmit = async (data: RideFormType) => {
+		console.log('Submit', data)
+		
+		setLoadingOverlay({ show: true, message: 'Adding ride...' })
+		
+		const rideData = {
+			driver: user?.uid,
+			location: data.not_campus,
+			to_campus: toCampus,
+			available_seats: data.available_seats,
+			datetime: new Timestamp(data.datetime?.getSeconds() || 0, 0),
+			created_at: Timestamp.now(),
+			car: data.car,
+			passengers: [],
+		} as Ride
+		
+		await runTransaction(db, async (transaction) => {
+			const rideRef = doc(db, 'rides')
+			transaction.set(rideRef, rideData)
+		})
+			.then(() => {
+				console.log('Ride added successfully')
+				navigation.goBack()
+			})
+			.catch((error) => {
+				console.error('Error adding ride', error)
+			})
+			.finally(() => {
+				setLoadingOverlay({ show: false, message: '' })
+			})
+	}
+	
 	return (
 		<CustomLayout
 			scrollable={false}
-			headerPaddingHorizontal={0}
 			header={
-				showMap ? <CustomHeader
-					title="Add Ride"
+				<CustomHeader
+					title={showMap ? 'Add Ride' : 'Back to Ride'}
 					onPress={() => {
-						step === 1 ? navigation.goBack() : setStep(step - 1)
+						showMap ? (step === 1 ? navigation.goBack() : setStep(step - 1)) : setShowMap(true)
 					}}
-				/> : <CustomHeader
-					title="Back to Ride"
-					onPress={() => setShowMap(true)}
 				/>
 			}
 			footer={
+				directions &&
 				<View style={[style.row, { gap: 20 }]}>
 					{step > 1 && (
 						<CustomOutlinedButton onPress={() => setStep(step - 1)}>
 							Back
 						</CustomOutlinedButton>
 					)}
-					<CustomSolidButton onPress={() => setStep(step + 1)}>
+					<CustomSolidButton onPress={() => step === 1 ? setStep(step + 1) : form.handleSubmit(onSubmit)()}>
 						{step === 1 ? 'Next' : 'Submit'}
 					</CustomSolidButton>
 				</View>
