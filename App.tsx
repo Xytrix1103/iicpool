@@ -27,6 +27,7 @@ import { LoadingOverlayProvider } from './components/contexts/LoadingOverlayCont
 import UpdatePassword from './screens/UpdatePassword'
 import Cars from './screens/Cars'
 import ManageCar from './screens/ManageCar'
+import { ModeProvider } from './components/contexts/ModeContext'
 
 const Stack = createNativeStackNavigator()
 
@@ -118,21 +119,23 @@ const App = (): ReactElement => {
 						<QueryClientProvider client={queryClient}>
 							<LoadingOverlayProvider>
 								<AuthProvider>
-									<NavigationContainer
-										initialState={initialState}
-										onStateChange={(state) => {
-											AsyncStorage.setItem(
-												PERSISTENCE_KEY,
-												JSON.stringify(state),
-											).then((r) => r)
-										}}
-									>
-										<SafeAreaView
-											style={style.safeArea}
+									<ModeProvider>
+										<NavigationContainer
+											initialState={initialState}
+											onStateChange={(state) => {
+												AsyncStorage.setItem(
+													PERSISTENCE_KEY,
+													JSON.stringify(state),
+												).then((r) => r)
+											}}
 										>
-											<Routes />
-										</SafeAreaView>
-									</NavigationContainer>
+											<SafeAreaView
+												style={style.safeArea}
+											>
+												<Routes />
+											</SafeAreaView>
+										</NavigationContainer>
+									</ModeProvider>
 								</AuthProvider>
 							</LoadingOverlayProvider>
 						</QueryClientProvider>

@@ -49,12 +49,14 @@ const Login = () => {
 		<CustomLayout contentPadding={0}>
 			<View style={style.content}>
 				<Image
-					source={require('../assets/logo.png')}
+					source={require('../assets/logo_with_text.png')}
 					tintColor={colors.primary}
 					style={{ height: 120 }}
 					resizeMethod="scale"
 					resizeMode="contain"
 				/>
+				{/*<View style={{ width: '100%', alignItems: 'center', gap: 10 }}>*/}
+				{/*	<CustomHeading>Login</CustomHeading>*/}
 				<View style={{ width: '100%' }}>
 					<View id="login-form" style={style.loginForm}>
 						<View style={style.inputs}>
@@ -128,6 +130,7 @@ const Login = () => {
 					</View>
 				</View>
 			</View>
+			{/*</View>*/}
 		</CustomLayout>
 	)
 }

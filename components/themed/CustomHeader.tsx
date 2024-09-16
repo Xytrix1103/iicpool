@@ -8,6 +8,7 @@ type CustomHeaderProps = {
 	navigation?: any,
 	onPress?: () => void
 	rightNode?: ReactNode
+	isHome?: boolean
 }
 
 const CustomHeader: FC<CustomHeaderProps> = (
@@ -16,6 +17,7 @@ const CustomHeader: FC<CustomHeaderProps> = (
 		navigation,
 		onPress,
 		rightNode,
+		isHome = false,
 	},
 ) => {
 	return (
@@ -34,7 +36,7 @@ const CustomHeader: FC<CustomHeaderProps> = (
 				}}
 			>
 				{
-					(onPress || navigation) &&
+					((onPress || navigation) && !isHome) &&
 					<CustomIconButton
 						icon="arrow-left"
 						onPress={() => {
