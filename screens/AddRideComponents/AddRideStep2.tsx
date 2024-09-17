@@ -21,9 +21,6 @@ const AddRideStep2 = (
 		form,
 		colors,
 		toCampus,
-		setLoadingOverlay,
-		wrapPermissions,
-		directions,
 	}: {
 		style: any,
 		form: UseFormReturn<RideFormType>
@@ -116,11 +113,13 @@ const AddRideStep2 = (
 									<CustomInput
 										label={toCampus ? 'Pick-Up Date' : 'Drop-Off Date'}
 										editable={false}
-										value={
-											value?.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }).split(', ')[0]
-											?? new Date().toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }).split(', ')[0]
-										}
+										value={value?.toLocaleDateString('en-GB', {
+											day: 'numeric',
+											month: 'numeric',
+											year: 'numeric',
+										})}
 										onChangeText={() => null}
+										errorMessage={form.formState.errors.datetime && form.formState.errors.datetime.message}
 									/>
 								</Pressable>
 							)}
@@ -133,7 +132,7 @@ const AddRideStep2 = (
 									if (value) {
 										if (new Date(value).getTime() < new Date().getTime()) {
 											return 'Date and time cannot be in the past'
-										} else if (new Date(value).getTime() < new Date().getTime() + 3600000) {
+										} else if (new Date(value).getTime() < new Date().getTime() + 1800000) {
 											return 'Date and time must be at least 1 hour from now'
 										}
 										
@@ -162,11 +161,14 @@ const AddRideStep2 = (
 									<CustomInput
 										label={toCampus ? 'Pick-Up Time' : 'Drop-Off Time'}
 										editable={false}
-										value={
-											value?.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }).split(', ')[1]
-											?? new Date().toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }).split(', ')[1]
-										}
+										value={value?.toLocaleString('en-US', {
+											timeZone: 'Asia/Kuala_Lumpur',
+											hour: '2-digit',
+											minute: '2-digit',
+											hour12: true,
+										})}
 										onChangeText={() => null}
+										errorMessage={form.formState.errors.datetime && form.formState.errors.datetime.message}
 									/>
 								</Pressable>
 							)}
@@ -184,6 +186,10 @@ const AddRideStep2 = (
 						name="car"
 						rules={{
 							required: 'Please select a vehicle',
+							pattern: {
+								value: new RegExp(cars.map(car => car.id).join('|')),
+								message: 'Please select a vehicle',
+							},
 							validate: (value) => {
 								if (value) {
 									return true
@@ -222,6 +228,10 @@ const AddRideStep2 = (
 						name="available_seats"
 						rules={{
 							required: 'Please enter the number of available seats',
+							pattern: {
+								value: /^[1-9]\d*$/,
+								message: 'Number of available seats must be greater than 0',
+							},
 							validate: (value) => {
 								if (value) {
 									if (value > 0) {
@@ -240,6 +250,7 @@ const AddRideStep2 = (
 								keyboardType="number-pad"
 								onChangeText={onChange}
 								value={value?.toString()}
+								errorMessage={form.formState.errors.available_seats && form.formState.errors.available_seats.message}
 							/>
 						)}
 					/>

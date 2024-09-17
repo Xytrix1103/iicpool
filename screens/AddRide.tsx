@@ -13,7 +13,7 @@ import CustomSolidButton from '../components/themed/CustomSolidButton'
 import CustomOutlinedButton from '../components/themed/CustomOutlinedButton'
 import { GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete'
 import AddRideStep2 from './AddRideComponents/AddRideStep2'
-import { doc, runTransaction } from 'firebase/firestore'
+import { collection, doc, runTransaction } from 'firebase/firestore'
 import FirebaseApp from '../components/FirebaseApp'
 import { AuthContext } from '../components/contexts/AuthContext'
 import { Ride } from '../database/schema'
@@ -56,10 +56,12 @@ const AddRide = () => {
 					},
 				},
 			},
-			datetime: undefined,
-			available_seats: undefined,
+			datetime: new Date(Date.now() + 60 * 60 * 1000),
+			available_seats: 1,
 		},
 	})
+	
+	const { handleSubmit } = form
 	
 	const onSubmit = async (data: RideFormType) => {
 		console.log('Submit', data)
@@ -70,16 +72,16 @@ const AddRide = () => {
 			driver: user?.uid,
 			location: data.not_campus,
 			to_campus: toCampus,
-			available_seats: data.available_seats,
-			datetime: new Timestamp(data.datetime?.getSeconds() || 0, 0),
+			available_seats: Number(data.available_seats),
+			datetime: Timestamp.fromDate(data.datetime!),
 			created_at: Timestamp.now(),
 			car: data.car,
 			passengers: [],
 		} as Ride
 		
 		await runTransaction(db, async (transaction) => {
-			const rideRef = doc(db, 'rides')
-			transaction.set(rideRef, rideData)
+			const ridesRef = doc(collection(db, 'rides'))
+			transaction.set(ridesRef, rideData)
 		})
 			.then(() => {
 				console.log('Ride added successfully')
@@ -112,7 +114,7 @@ const AddRide = () => {
 							Back
 						</CustomOutlinedButton>
 					)}
-					<CustomSolidButton onPress={() => step === 1 ? setStep(step + 1) : form.handleSubmit(onSubmit)()}>
+					<CustomSolidButton onPress={() => step === 1 ? setStep(step + 1) : handleSubmit(onSubmit)()}>
 						{step === 1 ? 'Next' : 'Submit'}
 					</CustomSolidButton>
 				</View>
