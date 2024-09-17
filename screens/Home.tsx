@@ -10,10 +10,12 @@ import CustomHeader from '../components/themed/CustomHeader'
 import { ModeContext } from '../components/contexts/ModeContext'
 import CustomIconButton from '../components/themed/CustomIconButton'
 import { Role } from '../database/schema'
+import { AuthContext } from '../components/contexts/AuthContext'
 
 const Home = () => {
 	const navigation = useNavigation()
 	const { mode, setMode } = useContext(ModeContext)
+	const { profile } = useContext(AuthContext)
 	const [visible, setVisible] = useState(false)
 	
 	return (
@@ -25,6 +27,7 @@ const Home = () => {
 					isHome={true}
 					title="Home"
 					rightNode={
+						profile?.roles.includes(Role.DRIVER) &&
 						<Menu
 							visible={visible}
 							onDismiss={() => {
