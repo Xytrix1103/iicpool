@@ -34,8 +34,8 @@ const Profile = () => {
 	
 	const form = useForm<ProfileData>({
 		defaultValues: {
-			full_name: profile?.full_name || '',
-			mobile_number: profile?.mobile_number || '',
+			full_name: '',
+			mobile_number: '',
 		},
 	})
 	
@@ -69,7 +69,6 @@ const Profile = () => {
 		handleSubmit,
 		formState: { errors },
 		setValue,
-		watch,
 	} = form
 	
 	useEffect(() => {
@@ -84,6 +83,7 @@ const Profile = () => {
 			header={
 				<CustomHeader
 					title={isEditing ? 'Edit Profile' : 'Profile'}
+					onPress={isEditing ? () => setIsEditing(false) : undefined}
 					rightNode={
 						<View style={[style.row, {
 							gap: 5,
