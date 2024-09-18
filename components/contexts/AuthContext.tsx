@@ -1,10 +1,10 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useEffect, useState } from 'react'
 import { onAuthStateChanged, User } from 'firebase/auth'
 import FirebaseApp from '../FirebaseApp'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { Profile } from '../../database/schema'
-import { LoadingOverlayContext } from './LoadingOverlayContext'
 import { httpsCallable } from 'firebase/functions'
+import { Alert } from 'react-native'
 
 const AuthContext = createContext<AuthContextType>({
 	loading: true,
@@ -53,10 +53,10 @@ const { auth, db, functions } = FirebaseApp
 
 const AuthProvider = ({ children }: any) => {
 	const [loading, setLoading] = useState<boolean>(true)
+	const [isAttachingListener, setIsAttachingListener] = useState<boolean>(true)
 	const [user, setUser] = useState<User | null>(null)
 	const [profile, setProfile] = useState<Profile | null>(null)
 	const [userRecord, setUserRecord] = useState<UserRecord | null>(null)
-	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	const checkUser = httpsCallable(functions, 'getUserInfo')
 	
 	const refreshUserRecord = useCallback(async () => {
@@ -73,44 +73,77 @@ const AuthProvider = ({ children }: any) => {
 	}, [functions, user])
 	
 	useEffect(() => {
+		setIsAttachingListener(true)
+		
 		const unsubscribe = onAuthStateChanged(
 			auth,
 			async (newUser) => {
-				if (!loading) {
-					setLoadingOverlay({ show: true, message: 'Signing you in...' })
+				if (newUser) {
+					setLoading(true)
 				}
 				
 				setUser(newUser)
+				setIsAttachingListener(false)
 			},
 			(error) => {
 				console.log('AuthProvider -> error', error)
 				setUser(null)
+				setIsAttachingListener(false)
 			},
 		)
 		
 		return () => {
 			unsubscribe()
 		}
-	}, [auth])
+	}, [])
 	
 	useEffect(() => {
 		let unsubscribe: () => void
 		
+		if (isAttachingListener) {
+			return
+		}
+		
 		if (user) {
 			refreshUserRecord().then(r => r)
 			
-			unsubscribe = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
-				if (snapshot.exists()) {
-					const data = snapshot.data() as Profile
-					setProfile(data)
-				} else {
-					setProfile(null)
-					setUserRecord(null)
-				}
-			})
+			unsubscribe = onSnapshot(doc(db, 'users', user.uid),
+				(snapshot) => {
+					if (snapshot.exists()) {
+						//account for bad internet connection by comparing last sign in time and account created time
+						const data = snapshot.data() as Profile
+						setProfile(data)
+						setLoading(false)
+					} else {
+						auth.signOut()
+							.then(() => {
+								setProfile(null)
+								setLoading(false)
+							})
+							.catch((error) => {
+								console.log('AuthProvider -> error', error)
+							})
+						
+						Alert.alert('Error', 'User not found')
+					}
+				},
+				(error) => {
+					console.log('AuthProvider -> error', error)
+					auth.signOut()
+						.then(() => {
+							setUser(null)
+							setProfile(null)
+							setLoading(false)
+						})
+						.catch((error) => {
+							console.log('AuthProvider -> error', error)
+						})
+				},
+			)
 		} else {
 			setProfile(null)
 			setUserRecord(null)
+			setLoading(false)
 		}
 		
 		return () => {
@@ -118,15 +151,7 @@ const AuthProvider = ({ children }: any) => {
 				unsubscribe()
 			}
 		}
-	}, [user])
-	
-	useEffect(() => {
-		if (!loading) {
-			setLoadingOverlay({ show: false, message: '' })
-		} else {
-			setLoading(false)
-		}
-	}, [profile])
+	}, [user, refreshUserRecord, isAttachingListener])
 	
 	useEffect(() => {
 		console.log('AuthProvider -> user', !!user, 'profile', profile, 'loading', loading)

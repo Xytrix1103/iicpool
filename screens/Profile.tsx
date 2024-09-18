@@ -115,13 +115,19 @@ const Profile = () => {
 			<View style={style.mainContent}>
 				<View style={[style.column, { gap: 20 }]}>
 					<View style={[style.row, { justifyContent: 'center' }]}>
-						<Avatar.Image source={
-							profile?.photo_url ? { uri: profile.photo_url } :
-								user?.photoURL ? { uri: user.photoURL } :
-									(props: { size: number }) => {
-										return <Icon name="account-circle" size={props.size} />
-									}
-						} size={160} />
+						<Avatar.Image
+							source={
+								profile?.photo_url ? { uri: profile.photo_url } :
+									user?.photoURL ? { uri: user.photoURL } :
+										(props: { size: number }) => {
+											return <Icon name="account-circle" size={props.size} />
+										}
+							}
+							style={{
+								backgroundColor: 'transparent',
+							}}
+							size={160}
+						/>
 					</View>
 					<View style={style.row}>
 						<View style={[style.column, { gap: 10 }]}>

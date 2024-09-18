@@ -6,6 +6,9 @@ type Profile = {
 	mobile_number: string;
 	photo_url?: string;
 	deleted: boolean;
+	expoPushToken?: string;
+	created_at: Timestamp;
+	deleted_at?: Timestamp;
 }
 
 type Car = {

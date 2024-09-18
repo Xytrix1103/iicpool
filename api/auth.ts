@@ -22,6 +22,8 @@ GoogleSignin.configure({
 		'1036262039422-a4bpd0qk0pubffjg1s5fumgdh2h0jksh.apps.googleusercontent.com', // client ID of type WEB for your server (needed to verify user ID and offline access)
 })
 
+const { auth } = FirebaseApp
+
 const logout = async () => {
 	const { auth } = FirebaseApp
 	
@@ -32,7 +34,6 @@ const register = (data: RegisterProps) => {
 	console.log('Register -> data sent', data)
 	
 	const { email, password } = data
-	const { auth } = FirebaseApp
 	
 	createUserWithEmailAndPassword(auth, email, password)
 		.then(async (userCredential) => {
@@ -158,8 +159,6 @@ const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; 
 }
 
 const linkEmailPassword = async (email: string, password: string) => {
-	const { auth } = FirebaseApp
-	
 	const credential = EmailAuthProvider.credential(email, password)
 	
 	if (auth.currentUser) {
@@ -170,8 +169,6 @@ const linkEmailPassword = async (email: string, password: string) => {
 }
 
 const linkGoogle = async () => {
-	const { auth } = FirebaseApp
-	
 	const userInfo = await GoogleSignin.signIn()
 	
 	//validate
@@ -195,8 +192,6 @@ const linkGoogle = async () => {
 }
 
 const unlinkEmailPassword = async () => {
-	const { auth } = FirebaseApp
-	
 	if (auth.currentUser) {
 		return await unlink(auth.currentUser, 'password')
 	}
@@ -205,8 +200,6 @@ const unlinkEmailPassword = async () => {
 }
 
 const unlinkGoogle = async () => {
-	const { auth } = FirebaseApp
-	
 	if (auth.currentUser) {
 		return await unlink(auth.currentUser, 'google.com')
 	}
