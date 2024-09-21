@@ -28,6 +28,7 @@ import UpdatePassword from './screens/UpdatePassword'
 import Cars from './screens/Cars'
 import ManageCar from './screens/ManageCar'
 import { ModeProvider } from './components/contexts/ModeContext'
+import InitialSetup from './screens/InitialSetup'
 
 const Stack = createNativeStackNavigator()
 
@@ -147,21 +148,29 @@ const App = (): ReactElement => {
 }
 
 const Routes = () => {
-	const { loading, user } = useContext(AuthContext)
+	const { loading, user, profile } = useContext(AuthContext)
 	
 	return (
 		<Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
 			{loading ? (
 				<Stack.Screen name="Loading" component={Loading} />
-			) : user ? (
-				<>
-					<Stack.Screen name="Home" component={Home} />
-					<Stack.Screen name="AddRide" component={AddRide} />
-					<Stack.Screen name="Profile" component={Profile} />
-					<Stack.Screen name="UpdatePassword" component={UpdatePassword} initialParams={{ type: 'update' }} />
-					<Stack.Screen name="Cars" component={Cars} />
-					<Stack.Screen name="ManageCar" component={ManageCar} />
-				</>
+			) : user && profile ? (
+				(
+					profile?.full_name &&
+					profile?.mobile_number &&
+					profile?.full_name.length > 0 &&
+					profile?.mobile_number.length > 0
+				) ?
+					<>
+						<Stack.Screen name="Home" component={Home} />
+						<Stack.Screen name="AddRide" component={AddRide} />
+						<Stack.Screen name="Profile" component={Profile} />
+						<Stack.Screen name="UpdatePassword" component={UpdatePassword}
+						              initialParams={{ type: 'update' }} />
+						<Stack.Screen name="Cars" component={Cars} />
+						<Stack.Screen name="ManageCar" component={ManageCar} />
+					</> :
+					<Stack.Screen name="InitialSetup" component={InitialSetup} />
 			) : (
 				<>
 					<Stack.Screen name="Login" component={Login} />

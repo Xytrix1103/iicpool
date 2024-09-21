@@ -46,29 +46,31 @@ const Login = () => {
 	}, [navigation, reset])
 	
 	return (
-		<CustomLayout contentPadding={0}>
-			<View style={style.content}>
-				<Image
-					source={require('../assets/logo_with_text.png')}
-					tintColor={colors.primary}
-					style={{ height: 120 }}
-					resizeMethod="scale"
-					resizeMode="contain"
-				/>
-				{/*<View style={{ width: '100%', alignItems: 'center', gap: 10 }}>*/}
-				{/*	<CustomHeading>Login</CustomHeading>*/}
-				<View style={{ width: '100%' }}>
-					<View id="login-form" style={style.loginForm}>
-						<View style={style.inputs}>
+		<CustomLayout
+			scrollable={false}
+			hasAppBar={false}
+		>
+			<View style={style.mainContent}>
+				<View style={[style.column, { alignItems: 'center', gap: 50 }]}>
+					<View style={style.row}>
+						<Image
+							source={require('../assets/logo_with_text.png')}
+							tintColor={colors.primary}
+							style={{ width: 300, height: 120 }}
+							resizeMode="contain"
+						/>
+					</View>
+					<View style={[style.column, { gap: 10, width: '90%' }]}>
+						<View style={[style.column, { gap: 10 }]}>
 							<Controller
 								control={control}
-								render={({ field: { onChange, onBlur, value } }) => (
+								render={({ field: { onChange, value } }) => (
 									<CustomInput
 										label="Email"
 										inputMode="email"
 										keyboardType="email-address"
 										autoCapitalize="none"
-										errorMessage={errors.email}
+										errorMessage={errors.email && errors.email.message}
 										onChangeText={onChange}
 										rightIcon={
 											value ? (
@@ -86,12 +88,12 @@ const Login = () => {
 							/>
 							<Controller
 								control={control}
-								render={({ field: { onChange, onBlur, value } }) => (
+								render={({ field: { onChange } }) => (
 									<CustomInput
 										label="Password"
 										autoCapitalize="none"
 										secureTextEntry
-										errorMessage={errors.password}
+										errorMessage={errors.password && errors.password.message}
 										onChangeText={onChange}
 									/>
 								)}
@@ -99,7 +101,7 @@ const Login = () => {
 								rules={{ required: 'Password is required' }}
 							/>
 						</View>
-						<View style={style.outlinedButtonContainer}>
+						<View style={[style.row, { gap: 10 }]}>
 							<CustomOutlinedButton
 								onPress={() => {
 									console.log('Register')
@@ -113,62 +115,59 @@ const Login = () => {
 								Login
 							</CustomSolidButton>
 						</View>
-					</View>
-					<CustomTextDivider text="OR" vmargin={12} />
-					<View style={style.buttonContainer}>
-						<Button
-							mode="elevated"
-							icon="google"
-							onPress={() => googleLogin(setLoadingOverlay)}
-							buttonColor={colors.primary}
-							labelStyle={{
-								marginVertical: 10,
-							}}
-							style={style.googleLoginButton}>
-							Login with Google
-						</Button>
+						<CustomTextDivider text="OR" vmargin={12} />
+						<View style={style.column}>
+							<Button
+								mode="elevated"
+								icon="google"
+								onPress={() => googleLogin(setLoadingOverlay)}
+								buttonColor={colors.primary}
+								labelStyle={{
+									marginVertical: 10,
+								}}
+								style={style.googleLoginButton}>
+								Login with Google
+							</Button>
+						</View>
 					</View>
 				</View>
 			</View>
-			{/*</View>*/}
 		</CustomLayout>
 	)
 }
 
 const style = StyleSheet.create({
-	content: {
+	container: {
 		flex: 1,
-		alignItems: 'center',
+		width: '100%',
+		height: '100%',
 		justifyContent: 'center',
-		width: '80%',
+	},
+	map: {
+		width: '100%',
+		height: '100%',
+		alignSelf: 'center',
+	},
+	row: {
+		flexDirection: 'row',
+		width: '100%',
+		alignItems: 'center',
+	},
+	column: {
 		flexDirection: 'column',
-		gap: 50,
-	},
-	loginForm: {
 		width: '100%',
 	},
-	inputs: {
+	mainContent: {
+		flex: 1,
 		width: '100%',
-		alignItems: 'center',
 		justifyContent: 'center',
+		alignItems: 'center',
 	},
 	googleLoginButton: {
-		width: '100%',
 		paddingVertical: 5,
 		color: 'darkred',
 		backgroundColor: 'white',
-	},
-	buttonContainer: {
-		width: '100%',
-		alignItems: 'center',
-		flexDirection: 'row',
-	},
-	outlinedButtonContainer: {
-		width: '100%',
-		alignItems: 'center',
-		flexDirection: 'row',
-		gap: 10,
-		marginTop: 20,
+		borderRadius: 20,
 	},
 })
 

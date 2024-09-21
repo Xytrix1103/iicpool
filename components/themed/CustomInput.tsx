@@ -1,5 +1,5 @@
 import React, { ReactNode, useEffect, useRef, useState } from 'react'
-import { Platform, StyleSheet, Text, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native'
+import { Platform, Pressable, StyleSheet, Text, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native'
 import { useTheme } from 'react-native-paper'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import { FieldError, FieldErrorsImpl } from 'react-hook-form'
@@ -52,13 +52,13 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 	}, [value, editable])
 	
 	return (
-		<>
+		<View style={{ width: '100%', flexDirection: 'column', gap: 5 }}>
 			<View
 				style={[
 					styles.inputContainer,
 					{
 						borderColor: isFocused ? colors.primary : '#ccc',
-						marginBottom: errorMessage ? 5 : 10,
+						marginBottom: errorMessage ? 0 : 10,
 					},
 				]}
 			>
@@ -114,7 +114,7 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 						</TouchableOpacity>
 					)}
 					{secureTextEntry && (
-						<TouchableOpacity
+						<Pressable
 							style={styles.icon}
 							onPress={() =>
 								setIsPasswordVisible(!isPasswordVisible)
@@ -125,7 +125,7 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 								size={24}
 								color={colors.primary}
 							/>
-						</TouchableOpacity>
+						</Pressable>
 					)}
 				</View>
 				{limit && (
@@ -149,7 +149,7 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 			{errorMessage && (
 				<Text style={styles.errorText}>{errorMessage.toString()}</Text>
 			)}
-		</>
+		</View>
 	)
 }
 
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderRadius: 8,
 		paddingHorizontal: 10,
-		padding: 7,
+		paddingVertical: 7,
 		position: 'relative',
 	},
 	label: {
