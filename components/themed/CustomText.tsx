@@ -7,6 +7,7 @@ export type CustomTextProps = {
 	color?: string;
 	width?: string;
 	align?: 'center' | 'left' | 'right';
+	numberOflines?: number;
 }
 
 const CustomText = (
@@ -17,6 +18,7 @@ const CustomText = (
 		color = 'black',
 		width = 'auto',
 		align = 'left',
+		numberOflines = 1,
 	}: CustomTextProps) => {
 	return (
 		<Text
@@ -26,9 +28,9 @@ const CustomText = (
 				fontWeight: bold ? 'bold' : 'normal',
 				width: width as DimensionValue,
 				textAlign: align,
-				overflow: 'hidden',
+				overflow: numberOflines > 1 ? 'hidden' : 'visible',
 			}}
-			numberOfLines={1}
+			numberOfLines={numberOflines}
 		>
 			{children}
 		</Text>
