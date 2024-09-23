@@ -101,6 +101,7 @@ const Profile = () => {
 		formState: { errors },
 		setValue,
 		watch,
+		reset,
 	} = form
 	
 	useEffect(() => {
@@ -136,6 +137,16 @@ const Profile = () => {
 			form.setValue('photo_uri', result.assets[0].uri)
 		}
 	}
+	
+	useEffect(() => {
+		if (!isEditing) {
+			reset({
+				full_name: profile?.full_name || '',
+				mobile_number: profile?.mobile_number || '',
+				photo_uri: profile?.photo_url || '',
+			})
+		}
+	}, [isEditing])
 	
 	return (
 		<CustomLayout

@@ -1,16 +1,18 @@
 import React, { useContext, useState } from 'react'
-import { StyleSheet } from 'react-native'
-import { Button, Menu } from 'react-native-paper'
-import { logout } from '../api/auth'
+import { View } from 'react-native'
+import { Menu } from 'react-native-paper'
 import CustomText from '../components/themed/CustomText'
 import { useNavigation } from '@react-navigation/native'
 import CustomLayout from '../components/themed/CustomLayout'
-import CustomFlex from '../components/themed/CustomFlex'
 import CustomHeader from '../components/themed/CustomHeader'
 import { ModeContext } from '../components/contexts/ModeContext'
 import CustomIconButton from '../components/themed/CustomIconButton'
 import { Role } from '../database/schema'
 import { AuthContext } from '../components/contexts/AuthContext'
+import style from '../styles/shared'
+import CustomTextButton from '../components/themed/CustomTextButton'
+import { logout } from '../api/auth'
+import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 
 const Home = () => {
 	const navigation = useNavigation()
@@ -22,6 +24,7 @@ const Home = () => {
 		<CustomLayout
 			hasAppBar={true}
 			scrollable={true}
+			contentPadding={0}
 			header={
 				<CustomHeader
 					isHome={true}
@@ -65,62 +68,44 @@ const Home = () => {
 				/>
 			}
 		>
-			<CustomFlex>
-				<CustomText>Home</CustomText>
-				<Button onPress={() => {
-					// @ts-ignore
-					navigation.navigate('AddRide')
-				}}>Ride to Campus</Button>
-				<Button onPress={logout}>Logout</Button>
-			</CustomFlex>
+			<View style={style.column}>
+				<View style={[style.row, {
+					backgroundColor: '#f5f269',
+					paddingHorizontal: 20,
+					paddingVertical: 10,
+					justifyContent: 'space-between',
+					alignItems: 'center',
+				}]}>
+					<View style={[style.row, { gap: 10, width: 'auto', alignItems: 'center' }]}>
+						<Icon name="alert-circle" size={24} color="darkred" />
+						<CustomText size={12}>Your email has not been verified</CustomText>
+					</View>
+					{/* @ts-expect-error navigation type */}
+					<CustomTextButton onPress={() => navigation.navigate('VerifyEmail')} size={12}>
+						Verify Now
+					</CustomTextButton>
+				</View>
+				<CustomLayout>
+					<View style={style.column}>
+						<View style={style.row}>
+							<CustomText size={16}>Welcome to the Home Page</CustomText>
+						</View>
+						<View style={style.row}>
+							<CustomTextButton onPress={
+								// @ts-expect-error navigation type
+								() => navigation.navigate('AddRide')
+							}>
+								Add Ride
+							</CustomTextButton>
+						</View>
+						<View style={style.row}>
+							<CustomTextButton onPress={logout}>Logout</CustomTextButton>
+						</View>
+					</View>
+				</CustomLayout>
+			</View>
 		</CustomLayout>
 	)
 }
-
-const style = StyleSheet.create({
-	appbar: {
-		width: '100%',
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-	buttonsContainer: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
-		width: '100%',
-		justifyContent: 'space-evenly',
-	},
-	button: {
-		flexDirection: 'column',
-		gap: 5,
-		alignItems: 'center',
-	},
-	container: {
-		flex: 1,
-		width: '100%',
-		height: '100%',
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-	map: {
-		width: '100%',
-		height: '100%',
-		alignSelf: 'center',
-	},
-	row: {
-		flexDirection: 'row',
-		width: '100%',
-		alignItems: 'center',
-	},
-	column: {
-		flexDirection: 'column',
-		width: '100%',
-	},
-	mainContent: {
-		flex: 1,
-		width: '100%',
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-})
 
 export default Home

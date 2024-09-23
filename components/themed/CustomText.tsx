@@ -2,7 +2,7 @@ import { DimensionValue, Text } from 'react-native'
 
 export type CustomTextProps = {
 	size?: number;
-	children: string;
+	children: string | string[];
 	bold?: boolean;
 	color?: string;
 	width?: string;
