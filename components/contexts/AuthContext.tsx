@@ -82,8 +82,12 @@ const AuthProvider = ({ children }: any) => {
 					setLoading(true)
 				}
 				
-				setUser(newUser)
-				setIsAttachingListener(false)
+				
+				//only set user after 3 seconds
+				setTimeout(() => {
+					setUser(newUser)
+					setIsAttachingListener(false)
+				}, 2000)
 			},
 			(error) => {
 				console.log('AuthProvider -> error', error)
