@@ -38,7 +38,23 @@ const NotificationSettingsProvider: React.FC<
 				)
 				
 				if (storedSettings) {
-					setNotificationSettings(JSON.parse(storedSettings))
+					//check if storedSettings matches the ProfileNotificationSettings interface
+					const parsedSettings = JSON.parse(storedSettings)
+					
+					if (JSON.stringify(Object.keys(parsedSettings).sort()) === JSON.stringify(Object.keys(notificationSettings).sort())) {
+						setNotificationSettings(parsedSettings)
+					} else {
+						console.error('Stored settings do not match the ProfileNotificationSettings interface')
+						
+						setNotificationSettings({
+							new_rides: false,
+							ride_updates: false,
+							new_messages: false,
+							new_passengers: false,
+							booking_confirmation: false,
+							driver_registration: false,
+						})
+					}
 				}
 			} catch (error) {
 				console.error('Failed to load notification settings', error)
@@ -49,6 +65,18 @@ const NotificationSettingsProvider: React.FC<
 	useEffect(() => {
 		const saveSettings = async () => {
 			try {
+				const oldSettings = await AsyncStorage.getItem(
+					NOTIFICATION_SETTINGS_KEY,
+				)
+				
+				if (oldSettings) {
+					const parsedOldSettings = JSON.parse(oldSettings)
+					
+					if (JSON.stringify(parsedOldSettings) === JSON.stringify(notificationSettings)) {
+						return
+					}
+				}
+				
 				await AsyncStorage.setItem(
 					NOTIFICATION_SETTINGS_KEY,
 					JSON.stringify(notificationSettings),
