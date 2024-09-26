@@ -1,8 +1,9 @@
 import { DimensionValue, Text } from 'react-native'
+import { ReactNode } from 'react'
 
 export type CustomTextProps = {
 	size?: number;
-	children: string | string[];
+	children: (string | ReactNode) | (string | ReactNode)[];
 	bold?: boolean;
 	color?: string;
 	width?: string;

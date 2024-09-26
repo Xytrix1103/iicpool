@@ -10,7 +10,7 @@ const CustomIconButton = (props: IconButtonProps) => {
 		{...props}
 		style={{ margin: 0, paddingHorizontal: 0 }}
 		animated={true}
-		disabled={loadingOverlay.show}
+		disabled={loadingOverlay.show || props.disabled}
 	/>
 }
 

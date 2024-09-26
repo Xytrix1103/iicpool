@@ -1,8 +1,11 @@
-import { Button, useTheme } from 'react-native-paper'
+import { Button, ButtonProps, useTheme } from 'react-native-paper'
 import React, { ReactElement, useContext } from 'react'
 import { LoadingOverlayContext } from '../contexts/LoadingOverlayContext'
 
-const CustomSolidButton = ({ children, onPress }: { children: ReactElement | string, onPress: () => void }) => {
+const CustomSolidButton = ({ children, onPress, ...props }: {
+	children: ReactElement | string,
+	onPress: () => void,
+} & ButtonProps) => {
 	const { colors } = useTheme()
 	const { loadingOverlay } = useContext(LoadingOverlayContext)
 	
@@ -18,7 +21,7 @@ const CustomSolidButton = ({ children, onPress }: { children: ReactElement | str
 				flex: 1,
 				backgroundColor: colors.primary,
 			}}
-			disabled={loadingOverlay.show}
+			disabled={loadingOverlay.show || props.disabled}
 		>
 			{children}
 		</Button>

@@ -1,5 +1,14 @@
 import { Timestamp } from '@firebase/firestore'
 
+type ProfileNotificationSettings = {
+	new_rides: boolean;
+	ride_updates: boolean;
+	new_messages: boolean;
+	new_passengers: boolean;
+	booking_confirmation: boolean;
+	driver_registration: boolean;
+}
+
 type Profile = {
 	roles: Role[];
 	full_name: string;
@@ -7,6 +16,7 @@ type Profile = {
 	photo_url?: string;
 	deleted: boolean;
 	expoPushToken?: string;
+	notification_settings: ProfileNotificationSettings;
 	created_at: Timestamp;
 	deleted_at?: Timestamp;
 }
@@ -48,4 +58,4 @@ enum Role {
 	PASSENGER = 'passenger',
 }
 
-export { Profile, Car, Ride, Role }
+export { Profile, Car, Ride, Role, ProfileNotificationSettings }
