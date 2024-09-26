@@ -1,8 +1,8 @@
-import { Alert, StyleSheet, View } from 'react-native'
+import { StyleSheet, ToastAndroid, View } from 'react-native'
 import CustomLayout from '../components/themed/CustomLayout'
 import CustomHeader from '../components/themed/CustomHeader'
 import { useForm } from 'react-hook-form'
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import AccountSetupStep2 from './AccountSetupComponents/AccountSetupStep2'
 import CustomSolidButton from '../components/themed/CustomSolidButton'
 import CustomOutlinedButton from '../components/themed/CustomOutlinedButton'
@@ -62,7 +62,7 @@ const AccountSetup = () => {
 			})
 				.then(() => {
 					console.log('Profile Updated')
-					Alert.alert('Profile Updated', 'Your profile has been updated successfully.')
+					ToastAndroid.show('Profile Updated', ToastAndroid.LONG)
 				})
 				.catch((error) => {
 					console.error('Error updating profile: ', error)
@@ -72,6 +72,22 @@ const AccountSetup = () => {
 				})
 		})
 	}
+	
+	useEffect(() => {
+		(async () => {
+			await user?.reload()
+		})()
+	}, [])
+	
+	useEffect(() => {
+		if (user) {
+			form.reset({
+				photo_uri: user.photoURL || '',
+				full_name: user.displayName || '',
+				mobile_number: user.phoneNumber || '',
+			})
+		}
+	}, [user])
 	
 	return (
 		<CustomLayout

@@ -2,7 +2,7 @@ import CustomLayout from '../components/themed/CustomLayout'
 import { Alert, Pressable, StyleSheet, ToastAndroid, View } from 'react-native'
 import { Controller, useForm } from 'react-hook-form'
 import CustomInput from '../components/themed/CustomInput'
-import { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { AuthContext } from '../components/contexts/AuthContext'
 import FirebaseApp from '../components/FirebaseApp'
 import { doc, updateDoc } from 'firebase/firestore'
@@ -16,6 +16,7 @@ import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayCont
 import CustomIconButton from '../components/themed/CustomIconButton'
 import * as ImagePicker from 'expo-image-picker'
 import { getDownloadURL, ref as storageRef, uploadBytesResumable } from 'firebase/storage'
+import CustomTextButton from '../components/themed/CustomTextButton'
 
 type ProfileData = {
 	full_name: string
@@ -227,12 +228,38 @@ const Profile = () => {
 							<CustomText bold size={14}>
 								Email
 							</CustomText>
-							<CustomInput
-								autoCapitalize="none"
-								editable={false}
-								value={user?.email || ''}
-								onChangeText={() => null}
-							/>
+							<View style={[style.column]}>
+								<CustomInput
+									autoCapitalize="none"
+									editable={false}
+									value={user?.email || ''}
+									onChangeText={() => null}
+									rightIcon={
+										user?.emailVerified ? (
+											<Icon name="check" size={24} color="green" />
+										) : (
+											<Icon name="alert-circle" size={24} color="darkred" />
+										)
+									}
+								/>
+								{
+									!user?.emailVerified &&
+									<View style={[style.row, { alignItems: 'center' }]}>
+										<CustomText size={12}>
+											Secure your account by verifying your email{' '}
+										</CustomText>
+										<CustomTextButton
+											onPress={() => {
+												//@ts-ignore
+												navigation.navigate('VerifyEmail')
+											}}
+											size={12}
+										>
+											here
+										</CustomTextButton>
+									</View>
+								}
+							</View>
 						</View>
 					</View>
 					<View style={style.row}>

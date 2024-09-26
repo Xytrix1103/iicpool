@@ -1,16 +1,18 @@
-import { StyleSheet, TouchableOpacity } from 'react-native'
+import { StyleSheet, TouchableOpacity, TouchableOpacityProps } from 'react-native'
 import { useTheme } from 'react-native-paper'
 import CustomText from './CustomText'
-import { FC } from 'react'
+import { useContext } from 'react'
+import { LoadingOverlayContext } from '../contexts/LoadingOverlayContext'
 
 type CustomTextButtonProps = {
 	onPress: () => void
 	children: string
 	size?: number
-}
+} & TouchableOpacityProps
 
-const CustomTextButton: FC<CustomTextButtonProps> = ({ children, onPress, size = 16, ...props }) => {
+const CustomTextButton = ({ children, onPress, size = 16, ...props }: CustomTextButtonProps) => {
 	const { colors } = useTheme()
+	const { loadingOverlay } = useContext(LoadingOverlayContext)
 	
 	return (
 		<TouchableOpacity
@@ -19,6 +21,7 @@ const CustomTextButton: FC<CustomTextButtonProps> = ({ children, onPress, size =
 				styles.button,
 			]}
 			onPress={onPress}
+			disabled={loadingOverlay.show || props.disabled}
 		>
 			<CustomText size={size} bold color={colors.primary}>
 				{children}

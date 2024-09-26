@@ -15,6 +15,7 @@ import { logout } from '../api/auth'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 
 const Home = () => {
+	const { user } = useContext(AuthContext)
 	const navigation = useNavigation()
 	const { mode, setMode } = useContext(ModeContext)
 	const { profile } = useContext(AuthContext)
@@ -23,7 +24,6 @@ const Home = () => {
 	return (
 		<CustomLayout
 			hasAppBar={true}
-			scrollable={true}
 			contentPadding={0}
 			header={
 				<CustomHeader
@@ -68,42 +68,49 @@ const Home = () => {
 				/>
 			}
 		>
-			<View style={style.column}>
+			{
+				!user?.emailVerified &&
 				<View style={[style.row, {
+					gap: 10,
+					alignItems: 'center',
+					justifyContent: 'space-between',
 					backgroundColor: '#f5f269',
 					paddingHorizontal: 20,
-					paddingVertical: 10,
-					justifyContent: 'space-between',
-					alignItems: 'center',
+					paddingVertical: 15,
 				}]}>
-					<View style={[style.row, { gap: 10, width: 'auto', alignItems: 'center' }]}>
-						<Icon name="alert-circle" size={24} color="darkred" />
-						<CustomText size={12}>Your email has not been verified</CustomText>
+					<View style={[style.row, { gap: 5, alignItems: 'center', width: 'auto' }]}>
+						<Icon name="alert-circle" size={16} color="darkred" />
+						<CustomText size={12}>Verify your email in Profile to unlock features</CustomText>
 					</View>
-					{/* @ts-expect-error navigation type */}
-					<CustomTextButton onPress={() => navigation.navigate('VerifyEmail')} size={12}>
-						Verify Now
-					</CustomTextButton>
+					<View style={[style.row, { gap: 5, alignItems: 'center', width: 'auto' }]}>
+						<CustomTextButton
+							// @ts-expect-error navigation type
+							onPress={() => navigation.navigate('Profile')}
+							size={12}
+						>
+							Go
+						</CustomTextButton>
+					</View>
 				</View>
-				<CustomLayout>
-					<View style={style.column}>
-						<View style={style.row}>
-							<CustomText size={16}>Welcome to the Home Page</CustomText>
-						</View>
-						<View style={style.row}>
-							<CustomTextButton onPress={
-								// @ts-expect-error navigation type
-								() => navigation.navigate('AddRide')
-							}>
-								Add Ride
-							</CustomTextButton>
-						</View>
-						<View style={style.row}>
-							<CustomTextButton onPress={logout}>Logout</CustomTextButton>
-						</View>
+			}
+			<CustomLayout scrollable={true}>
+				<View style={style.column}>
+					<View style={style.row}>
+						<CustomText size={16}>Welcome to the Home Page</CustomText>
 					</View>
-				</CustomLayout>
-			</View>
+					<View style={style.row}>
+						<CustomTextButton onPress={
+							// @ts-expect-error navigation type
+							() => navigation.navigate('AddRide')
+						}>
+							Add Ride
+						</CustomTextButton>
+					</View>
+					<View style={style.row}>
+						<CustomTextButton onPress={logout}>Logout</CustomTextButton>
+					</View>
+				</View>
+			</CustomLayout>
 		</CustomLayout>
 	)
 }

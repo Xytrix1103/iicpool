@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { Alert, View } from 'react-native'
+import { ToastAndroid, View } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import CustomLayout from '../components/themed/CustomLayout'
 import CustomText from '../components/themed/CustomText'
@@ -21,7 +21,6 @@ const VerifyEmail = () => {
 	const [canResend, setCanResend] = useState(true)
 	const [remainingTime, setRemainingTime] = useState(0)
 	const cooldownPeriod = 60 * 1000 // 1 minute in milliseconds
-	
 	
 	useEffect(() => {
 		(async () => {
@@ -50,21 +49,32 @@ const VerifyEmail = () => {
 	const handleSendVerificationEmail = async () => {
 		if (canResend) {
 			// Send verification email logic here
-			sendVerificationEmail()
-				.then(() => {
-					AsyncStorage.setItem('lastVerificationEmailSent', Date.now().toString())
-					setCanResend(false)
+			await sendVerificationEmail()
+				.then(async () => {
+					console.log('Verification email sent')
 					setRemainingTime(cooldownPeriod / 1000)
-					Alert.alert('Verification email sent')
+					setCanResend(false)
+					await AsyncStorage.setItem('lastVerificationEmailSent', Date.now().toString())
 				})
 				.catch((error) => {
-					Alert.alert('Error', error.message)
+					console.log('Error sending verification email:', error)
+					ToastAndroid.show(error.message, ToastAndroid.LONG)
 				})
 				.finally(async () => {
+					console.log('Reloading user...')
 					auth.currentUser && await auth.currentUser.reload()
 				})
 		}
 	}
+	
+	useEffect(() => {
+		//once the user is verified, go back after 3 seconds while showing loading overlay
+		if (user?.emailVerified) {
+			setTimeout(() => {
+				navigation.goBack()
+			}, 3000)
+		}
+	}, [user?.emailVerified])
 	
 	return (
 		<CustomLayout
@@ -101,7 +111,10 @@ const VerifyEmail = () => {
 										Email verified
 									</CustomText>
 								) : (
-									<CustomOutlinedButton onPress={handleSendVerificationEmail} disabled={!canResend}>
+									<CustomOutlinedButton
+										onPress={handleSendVerificationEmail}
+										disabled={!canResend || user?.emailVerified}
+									>
 										{canResend ? 'Resend Verification Email' : `Resend in ${remainingTime} seconds`}
 									</CustomOutlinedButton>
 								)

@@ -16,6 +16,8 @@ import firebase from 'firebase/compat'
 import { RegisterProps } from '../screens/Register'
 import { httpsCallable } from 'firebase/functions'
 import { Role } from '../database/schema'
+import { useContext } from 'react'
+import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import FirebaseError = firebase.FirebaseError
 
 GoogleSignin.configure({
@@ -31,12 +33,18 @@ const logout = async () => {
 	await auth.signOut()
 }
 
-const register = (data: RegisterProps) => {
+const register = async (data: RegisterProps) => {
 	console.log('Register -> data sent', data)
 	
 	const { email, password } = data
+	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	
-	createUserWithEmailAndPassword(auth, email, password)
+	setLoadingOverlay({
+		show: true,
+		message: 'Registering...',
+	})
+	
+	await createUserWithEmailAndPassword(auth, email, password)
 		.then(async (userCredential) => {
 			console.log('Register -> userCredential', userCredential)
 			
@@ -62,6 +70,12 @@ const register = (data: RegisterProps) => {
 			} else {
 				Alert.alert('Error', 'An error occurred. Please try again later.')
 			}
+		})
+		.finally(() => {
+			setLoadingOverlay({
+				show: false,
+				message: '',
+			})
 		})
 }
 
@@ -110,19 +124,11 @@ const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; 
 			.catch(error => {
 				const fbError = error as FirebaseError
 				console.log('Google login -> error', fbError)
-				// setLoadingOverlay({
-				// 	show: false,
-				// 	message: '',
-				// })
 				return fbError.code !== 'functions/not-found'
 			})
 		
 		if (!checkResult) {
 			Alert.alert('Error', 'Google account not linked to any account. Please sign in with your email and password.')
-			// setLoadingOverlay({
-			// 	show: false,
-			// 	message: '',
-			// })
 			return
 		}
 		
@@ -143,6 +149,12 @@ const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; 
 						roles: [Role.PASSENGER],
 						deleted: false,
 					})
+						.then(() => {
+							console.log('Google login -> success')
+						})
+						.catch(error => {
+							console.log('Google login -> error', error)
+						})
 				}
 			})
 			.catch(error => {

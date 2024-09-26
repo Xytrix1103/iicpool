@@ -1,5 +1,15 @@
 import React, { ReactNode, useEffect, useRef, useState } from 'react'
-import { Platform, Pressable, StyleSheet, Text, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native'
+import {
+	DimensionValue,
+	Platform,
+	Pressable,
+	StyleSheet,
+	Text,
+	TextInput,
+	TextInputProps,
+	TouchableOpacity,
+	View,
+} from 'react-native'
 import { useTheme } from 'react-native-paper'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import { FieldError, FieldErrorsImpl } from 'react-hook-form'
@@ -18,6 +28,7 @@ interface FloatingLabelInputProps extends TextInputProps {
 	onCustomFocus?: () => void;
 	onCustomBlur?: () => void;
 	hideLabelOnFocus?: boolean;
+	width?: DimensionValue;
 }
 
 const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (

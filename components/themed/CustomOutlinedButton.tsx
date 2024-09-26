@@ -31,7 +31,7 @@ const CustomOutlinedButton = (
 				flex: 1,
 				borderColor: props.disabled ? 'grey' : colors.primary,
 			}}
-			disabled={loadingOverlay.show}
+			disabled={loadingOverlay.show || props.disabled}
 			//remove all animations when disabled
 			rippleColor={props.disabled ? 'transparent' : colors.primary}
 		>

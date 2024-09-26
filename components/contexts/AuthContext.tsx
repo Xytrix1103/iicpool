@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useEffect, useState } from 'react'
 import { onAuthStateChanged, User } from 'firebase/auth'
 import FirebaseApp from '../FirebaseApp'
-import { doc, onSnapshot } from 'firebase/firestore'
+import { doc, getDoc, onSnapshot } from 'firebase/firestore'
 import { Profile } from '../../database/schema'
 import { httpsCallable } from 'firebase/functions'
 import { Alert } from 'react-native'
@@ -78,16 +78,107 @@ const AuthProvider = ({ children }: any) => {
 		const unsubscribe = onAuthStateChanged(
 			auth,
 			async (newUser) => {
+				console.log('AuthProvider -> newUser', newUser)
+				
 				if (newUser) {
+					console.log('auth state changed, user is not null')
 					setLoading(true)
 				}
 				
-				setUser(newUser)
+				if (!newUser) {
+					console.log('auth state changed, user is null')
+					
+					setUser(newUser)
+				} else {
+					console.log('auth state changed, user is not null')
+					
+					if (
+						newUser.metadata.creationTime &&
+						newUser.metadata.lastSignInTime
+					) {
+						console.log('checking if user is new')
+						const creationTime = new Date(
+							newUser.metadata.creationTime,
+						)
+						const lastSignInTime = new Date(
+							newUser.metadata.lastSignInTime,
+						)
+						
+						console.log('creationTime', creationTime)
+						console.log('lastSignInTime', lastSignInTime)
+						
+						if (
+							Math.abs(
+								creationTime.getTime() -
+								lastSignInTime.getTime(),
+							) < 15000
+						) {
+							console.log('new user')
+							
+							setTimeout(() => {
+								setUser(newUser)
+							}, 3000)
+						} else {
+							console.log('old user')
+							
+							await getDoc(doc(db, 'users/' + newUser?.uid))
+								.then((doc) => {
+									if (!doc.exists()) {
+										throw new Error('User not found')
+									} else {
+										setUser(newUser)
+									}
+								})
+								.catch((error) => {
+									console.log('AuthProvider -> error', error)
+									
+									auth.signOut()
+										.then(() => {
+											setUser(null)
+										})
+										.catch((error) => {
+											console.log('AuthProvider -> error', error)
+										})
+								})
+						}
+					} else {
+						console.log('old user')
+						
+						await getDoc(doc(db, 'users/' + newUser?.uid))
+							.then((doc) => {
+								if (!doc.exists()) {
+									throw new Error('User not found')
+								} else {
+									setUser(newUser)
+								}
+							})
+							.catch((error) => {
+								console.log('AuthProvider -> error', error)
+								
+								auth.signOut()
+									.then(() => {
+										setUser(null)
+									})
+									.catch((error) => {
+										console.log('AuthProvider -> error', error)
+									})
+							})
+					}
+				}
+				
 				setIsAttachingListener(false)
 			},
-			(error) => {
+			async (error) => {
 				console.log('AuthProvider -> error', error)
-				setUser(null)
+				
+				auth.signOut()
+					.then(() => {
+						setUser(null)
+					})
+					.catch((error) => {
+						console.log('AuthProvider -> error', error)
+					})
+				
 				setIsAttachingListener(false)
 			},
 		)

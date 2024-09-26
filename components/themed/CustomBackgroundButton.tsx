@@ -1,6 +1,8 @@
 import { IconButtonProps } from 'react-native-paper'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import { Pressable } from 'react-native'
+import { LoadingOverlayContext } from '../contexts/LoadingOverlayContext'
+import { useContext } from 'react'
 
 //override style margin to 0
 const CustomBackgroundButton = (
@@ -21,6 +23,8 @@ const CustomBackgroundButton = (
 		iconColor?: string
 	},
 ) => {
+	const { loadingOverlay } = useContext(LoadingOverlayContext)
+	
 	return (
 		<Pressable
 			style={{
@@ -32,6 +36,7 @@ const CustomBackgroundButton = (
 				borderWidth: borderColor ? 1 : 0,
 			}}
 			onPress={props.onPress}
+			disabled={loadingOverlay.show || props.disabled}
 		>
 			<Icon
 				// @ts-expect-error icon type
