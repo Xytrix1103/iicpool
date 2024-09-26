@@ -4,17 +4,21 @@ import {
 	EmailAuthProvider,
 	GoogleAuthProvider,
 	linkWithCredential,
+	sendEmailVerification,
 	signInWithCredential,
 	signInWithEmailAndPassword,
 	unlink,
 } from 'firebase/auth'
+import { deleteField, doc, getDoc, runTransaction, updateDoc } from 'firebase/firestore'
 import FirebaseApp from '../components/FirebaseApp'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { Alert, ToastAndroid } from 'react-native'
 import firebase from 'firebase/compat'
 import { RegisterProps } from '../screens/Register'
 import { httpsCallable } from 'firebase/functions'
-import { Role } from '../database/schema'
+import { Profile, Role } from '../database/schema'
+import { useContext } from 'react'
+import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
+import { Timestamp } from '@firebase/firestore'
 import FirebaseError = firebase.FirebaseError
 
 GoogleSignin.configure({
@@ -22,36 +26,100 @@ GoogleSignin.configure({
 		'1036262039422-a4bpd0qk0pubffjg1s5fumgdh2h0jksh.apps.googleusercontent.com', // client ID of type WEB for your server (needed to verify user ID and offline access)
 })
 
-const { auth } = FirebaseApp
+const { auth, db, functions } = FirebaseApp
 
 const logout = async () => {
-	const { auth } = FirebaseApp
-	
-	await auth.signOut()
+	Alert.alert('Logout', 'Are you sure you want to logout?', [
+		{
+			text: 'Cancel',
+			style: 'cancel',
+		},
+		{
+			text: 'Logout',
+			onPress: async () => {
+				await backgroundLogout()
+			},
+		},
+	])
 }
 
-const register = (data: RegisterProps) => {
+const backgroundLogout = async ({ callback }: { callback?: () => void } = {}): Promise<void> => {
+	//delete fcm token
+	const user = auth.currentUser
+	
+	if (!user) {
+		return
+	}
+	
+	const userId = user.uid
+	const userRef = doc(db, 'users', userId)
+	
+	await auth
+		.signOut()
+		.then(async () => {
+			//check if user is mobile user or contractor
+			if (await getDoc(userRef).then((doc) => doc.exists())) {
+				await updateDoc(userRef, {
+					expoPushToken: deleteField(),
+				})
+			} else {
+				const contractorRef = doc(db, 'Contractors', userId)
+				await updateDoc(contractorRef, {
+					expoPushToken: deleteField(),
+				})
+			}
+			
+			if (callback) {
+				callback()
+			}
+			
+			console.log('logout -> success')
+		})
+		.catch((error: FirebaseError) => {
+			console.log('logout -> error', error)
+		})
+}
+
+const register = async (data: RegisterProps) => {
 	console.log('Register -> data sent', data)
 	
 	const { email, password } = data
+	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	
-	createUserWithEmailAndPassword(auth, email, password)
+	setLoadingOverlay({
+		show: true,
+		message: 'Registering...',
+	})
+	
+	await createUserWithEmailAndPassword(auth, email, password)
 		.then(async (userCredential) => {
 			console.log('Register -> userCredential', userCredential)
 			
-			//add user to users collection
-			const { db } = FirebaseApp
-			const docSnap = await getDoc(doc(db, 'users', userCredential.user.uid))
-			
-			if (!docSnap.exists()) {
-				await setDoc(doc(db, 'users', userCredential.user.uid), {
+			await runTransaction(db, async (transaction) => {
+				const userRef = doc(db, 'MobileUsers', userCredential.user.uid)
+				
+				transaction.set(userRef, {
 					full_name: '',
 					mobile_number: '',
 					roles: [Role.PASSENGER],
-					photo_url: userCredential.user.photoURL,
 					deleted: false,
+					notification_settings: {
+						new_rides: false,
+						ride_updates: false,
+						new_messages: false,
+						new_passengers: false,
+						booking_confirmation: false,
+						driver_registration: false,
+					},
+					created_at: Timestamp.now(),
+				} as Profile)
+			})
+				.then(() => {
+					console.log('Register -> success')
 				})
-			}
+				.catch(error => {
+					throw error
+				})
 		})
 		.catch((error: FirebaseError) => {
 			console.log('Register -> error', error)
@@ -62,11 +130,15 @@ const register = (data: RegisterProps) => {
 				Alert.alert('Error', 'An error occurred. Please try again later.')
 			}
 		})
+		.finally(() => {
+			setLoadingOverlay({
+				show: false,
+				message: '',
+			})
+		})
 }
 
 const login = (email: string, password: string) => {
-	const { auth } = FirebaseApp
-	
 	signInWithEmailAndPassword(auth, email, password)
 		.then(userCredential => {
 			console.log('Login -> userCredential', userCredential)
@@ -77,8 +149,6 @@ const login = (email: string, password: string) => {
 }
 
 const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; message: string; }) => void) => {
-	const { auth, db, functions } = FirebaseApp
-	
 	try {
 		// Check if Google Play Services are available
 		await GoogleSignin.hasPlayServices()
@@ -109,19 +179,11 @@ const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; 
 			.catch(error => {
 				const fbError = error as FirebaseError
 				console.log('Google login -> error', fbError)
-				// setLoadingOverlay({
-				// 	show: false,
-				// 	message: '',
-				// })
 				return fbError.code !== 'functions/not-found'
 			})
 		
 		if (!checkResult) {
 			Alert.alert('Error', 'Google account not linked to any account. Please sign in with your email and password.')
-			// setLoadingOverlay({
-			// 	show: false,
-			// 	message: '',
-			// })
 			return
 		}
 		
@@ -131,18 +193,31 @@ const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; 
 		// Sign-in the user with the credential
 		await signInWithCredential(auth, googleCredential)
 			.then(async userCredential => {
-				// If document does not exist, create a new document in the users collection
-				const docSnap = await getDoc(doc(db, 'users', userCredential.user.uid))
-				
-				if (!docSnap.exists()) {
-					await setDoc(doc(db, 'users', userCredential.user.uid), {
-						full_name: userCredential.user.displayName,
+				await runTransaction(db, async (transaction) => {
+					const userRef = doc(db, 'MobileUsers', userCredential.user.uid)
+					
+					transaction.set(userRef, {
+						full_name: userCredential.user.displayName ?? '',
 						mobile_number: userCredential.user.phoneNumber ?? '',
-						photo_url: userCredential.user.photoURL,
 						roles: [Role.PASSENGER],
 						deleted: false,
+						notification_settings: {
+							new_rides: false,
+							ride_updates: false,
+							new_messages: false,
+							new_passengers: false,
+							booking_confirmation: false,
+							driver_registration: false,
+						},
+						created_at: Timestamp.now(),
+					} as Profile)
+				})
+					.then(() => {
+						console.log('Google login -> success')
 					})
-				}
+					.catch(error => {
+						throw error
+					})
 			})
 			.catch(error => {
 				console.log('Google login -> error', error)
@@ -207,6 +282,20 @@ const unlinkGoogle = async () => {
 	return null
 }
 
+const sendVerificationEmail = async () => {
+	if (auth.currentUser) {
+		return await sendEmailVerification(auth.currentUser)
+	}
+}
+
 export {
-	login, logout, googleLogin, register, linkEmailPassword, linkGoogle, unlinkEmailPassword, unlinkGoogle,
+	login,
+	logout,
+	googleLogin,
+	register,
+	linkEmailPassword,
+	linkGoogle,
+	unlinkEmailPassword,
+	unlinkGoogle,
+	sendVerificationEmail,
 }
