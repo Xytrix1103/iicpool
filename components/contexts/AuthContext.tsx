@@ -82,13 +82,11 @@ const AuthProvider = ({ children }: any) => {
 				console.log('AuthProvider -> newUser', newUser)
 				
 				if (newUser) {
-					console.log('auth state changed, user is not null')
 					setLoading(true)
 				}
 				
 				if (!newUser) {
 					console.log('auth state changed, user is null')
-					
 					setUser(newUser)
 				} else {
 					console.log('auth state changed, user is not null')

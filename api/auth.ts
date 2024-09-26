@@ -96,7 +96,7 @@ const register = async (data: RegisterProps) => {
 			console.log('Register -> userCredential', userCredential)
 			
 			await runTransaction(db, async (transaction) => {
-				const userRef = doc(db, 'MobileUsers', userCredential.user.uid)
+				const userRef = doc(db, 'users', userCredential.user.uid)
 				
 				transaction.set(userRef, {
 					full_name: '',
@@ -194,7 +194,7 @@ const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; 
 		await signInWithCredential(auth, googleCredential)
 			.then(async userCredential => {
 				await runTransaction(db, async (transaction) => {
-					const userRef = doc(db, 'MobileUsers', userCredential.user.uid)
+					const userRef = doc(db, 'users', userCredential.user.uid)
 					
 					transaction.set(userRef, {
 						full_name: userCredential.user.displayName ?? '',
@@ -258,6 +258,8 @@ const linkGoogle = async () => {
 	}
 	
 	const googleCredential = GoogleAuthProvider.credential(userInfo.idToken)
+	
+	await GoogleSignin.signOut()
 	
 	if (auth.currentUser) {
 		return await linkWithCredential(auth.currentUser, googleCredential)
