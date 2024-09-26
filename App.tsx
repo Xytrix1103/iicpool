@@ -5,6 +5,7 @@ import NavigationContainer from '@react-navigation/native/src/NavigationContaine
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { AppState, Linking, LogBox, Platform, StyleSheet } from 'react-native'
+import { Profile as ProfileType, ProfileNotificationSettings } from './database/schema'
 import {
 	Poppins_400Regular as Poppins,
 	Poppins_500Medium as Poppins_Medium,
@@ -30,14 +31,12 @@ import ManageCar from './screens/ManageCar'
 import { ModeProvider } from './components/contexts/ModeContext'
 import AccountSetup from './screens/AccountSetup'
 import VerifyEmail from './screens/VerifyEmail'
-import { useNavigation } from '@react-navigation/native'
 import FirebaseApp from './components/FirebaseApp'
 import Constants from 'expo-constants'
 import * as Notifications from 'expo-notifications'
 import * as TaskManager from 'expo-task-manager'
 import Device from 'expo-device'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { ProfileNotificationSettings } from './database/schema'
+import { doc, getDoc, runTransaction, updateDoc } from 'firebase/firestore'
 
 const Stack = createNativeStackNavigator()
 
@@ -188,14 +187,6 @@ TaskManager.defineTask(
 	},
 )
 
-Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK)
-	.then(() =>
-		console.log('Background notification task registered successfully'),
-	)
-	.catch((error) =>
-		console.error('Error registering background notification task:', error),
-	)
-
 interface AreObjectsEqualProps<T extends object> {
 	obj1: T;
 	obj2: T;
@@ -219,11 +210,16 @@ const areObjectsEqual = <T extends object>({ obj1, obj2 }: AreObjectsEqualProps<
 }
 
 const compareNotificationSettings = async (userId: string, localSettings: ProfileNotificationSettings) => {
-	const userRef = doc(db, 'MobileUsers', userId)
+	const userRef = doc(db, 'users', userId)
 	const userDoc = await getDoc(userRef)
 	
 	if (userDoc.exists()) {
-		const dbSettings = userDoc.data().notification_settings as ProfileNotificationSettings
+		const dbSettings = userDoc.data().notification_settings as ProfileNotificationSettings | undefined
+		
+		if (!dbSettings) {
+			return false
+		}
+		
 		const areSettingsEqual = areObjectsEqual({ obj1: localSettings, obj2: dbSettings })
 		
 		console.log('Are notification settings equal:', areSettingsEqual)
@@ -286,6 +282,14 @@ const App = (): ReactElement => {
 				(response) => {
 					redirect(response.notification).then((r) => r)
 				},
+			)
+		
+		Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK)
+			.then(() =>
+				console.log('Background notification task registered successfully'),
+			)
+			.catch((error) =>
+				console.error('Error registering background notification task:', error),
 			)
 		
 		return () => {
@@ -377,28 +381,40 @@ const App = (): ReactElement => {
 
 const Routes = ({ expoPushToken }: { expoPushToken: string }) => {
 	const { loading, user, profile } = useContext(AuthContext)
-	const needsAccountSetup = !loading && user && profile && (
-		!profile.full_name || !profile.mobile_number
-	)
+	const needsAccountSetup = !profile?.full_name || !profile?.mobile_number || !profile?.photo_url
 	const { notificationSettings } = useNotificationSettings()
-	const navigation = useNavigation()
 	
 	//add expo push token to user profile in firestore if it is not empty and user is logged in
 	useEffect(() => {
 		if (user && profile && expoPushToken) {
 			const userId = user.uid.toString()
-			const userRef = doc(db, 'MobileUsers', userId)
+			const userRef = doc(db, 'users', userId);
 			
-			updateDoc(userRef, { expoPushToken })
-				.then(() => {
-					console.log('Expo push token added to user profile')
+			(async () => {
+				await runTransaction(db, async (transaction) => {
+					const userDoc = await getDoc(userRef)
+					
+					if (userDoc.exists()) {
+						const userDocData = userDoc.data() as ProfileType
+						
+						if (userDocData) {
+							const oldExpoPushToken = userDocData.expoPushToken
+							if (oldExpoPushToken !== expoPushToken) {
+								transaction.update(userRef, {
+									expoPushToken,
+								})
+								console.log('Expo push token updated')
+							}
+						}
+					}
 				})
-				.catch((error) => {
-					console.error(
-						'Error adding expo push token to user profile',
-						error,
-					)
-				})
+					.catch((error) => {
+						console.error(
+							'Error adding expo push token to user profile:',
+							error,
+						)
+					})
+			})()
 		}
 	}, [user, expoPushToken, profile])
 	
@@ -411,7 +427,7 @@ const Routes = ({ expoPushToken }: { expoPushToken: string }) => {
 			await compareNotificationSettings(user.uid, notificationSettings)
 				.then((areEqual) => {
 					if (!areEqual) {
-						updateDoc(doc(db, 'MobileUsers/' + user.uid), {
+						updateDoc(doc(db, 'users/' + user.uid), {
 							notification_settings: notificationSettings,
 						})
 							.then(() => {
@@ -430,15 +446,6 @@ const Routes = ({ expoPushToken }: { expoPushToken: string }) => {
 				})
 		})()
 	}, [notificationSettings, profile, user])
-	
-	useEffect(() => {
-		if (needsAccountSetup) {
-			//@ts-expect-error navigation type
-			navigation.navigate('AccountSetup')
-		}
-		
-		auth.currentUser?.reload().then(r => r)
-	}, [needsAccountSetup, navigation])
 	
 	return (
 		<Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
