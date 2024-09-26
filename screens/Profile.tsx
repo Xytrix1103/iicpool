@@ -236,9 +236,9 @@ const Profile = () => {
 									onChangeText={() => null}
 									rightIcon={
 										user?.emailVerified ? (
-											<Icon name="check" size={24} color="green" />
+											<Icon name="check-decagram" size={24} color="green" />
 										) : (
-											<Icon name="alert-circle" size={24} color="darkred" />
+											<Icon name="alert-circle-outline" size={24} color="darkred" />
 										)
 									}
 								/>
