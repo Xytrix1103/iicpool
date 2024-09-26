@@ -29,8 +29,13 @@ import Cars from './screens/Cars'
 import ManageCar from './screens/ManageCar'
 import { ModeProvider } from './components/contexts/ModeContext'
 import AccountSetup from './screens/AccountSetup'
+import VerifyEmail from './screens/VerifyEmail'
+import { useNavigation } from '@react-navigation/native'
+import FirebaseApp from './components/FirebaseApp'
 
 const Stack = createNativeStackNavigator()
+
+const { auth } = FirebaseApp
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -152,6 +157,16 @@ const Routes = () => {
 	const needsAccountSetup = !loading && user && profile && (
 		!profile.full_name || !profile.mobile_number
 	)
+	const navigation = useNavigation()
+	
+	useEffect(() => {
+		if (needsAccountSetup) {
+			//@ts-expect-error navigation type
+			navigation.navigate('AccountSetup')
+		}
+		
+		auth.currentUser?.reload().then(r => r)
+	}, [needsAccountSetup, navigation])
 	
 	return (
 		<Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
@@ -167,6 +182,7 @@ const Routes = () => {
 						              initialParams={{ type: 'update' }} />
 						<Stack.Screen name="Cars" component={Cars} />
 						<Stack.Screen name="ManageCar" component={ManageCar} />
+						<Stack.Screen name="VerifyEmail" component={VerifyEmail} />
 					</> :
 					<Stack.Screen name="AccountSetup" component={AccountSetup} />
 			) : (

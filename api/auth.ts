@@ -4,6 +4,7 @@ import {
 	EmailAuthProvider,
 	GoogleAuthProvider,
 	linkWithCredential,
+	sendEmailVerification,
 	signInWithCredential,
 	signInWithEmailAndPassword,
 	unlink,
@@ -207,6 +208,20 @@ const unlinkGoogle = async () => {
 	return null
 }
 
+const sendVerificationEmail = async () => {
+	if (auth.currentUser) {
+		return await sendEmailVerification(auth.currentUser)
+	}
+}
+
 export {
-	login, logout, googleLogin, register, linkEmailPassword, linkGoogle, unlinkEmailPassword, unlinkGoogle,
+	login,
+	logout,
+	googleLogin,
+	register,
+	linkEmailPassword,
+	linkGoogle,
+	unlinkEmailPassword,
+	unlinkGoogle,
+	sendVerificationEmail,
 }
