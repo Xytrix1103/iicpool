@@ -5,6 +5,7 @@ import { doc, getDoc, onSnapshot } from 'firebase/firestore'
 import { Profile } from '../../database/schema'
 import { httpsCallable } from 'firebase/functions'
 import { Alert } from 'react-native'
+import { backgroundLogout } from '../../api/auth'
 
 const AuthContext = createContext<AuthContextType>({
 	loading: true,
@@ -129,15 +130,24 @@ const AuthProvider = ({ children }: any) => {
 										setUser(newUser)
 									}
 								})
-								.catch((error) => {
+								.catch(async (error) => {
 									console.log('AuthProvider -> error', error)
 									
-									auth.signOut()
-										.then(() => {
+									await backgroundLogout({
+										callback: () => {
 											setUser(null)
+										},
+									})
+										.then(() => {
+											console.log(
+												'AuthProvider -> success',
+											)
 										})
 										.catch((error) => {
-											console.log('AuthProvider -> error', error)
+											console.log(
+												'AuthProvider -> error',
+												error,
+											)
 										})
 								})
 						}
@@ -152,15 +162,22 @@ const AuthProvider = ({ children }: any) => {
 									setUser(newUser)
 								}
 							})
-							.catch((error) => {
+							.catch(async (error) => {
 								console.log('AuthProvider -> error', error)
 								
-								auth.signOut()
-									.then(() => {
+								await backgroundLogout({
+									callback: () => {
 										setUser(null)
+									},
+								})
+									.then(() => {
+										console.log('AuthProvider -> success')
 									})
 									.catch((error) => {
-										console.log('AuthProvider -> error', error)
+										console.log(
+											'AuthProvider -> error',
+											error,
+										)
 									})
 							})
 					}
@@ -171,15 +188,19 @@ const AuthProvider = ({ children }: any) => {
 			async (error) => {
 				console.log('AuthProvider -> error', error)
 				
-				auth.signOut()
-					.then(() => {
+				setIsAttachingListener(false)
+				
+				await backgroundLogout({
+					callback: () => {
 						setUser(null)
+					},
+				})
+					.then(() => {
+						console.log('AuthProvider -> success')
 					})
 					.catch((error) => {
 						console.log('AuthProvider -> error', error)
 					})
-				
-				setIsAttachingListener(false)
 			},
 		)
 		
@@ -199,32 +220,68 @@ const AuthProvider = ({ children }: any) => {
 			refreshUserRecord().then(r => r)
 			
 			unsubscribe = onSnapshot(doc(db, 'users', user.uid),
-				(snapshot) => {
+				async (snapshot) => {
 					if (snapshot.exists()) {
-						//account for bad internet connection by comparing last sign in time and account created time
-						const data = snapshot.data() as Profile
-						setProfile(data)
+						setProfile(snapshot.data() as Profile)
 						setLoading(false)
 					} else {
-						auth.signOut()
-							.then(() => {
-								setProfile(null)
-								setLoading(false)
-							})
-							.catch((error) => {
-								console.log('AuthProvider -> error', error)
-							})
-						
-						Alert.alert('Error', 'User not found')
+						//check metadata if user is new, because there is a delay in firestore
+						if (
+							user?.metadata.creationTime &&
+							user?.metadata.lastSignInTime
+						) {
+							const creationTime = new Date(
+								user.metadata.creationTime,
+							)
+							const lastSignInTime = new Date(
+								user.metadata.lastSignInTime,
+							)
+							
+							if (
+								Math.abs(
+									creationTime.getTime() -
+									lastSignInTime.getTime(),
+								) > 15000
+							) {
+								await backgroundLogout({
+									callback: () => {
+										setProfile(null)
+										setLoading(false)
+									},
+								})
+									.then(() => {
+										console.log('AuthProvider -> success')
+									})
+									.catch((error) => {
+										console.log(
+											'AuthProvider -> error',
+											error,
+										)
+									})
+									.finally(() => {
+										Alert.alert(
+											'Error',
+											'User not found',
+										)
+									})
+							} else {
+								console.log('new user')
+							}
+						}
 					}
 				},
-				(error) => {
+				async (error) => {
 					console.log('AuthProvider -> error', error)
-					auth.signOut()
-						.then(() => {
+					
+					await backgroundLogout({
+						callback: () => {
 							setUser(null)
 							setProfile(null)
 							setLoading(false)
+						},
+					})
+						.then(() => {
+							console.log('AuthProvider -> success')
 						})
 						.catch((error) => {
 							console.log('AuthProvider -> error', error)
@@ -233,7 +290,6 @@ const AuthProvider = ({ children }: any) => {
 			)
 		} else {
 			setProfile(null)
-			setUserRecord(null)
 			setLoading(false)
 		}
 		
@@ -243,10 +299,6 @@ const AuthProvider = ({ children }: any) => {
 			}
 		}
 	}, [user, refreshUserRecord, isAttachingListener])
-	
-	useEffect(() => {
-		console.log('AuthProvider -> user', !!user, 'profile', profile, 'loading', loading)
-	}, [user, profile, loading])
 	
 	return (
 		<AuthContext.Provider value={{ loading, setLoading, user, profile, userRecord, refreshUserRecord }}>

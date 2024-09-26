@@ -298,4 +298,5 @@ export {
 	unlinkEmailPassword,
 	unlinkGoogle,
 	sendVerificationEmail,
+	backgroundLogout,
 }
