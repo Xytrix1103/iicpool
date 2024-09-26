@@ -3,10 +3,15 @@ import React, { ReactElement, useContext } from 'react'
 import { GestureResponderEvent } from 'react-native'
 import { LoadingOverlayContext } from '../contexts/LoadingOverlayContext'
 
-const CustomOutlinedButton = ({ children, onPress }: {
-	children: ReactElement | string,
-	onPress: ((e: GestureResponderEvent) => void) | undefined
-}) => {
+const CustomOutlinedButton = (
+	{
+		children, onPress, textSize, paddingVertical = 5,
+	}: {
+		children: ReactElement | string,
+		onPress: ((e: GestureResponderEvent) => void) | undefined,
+		textSize?: number,
+		paddingVertical?: number,
+	}) => {
 	const { colors } = useTheme()
 	const { loadingOverlay } = useContext(LoadingOverlayContext)
 	
@@ -15,7 +20,9 @@ const CustomOutlinedButton = ({ children, onPress }: {
 			mode="outlined"
 			onPress={onPress}
 			labelStyle={{
-				paddingVertical: 5,
+				fontSize: textSize,
+				color: colors.primary,
+				paddingVertical: paddingVertical,
 			}}
 			style={{
 				flex: 1,

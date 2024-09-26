@@ -6,9 +6,10 @@ import { FC } from 'react'
 type CustomTextButtonProps = {
 	onPress: () => void
 	children: string
+	size?: number
 }
 
-const CustomTextButton: FC<CustomTextButtonProps> = ({ children, onPress, ...props }) => {
+const CustomTextButton: FC<CustomTextButtonProps> = ({ children, onPress, size = 16, ...props }) => {
 	const { colors } = useTheme()
 	
 	return (
@@ -19,7 +20,7 @@ const CustomTextButton: FC<CustomTextButtonProps> = ({ children, onPress, ...pro
 			]}
 			onPress={onPress}
 		>
-			<CustomText size={16} bold color={colors.primary}>
+			<CustomText size={size} bold color={colors.primary}>
 				{children}
 			</CustomText>
 		</TouchableOpacity>

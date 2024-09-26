@@ -1,5 +1,5 @@
 import CustomLayout from '../components/themed/CustomLayout'
-import { Alert, StyleSheet, ToastAndroid, View } from 'react-native'
+import { Alert, Pressable, StyleSheet, ToastAndroid, View } from 'react-native'
 import { Controller, useForm } from 'react-hook-form'
 import CustomInput from '../components/themed/CustomInput'
 import { useContext, useEffect, useState } from 'react'
@@ -14,10 +14,13 @@ import CustomHeader from '../components/themed/CustomHeader'
 import { linkGoogle, unlinkEmailPassword, unlinkGoogle } from '../api/auth'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import CustomIconButton from '../components/themed/CustomIconButton'
+import * as ImagePicker from 'expo-image-picker'
+import { getDownloadURL, ref as storageRef, uploadBytesResumable } from 'firebase/storage'
 
 type ProfileData = {
 	full_name: string
 	mobile_number: string
+	photo_uri: string
 }
 
 const { db } = FirebaseApp
@@ -26,6 +29,7 @@ const Profile = () => {
 	const { profile, user, userRecord, refreshUserRecord } = useContext(AuthContext)
 	const userRef = doc(db, 'users', user?.uid || '')
 	const [isEditing, setIsEditing] = useState(false)
+	const [isEditingImage, setIsEditingImage] = useState(false)
 	const navigation = useNavigation()
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	
@@ -34,6 +38,7 @@ const Profile = () => {
 	
 	const form = useForm<ProfileData>({
 		defaultValues: {
+			photo_uri: '',
 			full_name: '',
 			mobile_number: '',
 		},
@@ -47,34 +52,101 @@ const Profile = () => {
 			message: 'Updating Profile',
 		})
 		
-		await updateDoc(userRef, {
-			full_name: data.full_name,
-			mobile_number: data.mobile_number,
-		})
-			.then(() => {
-				console.log('Profile Updated')
-				Alert.alert('Profile Updated', 'Your profile has been updated successfully.')
-				setIsEditing(false)
-			})
-			.catch((error) => {
-				console.error('Error updating profile: ', error)
-			})
-			.finally(() => {
-				refreshUserRecord()
-				setLoadingOverlay({ show: false, message: '' })
-			})
+		const blob = await (await fetch(data.photo_uri)).blob()
+		
+		const newStorageRef = storageRef(FirebaseApp.storage, `users/${user?.uid}.png`)
+		
+		const uploadTask = uploadBytesResumable(newStorageRef, blob)
+		
+		uploadTask.on('state_changed',
+			(snapshot) => {
+				const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+				console.log('Upload is ' + progress + '% done')
+			},
+			(error) => {
+				console.error('Error uploading image: ', error)
+			},
+			async () => {
+				await getDownloadURL(uploadTask.snapshot.ref)
+					.then(async (downloadURL) => {
+						console.log('File available at', downloadURL)
+						
+						await updateDoc(userRef, {
+							full_name: data.full_name,
+							mobile_number: data.mobile_number,
+							photo_url: downloadURL,
+						})
+							.then(() => {
+								console.log('Profile Updated')
+								Alert.alert('Profile Updated', 'Your profile has been updated successfully.')
+								setIsEditing(false)
+							})
+							.catch((error) => {
+								console.error('Error updating profile: ', error)
+							})
+							.finally(() => {
+								refreshUserRecord()
+								setLoadingOverlay({ show: false, message: '' })
+							})
+					})
+					.catch((error) => {
+						console.error('Error getting download URL: ', error)
+					})
+			},
+		)
 	}
 	
 	const {
 		handleSubmit,
 		formState: { errors },
 		setValue,
+		watch,
+		reset,
 	} = form
 	
 	useEffect(() => {
+		setValue('photo_uri', profile?.photo_url || '')
 		setValue('full_name', profile?.full_name || '')
 		setValue('mobile_number', profile?.mobile_number || '')
 	}, [profile])
+	
+	const watchPhotoUri = watch('photo_uri')
+	
+	const handleLibrary = async () => {
+		const result = await ImagePicker.launchImageLibraryAsync({
+			mediaTypes: ImagePicker.MediaTypeOptions.Images,
+			allowsEditing: true,
+			aspect: [4, 3],
+			quality: 1,
+		})
+		
+		if (!result.canceled) {
+			form.setValue('photo_uri', result.assets[0].uri)
+		}
+	}
+	
+	const handleCamera = async () => {
+		const result = await ImagePicker.launchCameraAsync({
+			mediaTypes: ImagePicker.MediaTypeOptions.Images,
+			allowsEditing: true,
+			aspect: [4, 3],
+			quality: 1,
+		})
+		
+		if (!result.canceled) {
+			form.setValue('photo_uri', result.assets[0].uri)
+		}
+	}
+	
+	useEffect(() => {
+		if (!isEditing) {
+			reset({
+				full_name: profile?.full_name || '',
+				mobile_number: profile?.mobile_number || '',
+				photo_uri: profile?.photo_url || '',
+			})
+		}
+	}, [isEditing])
 	
 	return (
 		<CustomLayout
@@ -92,7 +164,8 @@ const Profile = () => {
 							alignItems: 'center',
 						}]}>
 							{
-								!isEditing && <CustomIconButton
+								!isEditing &&
+								<CustomIconButton
 									icon="car"
 									onPress={() => {
 										//@ts-ignore
@@ -115,19 +188,39 @@ const Profile = () => {
 			<View style={style.mainContent}>
 				<View style={[style.column, { gap: 20 }]}>
 					<View style={[style.row, { justifyContent: 'center' }]}>
-						<Avatar.Image
-							source={
-								profile?.photo_url ? { uri: profile.photo_url } :
-									user?.photoURL ? { uri: user.photoURL } :
+						<Pressable
+							onPress={() => {
+								isEditing ? setIsEditingImage(!isEditingImage) : null
+							}}
+						>
+							<Avatar.Image
+								source={
+									watchPhotoUri ?
+										{ uri: watchPhotoUri } :
 										(props: { size: number }) => {
 											return <Icon name="account-circle" size={props.size} />
 										}
-							}
-							style={{
-								backgroundColor: 'transparent',
-							}}
-							size={160}
-						/>
+								}
+								style={{
+									backgroundColor: 'transparent',
+								}}
+								size={200}
+							/>
+							{(isEditingImage && isEditing) && (
+								<View style={style.overlay}>
+									<CustomIconButton
+										icon="camera"
+										onPress={handleCamera}
+										iconColor="white"
+									/>
+									<CustomIconButton
+										icon="image"
+										onPress={handleLibrary}
+										iconColor="white"
+									/>
+								</View>
+							)}
+						</Pressable>
 					</View>
 					<View style={style.row}>
 						<View style={[style.column, { gap: 10 }]}>
@@ -414,6 +507,19 @@ const style = StyleSheet.create({
 		width: '100%',
 		justifyContent: 'center',
 		alignItems: 'center',
+	},
+	overlay: {
+		position: 'absolute',
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		backgroundColor: 'rgba(0, 0, 0, 0.5)',
+		justifyContent: 'center',
+		alignItems: 'center',
+		flexDirection: 'row',
+		gap: 10,
+		borderRadius: 100,
 	},
 })
 
