@@ -15,11 +15,10 @@ import { Alert, ToastAndroid } from 'react-native'
 import firebase from 'firebase/compat'
 import { RegisterProps } from '../screens/Register'
 import { httpsCallable } from 'firebase/functions'
-import { Profile, Role } from '../database/schema'
+import { Profile, ProfileNotificationSettings, Role } from '../database/schema'
 import { useContext } from 'react'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import { Timestamp } from '@firebase/firestore'
-import { useNotificationSettings } from '../components/contexts/NotificationContext'
 import FirebaseError = firebase.FirebaseError
 
 GoogleSignin.configure({
@@ -81,12 +80,18 @@ const backgroundLogout = async ({ callback }: { callback?: () => void } = {}): P
 		})
 }
 
-const register = async (data: RegisterProps) => {
+const register = async (
+	{
+		data,
+		notificationSettings,
+	}: {
+		data: RegisterProps
+		notificationSettings: ProfileNotificationSettings
+	}) => {
 	console.log('Register -> data sent', data)
 	
 	const { email, password } = data
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
-	const { notificationSettings } = useNotificationSettings()
 	
 	setLoadingOverlay({
 		show: true,
@@ -143,12 +148,26 @@ const login = (email: string, password: string) => {
 		})
 }
 
-const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; message: string; }) => void) => {
-	const { notificationSettings } = useNotificationSettings()
-	
+const googleLogin = async (
+	{
+		setLoadingOverlay,
+		notificationSettings,
+	}: {
+		setLoadingOverlay: (loadingOverlay: { show: boolean; message: string }) => void
+		notificationSettings: ProfileNotificationSettings
+	},
+) => {
 	try {
 		// Check if Google Play Services are available
-		await GoogleSignin.hasPlayServices()
+		const hasPlayServices = await GoogleSignin.hasPlayServices()
+		
+		console.log('Google login -> hasPlayServices', hasPlayServices)
+		
+		if (!hasPlayServices) {
+			ToastAndroid.show('Google Play Services are not available.', ToastAndroid.SHORT)
+			return
+		}
+		
 		//if user is signed in, sign out to allow user to prevent automatic sign in
 		await GoogleSignin.signOut()
 		
@@ -192,6 +211,10 @@ const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; 
 			.then(async userCredential => {
 				await runTransaction(db, async (transaction) => {
 					const userRef = doc(db, 'users', userCredential.user.uid)
+					
+					if (await getDoc(userRef).then((doc) => doc.exists())) {
+						return
+					}
 					
 					transaction.set(userRef, {
 						full_name: userCredential.user.displayName ?? '',
@@ -278,6 +301,26 @@ const sendVerificationEmail = async () => {
 	if (auth.currentUser) {
 		return await sendEmailVerification(auth.currentUser)
 	}
+}
+
+const deleteAccount = async () => {
+	return await runTransaction(db, async (transaction) => {
+		const userRef = doc(db, 'users', auth.currentUser?.uid ?? '')
+		
+		transaction.update(userRef, {
+			deleted_at: Timestamp.now(),
+		})
+	})
+		.then(() => {
+			console.log('deleteAccount -> success')
+			
+			return auth.currentUser?.delete()
+		})
+		.catch(error => {
+			console.log('deleteAccount -> error', error)
+			
+			return
+		})
 }
 
 export {

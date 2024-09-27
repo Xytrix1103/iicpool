@@ -35,7 +35,7 @@ import FirebaseApp from './components/FirebaseApp'
 import Constants from 'expo-constants'
 import * as Notifications from 'expo-notifications'
 import * as TaskManager from 'expo-task-manager'
-import Device from 'expo-device'
+import * as Device from 'expo-device'
 import { doc, getDoc, runTransaction, updateDoc } from 'firebase/firestore'
 import Settings from './screens/Settings'
 
@@ -188,6 +188,14 @@ TaskManager.defineTask(
 	},
 )
 
+Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK)
+	.then(() =>
+		console.log('Background notification task registered successfully'),
+	)
+	.catch((error) =>
+		console.error('Error registering background notification task:', error),
+	)
+
 interface AreObjectsEqualProps<T extends object> {
 	obj1: T;
 	obj2: T;
@@ -247,7 +255,9 @@ const App = (): ReactElement => {
 				setExpoPushToken(token ?? '')
 				console.log({ token })
 			})
-			.catch((error: string) => setExpoPushToken(`${error}`))
+			.catch((error: string) => {
+				console.error('Error getting push token:', error)
+			})
 		
 		notificationListener.current =
 			Notifications.addNotificationReceivedListener((notification) => {
@@ -283,14 +293,6 @@ const App = (): ReactElement => {
 				(response) => {
 					redirect(response.notification).then((r) => r)
 				},
-			)
-		
-		Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK)
-			.then(() =>
-				console.log('Background notification task registered successfully'),
-			)
-			.catch((error) =>
-				console.error('Error registering background notification task:', error),
 			)
 		
 		return () => {
@@ -332,7 +334,7 @@ const App = (): ReactElement => {
 		}
 		
 		if (!isReady) {
-			restoreState().then(r => r)
+			restoreState().then((r) => r)
 		}
 	}, [isReady])
 	

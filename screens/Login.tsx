@@ -11,6 +11,7 @@ import CustomLayout from '../components/themed/CustomLayout'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import CustomInput from '../components/themed/CustomInput'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
+import { useNotificationSettings } from '../components/contexts/NotificationContext'
 
 const onSubmit = async (data: any) => {
 	const { email, password } = data
@@ -20,6 +21,7 @@ const onSubmit = async (data: any) => {
 const Login = () => {
 	const { colors } = useTheme()
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
+	const { notificationSettings } = useNotificationSettings()
 	
 	const {
 		control,
@@ -120,7 +122,7 @@ const Login = () => {
 							<Button
 								mode="elevated"
 								icon="google"
-								onPress={() => googleLogin(setLoadingOverlay)}
+								onPress={() => googleLogin({ setLoadingOverlay, notificationSettings })}
 								buttonColor={colors.primary}
 								labelStyle={{
 									marginVertical: 10,
