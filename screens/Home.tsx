@@ -30,40 +30,51 @@ const Home = () => {
 					isHome={true}
 					title="Home"
 					rightNode={
-						profile?.roles.includes(Role.DRIVER) &&
-						<Menu
-							visible={visible}
-							onDismiss={() => {
-								setVisible(false)
-							}}
-							anchorPosition="bottom"
-							style={{ marginTop: 40 }} // Add margin to avoid overlap
-							anchor={
-								<CustomIconButton
-									icon={mode === 'driver' ? 'steering' : 'seat-passenger'}
-									onPress={() => {
-										setVisible(true)
+						<View style={[style.row, { gap: 10, width: 'auto' }]}>
+							{
+								profile?.roles.includes(Role.DRIVER) &&
+								<Menu
+									visible={visible}
+									onDismiss={() => {
+										setVisible(false)
 									}}
-								/>
+									anchorPosition="bottom"
+									style={{ marginTop: 40 }} // Add margin to avoid overlap
+									anchor={
+										<CustomIconButton
+											icon={mode === 'driver' ? 'steering' : 'seat-passenger'}
+											onPress={() => {
+												setVisible(true)
+											}}
+										/>
+									}
+								>
+									<Menu.Item
+										leadingIcon="seat-passenger"
+										title="Passenger Mode"
+										onPress={() => {
+											setMode(Role.PASSENGER)
+											setVisible(false)
+										}}
+									/>
+									<Menu.Item
+										leadingIcon="steering"
+										title="Driver Mode"
+										onPress={() => {
+											setMode(Role.DRIVER)
+											setVisible(false)
+										}}
+									/>
+								</Menu>
 							}
-						>
-							<Menu.Item
-								leadingIcon="seat-passenger"
-								title="Passenger Mode"
+							<CustomIconButton
+								icon="cog"
 								onPress={() => {
-									setMode(Role.PASSENGER)
-									setVisible(false)
+									// @ts-ignore
+									navigation.navigate('Settings')
 								}}
 							/>
-							<Menu.Item
-								leadingIcon="steering"
-								title="Driver Mode"
-								onPress={() => {
-									setMode(Role.DRIVER)
-									setVisible(false)
-								}}
-							/>
-						</Menu>
+						</View>
 					}
 				/>
 			}

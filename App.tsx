@@ -37,6 +37,7 @@ import * as Notifications from 'expo-notifications'
 import * as TaskManager from 'expo-task-manager'
 import Device from 'expo-device'
 import { doc, getDoc, runTransaction, updateDoc } from 'firebase/firestore'
+import Settings from './screens/Settings'
 
 const Stack = createNativeStackNavigator()
 
@@ -462,6 +463,7 @@ const Routes = ({ expoPushToken }: { expoPushToken: string }) => {
 						<Stack.Screen name="Cars" component={Cars} />
 						<Stack.Screen name="ManageCar" component={ManageCar} />
 						<Stack.Screen name="VerifyEmail" component={VerifyEmail} />
+						<Stack.Screen name="Settings" component={Settings} />
 					</> :
 					<Stack.Screen name="AccountSetup" component={AccountSetup} />
 			) : (

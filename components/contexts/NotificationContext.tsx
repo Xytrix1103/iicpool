@@ -27,7 +27,6 @@ const NotificationSettingsProvider: React.FC<
 			new_messages: false,
 			new_passengers: false,
 			booking_confirmation: false,
-			driver_registration: false,
 		})
 	
 	useEffect(() => {
@@ -52,7 +51,6 @@ const NotificationSettingsProvider: React.FC<
 							new_messages: false,
 							new_passengers: false,
 							booking_confirmation: false,
-							driver_registration: false,
 						})
 					}
 				}

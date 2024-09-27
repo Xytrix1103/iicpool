@@ -6,7 +6,6 @@ type ProfileNotificationSettings = {
 	new_messages: boolean;
 	new_passengers: boolean;
 	booking_confirmation: boolean;
-	driver_registration: boolean;
 }
 
 type Profile = {

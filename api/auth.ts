@@ -19,6 +19,7 @@ import { Profile, Role } from '../database/schema'
 import { useContext } from 'react'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import { Timestamp } from '@firebase/firestore'
+import { useNotificationSettings } from '../components/contexts/NotificationContext'
 import FirebaseError = firebase.FirebaseError
 
 GoogleSignin.configure({
@@ -85,6 +86,7 @@ const register = async (data: RegisterProps) => {
 	
 	const { email, password } = data
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
+	const { notificationSettings } = useNotificationSettings()
 	
 	setLoadingOverlay({
 		show: true,
@@ -103,14 +105,7 @@ const register = async (data: RegisterProps) => {
 					mobile_number: '',
 					roles: [Role.PASSENGER],
 					deleted: false,
-					notification_settings: {
-						new_rides: false,
-						ride_updates: false,
-						new_messages: false,
-						new_passengers: false,
-						booking_confirmation: false,
-						driver_registration: false,
-					},
+					notification_settings: notificationSettings,
 					created_at: Timestamp.now(),
 				} as Profile)
 			})
@@ -149,6 +144,8 @@ const login = (email: string, password: string) => {
 }
 
 const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; message: string; }) => void) => {
+	const { notificationSettings } = useNotificationSettings()
+	
 	try {
 		// Check if Google Play Services are available
 		await GoogleSignin.hasPlayServices()
@@ -201,14 +198,7 @@ const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; 
 						mobile_number: userCredential.user.phoneNumber ?? '',
 						roles: [Role.PASSENGER],
 						deleted: false,
-						notification_settings: {
-							new_rides: false,
-							ride_updates: false,
-							new_messages: false,
-							new_passengers: false,
-							booking_confirmation: false,
-							driver_registration: false,
-						},
+						notification_settings: notificationSettings,
 						created_at: Timestamp.now(),
 					} as Profile)
 				})
