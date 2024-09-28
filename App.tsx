@@ -39,6 +39,8 @@ import * as Device from 'expo-device'
 import { doc, getDoc, runTransaction, updateDoc } from 'firebase/firestore'
 import Settings from './screens/Settings'
 import { StatusBar, StatusBarStyle } from 'expo-status-bar'
+import FindRides from './screens/FindRides'
+import MyRides from './screens/MyRides'
 
 const Stack = createNativeStackNavigator()
 
@@ -477,6 +479,8 @@ const Routes = ({ expoPushToken }: { expoPushToken: string }) => {
 						<Stack.Screen name="ManageCar" component={ManageCar} />
 						<Stack.Screen name="VerifyEmail" component={VerifyEmail} />
 						<Stack.Screen name="Settings" component={Settings} />
+						<Stack.Screen name="FindRides" component={FindRides} />
+						<Stack.Screen name="MyRides" component={MyRides} />
 					</> :
 					<Stack.Screen name="AccountSetup" component={AccountSetup} />
 			) : (

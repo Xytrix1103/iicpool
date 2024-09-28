@@ -1,10 +1,10 @@
 import { createContext, useEffect, useState } from 'react'
 import { Role } from '../../database/schema'
-import SecureStore from 'expo-secure-store'
+import * as SecureStore from 'expo-secure-store'
 
 const ModeContext = createContext<{
-	mode: string,
-	setMode: (mode: string) => void
+	mode: Role,
+	setMode: (mode: Role) => void
 }>({
 	mode: Role.PASSENGER,
 	setMode: () => {
@@ -12,13 +12,15 @@ const ModeContext = createContext<{
 })
 
 const ModeProvider = ({ children }: { children: any }) => {
-	const [mode, setMode] = useState<string>(Role.PASSENGER)
+	const [mode, setMode] = useState<Role>(Role.PASSENGER)
 	
 	useEffect(() => {
 		//write to expo secure store
 		(async () => {
-			const role = await SecureStore.getItemAsync('role')
+			const role = await SecureStore.getItemAsync('role') as Role
+			
 			if (role) {
+				console.log('Role found', role)
 				setMode(role)
 			}
 		})()
@@ -29,6 +31,7 @@ const ModeProvider = ({ children }: { children: any }) => {
 		(async () => {
 			const currentRole = await SecureStore.getItemAsync('role')
 			if (currentRole !== mode) {
+				console.log('Role changed', mode)
 				await SecureStore.setItemAsync('role', mode)
 			}
 		})()

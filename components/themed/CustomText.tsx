@@ -1,4 +1,4 @@
-import { DimensionValue, Text } from 'react-native'
+import { DimensionValue, Text, TextProps } from 'react-native'
 import { ReactNode } from 'react'
 
 export type CustomTextProps = {
@@ -9,7 +9,7 @@ export type CustomTextProps = {
 	width?: string;
 	align?: 'center' | 'left' | 'right';
 	numberOflines?: number;
-}
+} & TextProps
 
 const CustomText = (
 	{
@@ -19,8 +19,9 @@ const CustomText = (
 		color = 'black',
 		width = 'auto',
 		align = 'left',
-		numberOflines = 1,
+		...props
 	}: CustomTextProps) => {
+	
 	return (
 		<Text
 			style={{
@@ -29,11 +30,15 @@ const CustomText = (
 				fontWeight: bold ? 'bold' : 'normal',
 				width: width as DimensionValue,
 				textAlign: align,
-				overflow: numberOflines > 1 ? 'hidden' : 'visible',
+				overflow: (props.numberOflines ?? 0) > 1 ? 'hidden' : 'visible',
 			}}
-			numberOfLines={numberOflines}
+			numberOfLines={props.numberOflines}
 		>
-			{children}
+			<Text
+				{...props}
+			>
+				{children}
+			</Text>
 		</Text>
 	)
 }

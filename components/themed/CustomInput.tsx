@@ -56,9 +56,8 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 	const usedValue = editable ? inputRef.current?.value : value
 	
 	useEffect(() => {
-		if (editable && value) {
-			// @ts-expect-error inputRef current value
-			inputRef.current.value = value
+		if (editable && value !== undefined) {
+			inputRef.current?.setNativeProps({ text: value })
 		}
 	}, [value, editable])
 	
