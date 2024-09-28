@@ -1,8 +1,8 @@
 import { IconButtonProps } from 'react-native-paper'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
-import { Pressable } from 'react-native'
+import { Pressable, View } from 'react-native'
 import { LoadingOverlayContext } from '../contexts/LoadingOverlayContext'
-import { useContext } from 'react'
+import { ReactNode, useContext } from 'react'
 
 //override style margin to 0
 const CustomBackgroundButton = (
@@ -13,6 +13,7 @@ const CustomBackgroundButton = (
 		borderRadius,
 		elevation,
 		borderColor,
+		children,
 		...props
 	}: IconButtonProps & {
 		padding?: number;
@@ -20,30 +21,39 @@ const CustomBackgroundButton = (
 		borderRadius?: number;
 		elevation?: number,
 		borderColor?: string,
-		iconColor?: string
+		iconColor?: string,
+		children?: ReactNode
 	},
 ) => {
 	const { loadingOverlay } = useContext(LoadingOverlayContext)
 	
 	return (
 		<Pressable
-			style={{
-				backgroundColor: backgroundColor,
-				padding: padding,
-				borderRadius: borderRadius,
-				elevation: elevation,
-				borderColor: borderColor,
-				borderWidth: borderColor ? 1 : 0,
-			}}
 			onPress={props.onPress}
 			disabled={loadingOverlay.show || props.disabled}
 		>
-			<Icon
-				// @ts-expect-error icon type
-				name={props.icon}
-				size={props.size}
-				color={iconColor}
-			/>
+			<View
+				style={{
+					backgroundColor: backgroundColor,
+					padding: padding,
+					borderRadius: borderRadius,
+					elevation: elevation,
+					borderColor: borderColor,
+					borderWidth: borderColor ? 1 : 0,
+					flexDirection: 'column',
+					justifyContent: 'center',
+					alignItems: 'center',
+					gap: 5,
+				}}
+			>
+				<Icon
+					// @ts-expect-error icon type
+					name={props.icon}
+					size={props.size}
+					color={iconColor}
+				/>
+				{children}
+			</View>
 		</Pressable>
 	)
 }
