@@ -9,6 +9,7 @@ import RegisterStep1 from './RegisterComponents/RegisterStep1'
 import RegisterStep2 from './RegisterComponents/RegisterStep2'
 import CustomOutlinedButton from '../components/themed/CustomOutlinedButton'
 import CustomSolidButton from '../components/themed/CustomSolidButton'
+import { useNotificationSettings } from '../components/contexts/NotificationContext'
 
 const handleNext = (step: number, setStep: (step: number) => void, trigger: UseFormTrigger<RegisterProps>, steps: StepProps[]) => {
 	console.log('Next')
@@ -54,6 +55,7 @@ const Register = () => {
 			password_confirmation: '',
 		},
 	})
+	const { notificationSettings } = useNotificationSettings()
 	
 	const {
 		handleSubmit,
@@ -87,6 +89,10 @@ const Register = () => {
 			component: <RegisterStep2 form={form} style={style} />,
 		},
 	]
+	
+	const onSubmit = async (data: RegisterProps) => {
+		return await register({ data, notificationSettings })
+	}
 	
 	return (
 		<CustomLayout
@@ -127,7 +133,7 @@ const Register = () => {
 					{
 						step === steps?.length ?
 							<CustomSolidButton
-								onPress={handleSubmit(register)}
+								onPress={handleSubmit(onSubmit)}
 							>
 								Register
 							</CustomSolidButton> :

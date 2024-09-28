@@ -189,6 +189,14 @@ TaskManager.defineTask(
 	},
 )
 
+Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK)
+	.then(() =>
+		console.log('Background notification task registered successfully'),
+	)
+	.catch((error) =>
+		console.error('Error registering background notification task:', error),
+	)
+
 interface AreObjectsEqualProps<T extends object> {
 	obj1: T;
 	obj2: T;
@@ -288,14 +296,6 @@ const App = (): ReactElement => {
 				},
 			)
 		
-		Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK)
-			.then(() =>
-				console.log('Background notification task registered successfully'),
-			)
-			.catch((error) =>
-				console.error('Error registering background notification task:', error),
-			)
-		
 		return () => {
 			isMounted = false
 			subscription.remove()
@@ -335,7 +335,7 @@ const App = (): ReactElement => {
 		}
 		
 		if (!isReady) {
-			restoreState().then(r => r)
+			restoreState().then((r) => r)
 		}
 	}, [isReady])
 	

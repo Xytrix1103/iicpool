@@ -3,12 +3,20 @@ import { createContext, useEffect, useState } from 'react'
 import { ActivityIndicator } from 'react-native-paper'
 import { Modal, StyleSheet, Text, View } from 'react-native'
 
-const LoadingOverlayContext = createContext({
+type LoadingOverlayContextType = {
+	loadingOverlay: {
+		show: boolean,
+		message: string,
+	},
+	setLoadingOverlay: (loadingOverlay: { show: boolean, message: string }) => void
+}
+
+const LoadingOverlayContext = createContext<LoadingOverlayContextType>({
 	loadingOverlay: {
 		show: false,
 		message: '',
 	},
-	setLoadingOverlay: (loadingOverlay: { show: boolean; message: string }) => {
+	setLoadingOverlay: (loadingOverlay: { show: boolean; message: string; }) => {
 	},
 })
 
