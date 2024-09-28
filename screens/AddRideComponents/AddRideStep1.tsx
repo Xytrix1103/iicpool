@@ -1,4 +1,4 @@
-import { Pressable, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import CustomInput from '../../components/themed/CustomInput'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps'
@@ -13,11 +13,11 @@ import { DirectionsObject, RideFormType } from './types'
 import CustomInputAutoComplete from './CustomInputAutoComplete'
 import CustomLayout from '../../components/themed/CustomLayout'
 import CustomIconButton from '../../components/themed/CustomIconButton'
+import style from '../../styles/shared'
 
 
 const AddRideStep1 = (
 	{
-		style,
 		form,
 		colors,
 		toCampus,
@@ -30,7 +30,6 @@ const AddRideStep1 = (
 		setDirections,
 		autocompleteRef,
 	}: {
-		style: any,
 		form: UseFormReturn<RideFormType>,
 		colors: MD3Colors,
 		toCampus: boolean,
@@ -305,7 +304,7 @@ const AddRideStep1 = (
 					showMap &&
 					<MapView
 						provider={PROVIDER_GOOGLE}
-						style={[style.map]}
+						style={[localStyle.map]}
 						showsBuildings={true}
 						showsUserLocation={true}
 						ref={mapRef}
@@ -352,5 +351,13 @@ const AddRideStep1 = (
 		</CustomLayout>
 	)
 }
+
+const localStyle = StyleSheet.create({
+	map: {
+		width: '100%',
+		height: '100%',
+		alignSelf: 'center',
+	},
+})
 
 export default AddRideStep1

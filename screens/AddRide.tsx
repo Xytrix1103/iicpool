@@ -1,5 +1,5 @@
-import React, { useContext, useRef, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import React, { useContext, useEffect, useRef, useState } from 'react'
+import { View } from 'react-native'
 import CustomLayout from '../components/themed/CustomLayout'
 import { useTheme } from 'react-native-paper'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
@@ -13,11 +13,16 @@ import CustomSolidButton from '../components/themed/CustomSolidButton'
 import CustomOutlinedButton from '../components/themed/CustomOutlinedButton'
 import { GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete'
 import AddRideStep2 from './AddRideComponents/AddRideStep2'
-import { collection, doc, runTransaction } from 'firebase/firestore'
+import { collection, doc, onSnapshot, query, runTransaction, where } from 'firebase/firestore'
 import FirebaseApp from '../components/FirebaseApp'
 import { AuthContext } from '../components/contexts/AuthContext'
-import { Ride } from '../database/schema'
+import { Car, Ride } from '../database/schema'
 import { Timestamp } from '@firebase/firestore'
+import style from '../styles/shared'
+import CustomModal from '../components/themed/CustomModal'
+import CustomHeading from '../components/themed/CustomHeading'
+import CustomText from '../components/themed/CustomText'
+import CustomTextButton from '../components/themed/CustomTextButton'
 
 const { db } = FirebaseApp
 
@@ -32,6 +37,8 @@ const AddRide = () => {
 	const [step, setStep] = useState(1)
 	const [showMap, setShowMap] = useState(true)
 	const [directions, setDirections] = useState<DirectionsObject | null>(null)
+	const [cars, setCars] = useState<Car[]>([])
+	const carsRef = query(collection(db, 'cars'), where('owner', '==', user?.uid), where('deleted_at', '==', null))
 	
 	const form = useForm<RideFormType>({
 		defaultValues: {
@@ -95,6 +102,64 @@ const AddRide = () => {
 			})
 	}
 	
+	const steps = [
+		{
+			title: 'Step 1: Pick-Up Location',
+			component: (
+				<AddRideStep1
+					form={form}
+					toCampus={toCampus}
+					setToCampus={setToCampus}
+					setLoadingOverlay={setLoadingOverlay}
+					wrapPermissions={wrapPermissions}
+					colors={colors}
+					directions={directions}
+					setDirections={setDirections}
+					showMap={showMap}
+					setShowMap={setShowMap}
+					autocompleteRef={autocompleteRef}
+				/>
+			),
+		},
+		{
+			title: 'Step 2: Pick-Up Date & Time',
+			component: (
+				<AddRideStep2
+					form={form}
+					colors={colors}
+					toCampus={toCampus}
+					cars={cars}
+				/>
+			),
+		},
+	]
+	
+	useEffect(() => {
+		const unsubscribe = onSnapshot(carsRef, snapshot => {
+			const cars: Car[] = []
+			
+			snapshot.forEach(doc => {
+				const data = doc.data() as Car
+				cars.push({
+					...data,
+					id: doc.id,
+				})
+			})
+			
+			setCars(cars)
+		})
+		
+		return () => unsubscribe()
+	}, [])
+	
+	useEffect(() => {
+		console.log('cars', cars)
+		
+		if (cars.length > 0) {
+			form.setValue('car', cars[0].id)
+		}
+	}, [cars])
+	
 	return (
 		<CustomLayout
 			scrollable={false}
@@ -121,66 +186,44 @@ const AddRide = () => {
 			}
 		>
 			<View style={style.mainContent}>
-				{step === 1 && (
-					<AddRideStep1
-						form={form}
-						style={style}
-						toCampus={toCampus}
-						setToCampus={setToCampus}
-						setLoadingOverlay={setLoadingOverlay}
-						wrapPermissions={wrapPermissions}
-						colors={colors}
-						directions={directions}
-						setDirections={setDirections}
-						showMap={showMap}
-						setShowMap={setShowMap}
-						autocompleteRef={autocompleteRef}
-					/>
-				)}
-				{step === 2 && (
-					<AddRideStep2
-						form={form}
-						style={style}
-						colors={colors}
-						toCampus={toCampus}
-						setLoadingOverlay={setLoadingOverlay}
-						wrapPermissions={wrapPermissions}
-						directions={directions}
-					/>
-				)}
+				{
+					cars.length > 0 ?
+						steps[step - 1].component :
+						<CustomModal
+							visible={true}
+							style={{
+								elevation: 10,
+								borderWidth: 1,
+								padding: 20,
+								borderRadius: 40,
+								backgroundColor: colors.background,
+							}}
+						>
+							<View style={[style.column, { gap: 30, justifyContent: 'center' }]}>
+								<View style={[style.row, { gap: 10 }]}>
+									<View style={[style.column, { gap: 10 }]}>
+										<CustomHeading size={20}>
+											Register Car
+										</CustomHeading>
+										<CustomText size={14} numberOfLines={2}>
+											Please register your car before adding a ride
+										</CustomText>
+									</View>
+								</View>
+								<View style={[style.row, { gap: 10, justifyContent: 'center' }]}>
+									<CustomTextButton
+										// @ts-ignore
+										onPress={() => navigation.navigate('Cars')}
+									>
+										Continue
+									</CustomTextButton>
+								</View>
+							</View>
+						</CustomModal>
+				}
 			</View>
 		</CustomLayout>
 	)
 }
-
-const style = StyleSheet.create({
-	container: {
-		flex: 1,
-		width: '100%',
-		height: '100%',
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-	map: {
-		width: '100%',
-		height: '100%',
-		alignSelf: 'center',
-	},
-	row: {
-		flexDirection: 'row',
-		width: '100%',
-		alignItems: 'center',
-	},
-	column: {
-		flexDirection: 'column',
-		width: '100%',
-	},
-	mainContent: {
-		flex: 1,
-		width: '100%',
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-})
 
 export default AddRide
