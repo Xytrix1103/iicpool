@@ -1,68 +1,27 @@
 import CustomText from '../../components/themed/CustomText'
 import CustomLayout from '../../components/themed/CustomLayout'
 import { Controller, UseFormReturn } from 'react-hook-form'
-import { DirectionsObject, RideFormType } from './types'
+import { RideFormType } from './types'
 import { MD3Colors } from 'react-native-paper/lib/typescript/types'
 import { Pressable, View } from 'react-native'
 import CustomInput from '../../components/themed/CustomInput'
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { RadioButton } from 'react-native-paper'
 import { Car } from '../../database/schema'
-import { useContext, useEffect, useState } from 'react'
-import { collection, onSnapshot, query, where } from 'firebase/firestore'
-import FirebaseApp from '../../components/FirebaseApp'
-import { AuthContext } from '../../components/contexts/AuthContext'
-
-const { db } = FirebaseApp
+import style from '../../styles/shared'
 
 const AddRideStep2 = (
 	{
-		style,
 		form,
 		colors,
 		toCampus,
+		cars,
 	}: {
-		style: any,
 		form: UseFormReturn<RideFormType>
 		colors: MD3Colors,
 		toCampus: boolean,
-		setLoadingOverlay: ({ show, message }: { show: boolean, message: string }) => void,
-		wrapPermissions: ({ operation, type, message }: {
-			operation: () => Promise<void>;
-			type: 'notifications' | 'location' | 'camera';
-			message: string;
-		}) => Promise<void>,
-		directions: DirectionsObject | null,
+		cars: Car[],
 	}) => {
-	const { user } = useContext(AuthContext)
-	const [cars, setCars] = useState<Car[]>([])
-	const carsRef = query(collection(db, 'cars'), where('owner', '==', user?.uid), where('deleted_at', '==', null))
-	
-	useEffect(() => {
-		const unsubscribe = onSnapshot(carsRef, snapshot => {
-			const cars: Car[] = []
-			
-			snapshot.forEach(doc => {
-				const data = doc.data() as Car
-				cars.push({
-					...data,
-					id: doc.id,
-				})
-			})
-			
-			setCars(cars)
-		})
-		
-		return () => unsubscribe()
-	}, [])
-	
-	useEffect(() => {
-		console.log('cars', cars)
-		
-		if (cars.length > 0) {
-			form.setValue('car', cars[0].id)
-		}
-	}, [cars])
 	
 	const watchCar = form.watch('car')
 	console.log('watchCar', watchCar)
