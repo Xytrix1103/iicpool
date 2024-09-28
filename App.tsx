@@ -38,6 +38,7 @@ import * as TaskManager from 'expo-task-manager'
 import Device from 'expo-device'
 import { doc, getDoc, runTransaction, updateDoc } from 'firebase/firestore'
 import Settings from './screens/Settings'
+import { StatusBar, StatusBarStyle } from 'expo-status-bar'
 
 const Stack = createNativeStackNavigator()
 
@@ -362,6 +363,16 @@ const App = (): ReactElement => {
 											<SafeAreaView
 												style={style.safeArea}
 											>
+												<StatusBar
+													style={
+														'dark' as StatusBarStyle
+													}
+													hidden={false}
+													translucent={false}
+													backgroundColor={
+														'transparent'
+													}
+												/>
 												<Routes
 													expoPushToken={
 														expoPushToken
