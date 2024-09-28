@@ -16,8 +16,6 @@ import firebase from 'firebase/compat'
 import { RegisterProps } from '../screens/Register'
 import { httpsCallable } from 'firebase/functions'
 import { Profile, ProfileNotificationSettings, Role } from '../database/schema'
-import { useContext } from 'react'
-import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import { Timestamp } from '@firebase/firestore'
 import FirebaseError = firebase.FirebaseError
 
@@ -79,14 +77,15 @@ const register = async (
 	{
 		data,
 		notificationSettings,
+		setLoadingOverlay,
 	}: {
 		data: RegisterProps
-		notificationSettings: ProfileNotificationSettings
+		notificationSettings: ProfileNotificationSettings,
+		setLoadingOverlay: (loadingOverlay: { show: boolean; message: string }) => void
 	}) => {
 	console.log('Register -> data sent', data)
 	
 	const { email, password } = data
-	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	
 	setLoadingOverlay({
 		show: true,
@@ -105,7 +104,6 @@ const register = async (
 					mobile_number: '',
 					roles: [Role.PASSENGER],
 					deleted: false,
-					expoPushTokens: [],
 					notification_settings: notificationSettings,
 					created_at: Timestamp.now(),
 				} as Profile)
@@ -114,6 +112,7 @@ const register = async (
 					console.log('Register -> success')
 				})
 				.catch(error => {
+					console.log('Register -> error', error)
 					throw error
 				})
 		})
@@ -217,7 +216,6 @@ const googleLogin = async (
 						mobile_number: userCredential.user.phoneNumber ?? '',
 						roles: [Role.PASSENGER],
 						deleted: false,
-						expoPushTokens: [],
 						notification_settings: notificationSettings,
 						created_at: Timestamp.now(),
 					} as Profile)

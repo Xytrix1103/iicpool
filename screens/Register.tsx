@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useState } from 'react'
+import React, { ReactElement, useContext, useEffect, useState } from 'react'
 import { useForm, UseFormResetField, UseFormTrigger } from 'react-hook-form'
 import { Alert, StyleSheet, View } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
@@ -10,6 +10,7 @@ import RegisterStep2 from './RegisterComponents/RegisterStep2'
 import CustomOutlinedButton from '../components/themed/CustomOutlinedButton'
 import CustomSolidButton from '../components/themed/CustomSolidButton'
 import { useNotificationSettings } from '../components/contexts/NotificationContext'
+import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 
 const handleNext = (step: number, setStep: (step: number) => void, trigger: UseFormTrigger<RegisterProps>, steps: StepProps[]) => {
 	console.log('Next')
@@ -65,6 +66,7 @@ const Register = () => {
 	} = form
 	
 	const navigation = useNavigation()
+	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	
 	const [step, setStep] = useState(1)
 	
@@ -91,7 +93,13 @@ const Register = () => {
 	]
 	
 	const onSubmit = async (data: RegisterProps) => {
-		return await register({ data, notificationSettings })
+		return await register({ data, notificationSettings, setLoadingOverlay })
+			.then(() => {
+				console.log('Register -> success')
+			})
+			.catch((error) => {
+				console.log('Register -> error', error)
+			})
 	}
 	
 	return (

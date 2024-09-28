@@ -33,6 +33,17 @@ const AccountSetup = () => {
 	const { watch, handleSubmit } = form
 	const watchImage = watch('photo_uri')
 	
+	const steps = [
+		{
+			header: 'Profile Picture',
+			component: <AccountSetupStep1 form={form} />,
+		},
+		{
+			header: 'Personal Details',
+			component: <AccountSetupStep2 form={form} />,
+		},
+	]
+	
 	const onSubmit = async (data: { photo_uri: string, full_name: string, mobile_number: string }) => {
 		console.log(data)
 		
@@ -115,7 +126,7 @@ const AccountSetup = () => {
 				<View style={[style.row, { marginBottom: 40 }]}>
 					<View style={[style.column, { gap: 10 }]}>
 						<CustomHeading size={18}>
-							{`Step ${step} of 2: ${step === 1 ? 'Profile Picture' : 'Personal Details'}`}
+							{steps?.[step - 1]?.header}
 						</CustomHeading>
 						<ProgressBar
 							progress={step === 1 ? 0.5 : 1}
@@ -127,14 +138,7 @@ const AccountSetup = () => {
 						/>
 					</View>
 				</View>
-				{
-					step === 1 &&
-					<AccountSetupStep1 form={form} />
-				}
-				{
-					step === 2 &&
-					<AccountSetupStep2 form={form} />
-				}
+				{steps?.[step - 1]?.component}
 			</View>
 		</CustomLayout>
 	)

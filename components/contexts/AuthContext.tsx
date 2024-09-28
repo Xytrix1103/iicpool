@@ -79,8 +79,6 @@ const AuthProvider = ({ children }: any) => {
 		const unsubscribe = onAuthStateChanged(
 			auth,
 			async (newUser) => {
-				console.log('AuthProvider -> newUser', newUser)
-				
 				if (newUser) {
 					setLoading(true)
 				}
@@ -99,9 +97,7 @@ const AuthProvider = ({ children }: any) => {
 						const creationTime = new Date(
 							newUser.metadata.creationTime,
 						)
-						const lastSignInTime = new Date(
-							newUser.metadata.lastSignInTime,
-						)
+						const lastSignInTime = new Date()
 						
 						console.log('creationTime', creationTime)
 						console.log('lastSignInTime', lastSignInTime)
@@ -215,10 +211,10 @@ const AuthProvider = ({ children }: any) => {
 		}
 		
 		if (user) {
-			refreshUserRecord().then(r => r)
-			
 			unsubscribe = onSnapshot(doc(db, 'users', user.uid),
 				async (snapshot) => {
+					refreshUserRecord().then(r => r)
+					
 					if (snapshot.exists()) {
 						setProfile(snapshot.data() as Profile)
 						setLoading(false)

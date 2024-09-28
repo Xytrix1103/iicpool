@@ -33,6 +33,7 @@ type Car = {
 }
 
 type Ride = {
+	id?: string
 	driver: string
 	passengers: string[]
 	to_campus: boolean
@@ -50,6 +51,7 @@ type Ride = {
 			},
 		},
 	}
+	deleted_at?: Timestamp | null
 }
 
 enum Role {

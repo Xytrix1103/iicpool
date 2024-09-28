@@ -47,11 +47,7 @@ const RegisterStep1 = (
 												color="green"
 												size={24}
 											/> :
-											<Icon
-												name="close"
-												color="darkred"
-												size={24}
-											/>
+											<Icon name="close" onPress={() => onChange('')} size={24} />
 										: null
 								}
 							/>
