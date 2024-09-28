@@ -128,7 +128,6 @@ const ModeSwitch = (
 	}, [toggleRight])
 	
 	const buttonStyle = {
-		height: buttonWidth,
 		width: buttonWidth,
 		backgroundColor: buttonColor,
 		borderWidth: buttonBorderWidth ? buttonBorderWidth : 0,

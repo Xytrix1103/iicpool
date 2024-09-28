@@ -35,13 +35,13 @@ import FirebaseApp from './components/FirebaseApp'
 import Constants from 'expo-constants'
 import * as Notifications from 'expo-notifications'
 import * as TaskManager from 'expo-task-manager'
-import Device from 'expo-device'
+import * as Device from 'expo-device'
 import { doc, getDoc, runTransaction, updateDoc } from 'firebase/firestore'
 import Settings from './screens/Settings'
 
 const Stack = createNativeStackNavigator()
 
-const { auth, db } = FirebaseApp
+const { db } = FirebaseApp
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -247,7 +247,9 @@ const App = (): ReactElement => {
 				setExpoPushToken(token ?? '')
 				console.log({ token })
 			})
-			.catch((error: string) => setExpoPushToken(`${error}`))
+			.catch((error: string) => {
+				console.error('Error getting push token:', error)
+			})
 		
 		notificationListener.current =
 			Notifications.addNotificationReceivedListener((notification) => {

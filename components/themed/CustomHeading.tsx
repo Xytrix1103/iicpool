@@ -2,7 +2,7 @@ import { useTheme } from 'react-native-paper'
 import { Text } from 'react-native'
 
 const CustomHeading = ({ size = 24, children }: {
-	size: number,
+	size?: number,
 	children: string
 }) => {
 	const { colors } = useTheme()

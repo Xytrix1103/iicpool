@@ -63,11 +63,6 @@ const backgroundLogout = async ({ callback }: { callback?: () => void } = {}): P
 				await updateDoc(userRef, {
 					expoPushToken: deleteField(),
 				})
-			} else {
-				const contractorRef = doc(db, 'Contractors', userId)
-				await updateDoc(contractorRef, {
-					expoPushToken: deleteField(),
-				})
 			}
 			
 			if (callback) {
@@ -105,6 +100,7 @@ const register = async (data: RegisterProps) => {
 					mobile_number: '',
 					roles: [Role.PASSENGER],
 					deleted: false,
+					expoPushTokens: [],
 					notification_settings: notificationSettings,
 					created_at: Timestamp.now(),
 				} as Profile)
@@ -198,6 +194,7 @@ const googleLogin = async (setLoadingOverlay: (loadingOverlay: { show: boolean; 
 						mobile_number: userCredential.user.phoneNumber ?? '',
 						roles: [Role.PASSENGER],
 						deleted: false,
+						expoPushTokens: [],
 						notification_settings: notificationSettings,
 						created_at: Timestamp.now(),
 					} as Profile)
