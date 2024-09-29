@@ -67,6 +67,7 @@ const AddRideStep1 = (
 					setValue('campus', {
 						place_id: response.data.results[0].place_id,
 						formatted_address: address,
+						name: response.data.results[0].name || CAMPUS_NAME,
 						geometry: {
 							location: {
 								lat: response.data.results[0].geometry.location.lat,
@@ -93,6 +94,7 @@ const AddRideStep1 = (
 		setValue('not_campus', {
 			place_id: details.place_id,
 			formatted_address: details.formatted_address,
+			name: details.name || details.formatted_address,
 			geometry: {
 				location: {
 					lat: details.geometry.location.lat,
@@ -220,6 +222,7 @@ const AddRideStep1 = (
 												setValue('not_campus', {
 													place_id: '',
 													formatted_address: '',
+													name: '',
 													geometry: {
 														location: {
 															lat: 0,
@@ -263,6 +266,7 @@ const AddRideStep1 = (
 												setValue('not_campus', {
 													place_id: '',
 													formatted_address: '',
+													name: '',
 													geometry: {
 														location: {
 															lat: 0,

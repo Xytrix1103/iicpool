@@ -37,7 +37,7 @@ const AddRide = () => {
 	const [step, setStep] = useState(1)
 	const [showMap, setShowMap] = useState(true)
 	const [directions, setDirections] = useState<DirectionsObject | null>(null)
-	const [cars, setCars] = useState<Car[]>([])
+	const [cars, setCars] = useState<Car[] | null>(null)
 	const carsRef = query(collection(db, 'cars'), where('owner', '==', user?.uid), where('deleted_at', '==', null))
 	
 	const form = useForm<RideFormType>({
@@ -46,6 +46,7 @@ const AddRide = () => {
 			campus: {
 				place_id: '',
 				formatted_address: '',
+				name: '',
 				geometry: {
 					location: {
 						lat: 0,
@@ -56,6 +57,7 @@ const AddRide = () => {
 			not_campus: {
 				place_id: '',
 				formatted_address: '',
+				name: '',
 				geometry: {
 					location: {
 						lat: 0,
@@ -68,7 +70,7 @@ const AddRide = () => {
 		},
 	})
 	
-	const { handleSubmit } = form
+	const { handleSubmit, setValue } = form
 	
 	const onSubmit = async (data: RideFormType) => {
 		console.log('Submit', data)
@@ -128,7 +130,7 @@ const AddRide = () => {
 					form={form}
 					colors={colors}
 					toCampus={toCampus}
-					cars={cars}
+					cars={cars ?? []}
 				/>
 			),
 		},
@@ -155,8 +157,13 @@ const AddRide = () => {
 	useEffect(() => {
 		console.log('cars', cars)
 		
-		if (cars.length > 0) {
-			form.setValue('car', cars[0].id)
+		if (cars) {
+			if (cars.length > 0) {
+				setValue('car', cars[0].id)
+			}
+			setLoadingOverlay({ show: false, message: '' })
+		} else {
+			setLoadingOverlay({ show: true, message: 'Loading cars...' })
 		}
 	}, [cars])
 	
@@ -187,10 +194,10 @@ const AddRide = () => {
 		>
 			<View style={style.mainContent}>
 				{
-					cars.length > 0 ?
+					cars && ((cars?.length || 0) > 0) ?
 						steps[step - 1].component :
 						<CustomModal
-							visible={true}
+							visible={cars ? cars.length === 0 : false}
 							style={{
 								elevation: 10,
 								borderWidth: 1,
