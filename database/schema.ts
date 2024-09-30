@@ -9,10 +9,11 @@ type ProfileNotificationSettings = {
 }
 
 type Profile = {
+	id?: string;
 	roles: Role[];
 	full_name: string;
 	mobile_number: string;
-	photo_url?: string;
+	photo_url: string;
 	deleted: boolean;
 	expoPushToken?: string;
 	notification_settings: ProfileNotificationSettings;
@@ -41,7 +42,8 @@ type Ride = {
 	available_seats: number
 	datetime: Timestamp
 	created_at: Timestamp
-	location?: {
+	completed_at: Timestamp | null
+	location: {
 		place_id: string
 		formatted_address: string
 		name: string
@@ -52,7 +54,7 @@ type Ride = {
 			},
 		},
 	}
-	deleted_at?: Timestamp | null
+	deleted_at: Timestamp | null
 }
 
 enum Role {

@@ -11,6 +11,7 @@ import CustomText from '../components/themed/CustomText'
 import CustomHeader from '../components/themed/CustomHeader'
 import CustomIconButton from '../components/themed/CustomIconButton'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
+import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 
 const { db } = FirebaseApp
 
@@ -60,16 +61,17 @@ const RideComponent = ({ ride }: { ride: Ride }) => {
 				height: '100%',
 			}]}>
 				<Icon name="car" size={20} color="black" />
-				<CustomText align="center" bold>{ride.available_seats}</CustomText>
+				<CustomText align="center" bold>{(ride.passengers ?? []).length}/{ride.available_seats}</CustomText>
 			</View>
 		</View>
 	)
 }
 
 const MyRides = () => {
-	const [rides, setRides] = useState<Ride[]>([])
+	const [rides, setRides] = useState<Ride[] | null>(null)
 	const navigation = useNavigation()
 	const { user } = useContext(AuthContext)
+	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	
 	useEffect(() => {
 		let unsubscribe: () => void
@@ -90,6 +92,16 @@ const MyRides = () => {
 			}
 		)
 	}, [])
+	
+	useEffect(() => {
+		console.log('rides', rides)
+		
+		if (rides) {
+			setLoadingOverlay({ show: false, message: '' })
+		} else {
+			setLoadingOverlay({ show: true, message: 'Loading cars...' })
+		}
+	}, [rides])
 	
 	
 	return (
@@ -114,7 +126,7 @@ const MyRides = () => {
 			<View style={style.mainContent}>
 				<View style={style.column}>
 					{
-						rides.length > 0 ? (
+						rides && ((rides?.length || 0) > 0) ? (
 							rides.map(ride => (
 								<RideComponent key={ride.id} ride={ride} />
 							))

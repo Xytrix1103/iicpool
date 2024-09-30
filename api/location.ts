@@ -67,6 +67,36 @@ function decodePolyline(encoded: string): LatLng[] {
 	return coordinates
 }
 
+const fetchCampusLocation = async (
+	{
+		address,
+		callback,
+	}: {
+		address: string,
+		callback?: (location: any) => void,
+	},
+) => {
+	const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${GMAPS_API_KEY}`
+	
+	try {
+		const response = await axios.get(url, {
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		})
+		
+		if (response) {
+			console.log('Campus location:', response.data.results[0])
+			
+			if (callback) {
+				callback(response.data.results[0])
+			}
+		}
+	} catch (error) {
+		console.error('Error fetching address:', error)
+	}
+}
+
 interface GeocodedWaypoint {
 	geocoder_status: string;
 	place_id: string;
@@ -141,4 +171,5 @@ export {
 	getDirections,
 	decodePolyline,
 	DirectionsResponse,
+	fetchCampusLocation,
 }

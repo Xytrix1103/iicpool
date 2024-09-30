@@ -2,12 +2,11 @@ import { Pressable, StyleSheet, View } from 'react-native'
 import CustomInput from '../../components/themed/CustomInput'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps'
-import React, { MutableRefObject, useCallback, useEffect, useRef, useState } from 'react'
+import React, { MutableRefObject, useEffect, useRef, useState } from 'react'
 import { UseFormReturn } from 'react-hook-form'
 import { MD3Colors } from 'react-native-paper/lib/typescript/types'
 import { GooglePlaceDetail, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete'
-import { CAMPUS_NAME, decodePolyline, getDirections, GMAPS_API_KEY } from '../../api/location'
-import axios from 'axios'
+import { CAMPUS_NAME, decodePolyline, fetchCampusLocation, getDirections } from '../../api/location'
 import * as Location from 'expo-location'
 import { DirectionsObject, RideFormType } from './types'
 import CustomInputAutoComplete from './CustomInputAutoComplete'
@@ -50,39 +49,6 @@ const AddRideStep1 = (
 	const mapRef = useRef<MapView | null>(null)
 	const { setValue, watch } = form
 	
-	const fetchCampusLocation = useCallback(
-		async (address: string) => {
-			const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${GMAPS_API_KEY}`
-			
-			try {
-				const response = await axios.get(url, {
-					headers: {
-						'Content-Type': 'application/json',
-					},
-				})
-				
-				if (response) {
-					console.log('Campus location:', response.data.results[0])
-					
-					setValue('campus', {
-						place_id: response.data.results[0].place_id,
-						formatted_address: address,
-						name: response.data.results[0].name || CAMPUS_NAME,
-						geometry: {
-							location: {
-								lat: response.data.results[0].geometry.location.lat,
-								lng: response.data.results[0].geometry.location.lng,
-							},
-						},
-					})
-				}
-			} catch (error) {
-				console.error('Error fetching address:', error)
-			}
-		},
-		[],
-	)
-	
 	const watchNotCampus = watch('not_campus')
 	const watchCampus = watch('campus')
 	
@@ -114,7 +80,22 @@ const AddRideStep1 = (
 				message: 'Fetching location...',
 			})
 			
-			await fetchCampusLocation(CAMPUS_NAME)
+			await fetchCampusLocation({
+				address: CAMPUS_NAME,
+				callback: (location) => {
+					setValue('campus', {
+						place_id: location.place_id,
+						formatted_address: CAMPUS_NAME,
+						name: CAMPUS_NAME,
+						geometry: {
+							location: {
+								lat: location.geometry.location.lat,
+								lng: location.geometry.location.lng,
+							},
+						},
+					})
+				},
+			})
 			
 			await wrapPermissions({
 				operation: async () => {
