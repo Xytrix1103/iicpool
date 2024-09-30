@@ -33,7 +33,7 @@ const CustomAppbar = () => {
 		<Appbar style={style.appbar}>
 			<View style={style.buttonsContainer}>
 				<CustomAppbarItem
-					icon="compass"
+					icon="compass-outline"
 					text="Home"
 					active={route === 'Home'}
 					onPress={() => {
@@ -43,7 +43,7 @@ const CustomAppbar = () => {
 					}}
 				/>
 				<CustomAppbarItem
-					icon="script-text"
+					icon="script-text-outline"
 					text="Activity"
 					active={route === 'Activity'}
 					onPress={() => {
