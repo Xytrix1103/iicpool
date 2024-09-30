@@ -44,6 +44,7 @@ type Ride = {
 	location?: {
 		place_id: string
 		formatted_address: string
+		name: string
 		geometry: {
 			location: {
 				lat: number

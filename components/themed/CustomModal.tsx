@@ -12,6 +12,7 @@ type CustomModalProps = {
 
 const CustomModal = ({ visible, onClose, children, style: customStyle }: CustomModalProps) => {
 	return (
+		visible &&
 		<View style={style.mainContent}>
 			<View style={[style.column, customStyle]}>
 				<View style={[style.row, { justifyContent: 'flex-end', alignItems: 'center' }]}>
@@ -19,7 +20,7 @@ const CustomModal = ({ visible, onClose, children, style: customStyle }: CustomM
 						onClose && <CustomIconButton icon="close" onPress={onClose} />
 					}
 				</View>
-				{visible && children}
+				{children}
 			</View>
 		</View>
 	)

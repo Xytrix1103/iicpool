@@ -3,6 +3,7 @@ import { LatLng } from 'react-native-maps'
 type RideFormTypeSingle = {
 	place_id: string
 	formatted_address: string
+	name: string
 	geometry: {
 		location: {
 			lat: number
