@@ -1,5 +1,5 @@
 import React, { useContext } from 'react'
-import { View } from 'react-native'
+import { Alert, View } from 'react-native'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import CustomText from '../../components/themed/CustomText'
 import style from '../../styles/shared'
@@ -8,6 +8,7 @@ import { Avatar } from 'react-native-paper'
 import { AuthContext } from '../../components/contexts/AuthContext'
 import { arrayUnion, doc, runTransaction } from 'firebase/firestore'
 import FirebaseApp from '../../components/FirebaseApp'
+import CustomIconButton from '../../components/themed/CustomIconButton'
 
 type PassengersListComponentProps = {
 	ride: Ride,
@@ -19,14 +20,29 @@ const { db } = FirebaseApp
 const PassengersListComponent: React.FC<PassengersListComponentProps> = ({ ride, passengers }) => {
 	const { user } = useContext(AuthContext)
 	
-	const handleBookRide = async () => {
-		await runTransaction(db, async (transaction) => {
-			const rideRef = doc(db, 'rides', ride?.id || '')
-			
-			transaction.update(rideRef, {
-				passengers: arrayUnion(user?.uid),
-			})
-		})
+	const handleBookRide = () => {
+		Alert.alert(
+			'Book Ride',
+			'Are you sure you want to book this ride?',
+			[
+				{
+					text: 'Cancel',
+					style: 'cancel',
+				},
+				{
+					text: 'Book',
+					onPress: async () => {
+						await runTransaction(db, async (transaction) => {
+							const rideRef = doc(db, 'rides', ride?.id || '')
+							
+							transaction.update(rideRef, {
+								passengers: arrayUnion(user?.uid),
+							})
+						})
+					},
+				},
+			],
+		)
 	}
 	
 	return (
@@ -40,21 +56,46 @@ const PassengersListComponent: React.FC<PassengersListComponentProps> = ({ ride,
 							<CustomText size={16} bold>
 								Passengers ({ride.passengers?.length}/{ride.available_seats})
 							</CustomText>
+							<CustomText
+								size={14}
+								bold
+								color={ride.passengers?.length === ride.available_seats || passengers?.some((passenger) => passenger?.id === user?.uid) ? 'red' : 'green'}
+							>
+								{
+									passengers?.every((passenger) => passenger?.id !== user?.uid) ?
+										ride.passengers?.length === ride.available_seats
+											? 'Full' :
+											'Available'
+										: 'Booked'
+								}
+							</CustomText>
 						</View>
 					</View>
 				</View>
-				<View style={[style.row, { gap: 10, justifyContent: 'flex-start', flexWrap: 'wrap' }]}>
+				<View style={[style.row, { gap: 5, justifyContent: 'flex-start', flexWrap: 'wrap' }]}>
 					{
 						passengers?.map((passenger, index) => (
 							passenger ?
 								<View key={index} style={[style.column, { gap: 5, width: 'auto' }]}>
 									<Avatar.Image
-										size={60}
+										size={50}
 										source={{ uri: passenger.photo_url }}
 									/>
+									<CustomText size={14} align="center">
+										{passenger.id === user?.uid ? 'You' : passenger.full_name}
+									</CustomText>
 								</View> :
+								passengers.every((passenger) => passenger?.id !== user?.uid) &&
 								<View key={index} style={[style.column, { gap: 5, width: 'auto' }]}>
-									<Icon name="circle-outline" size={60} color="grey" />
+									<CustomIconButton
+										size={30}
+										icon="plus-circle-outline"
+										iconColor="black"
+										onPress={handleBookRide}
+									/>
+									<CustomText size={14} align="center">
+										{''}
+									</CustomText>
 								</View>
 						))
 					}

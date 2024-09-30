@@ -16,6 +16,7 @@ import { GooglePlaceDetail } from 'react-native-google-places-autocomplete'
 import { CustomDirectionsResponse } from './AddRideComponents/types'
 import PassengerView from './ViewRideComponents/PassengerView'
 import { getPassengers } from '../api/rides'
+import { AuthContext } from '../components/contexts/AuthContext'
 
 type ViewRideProps = RouteProp<{ ViewRide: { rideId?: string } }, 'ViewRide'>;
 const { db } = FirebaseApp
@@ -79,6 +80,7 @@ const DriverView = ({ ride, car, driver }: { ride: Ride, car: Car | null, driver
 
 const ViewRide = () => {
 	const { mode } = useContext(ModeContext)
+	const { user } = useContext(AuthContext)
 	const route = useRoute<ViewRideProps>()
 	const { colors } = useTheme()
 	const navigation = useNavigation()
@@ -197,7 +199,7 @@ const ViewRide = () => {
 		<CustomLayout
 			header={
 				<CustomHeader
-					title="View Ride"
+					title="Ride Details"
 					navigation={navigation}
 				/>
 			}

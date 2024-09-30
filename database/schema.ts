@@ -43,6 +43,7 @@ type Ride = {
 	datetime: Timestamp
 	created_at: Timestamp
 	completed_at: Timestamp | null
+	started_at: Timestamp | null
 	location: {
 		place_id: string
 		formatted_address: string

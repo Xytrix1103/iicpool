@@ -32,6 +32,19 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({ ride, directions, c
 		>
 			<View style={[style.column, { gap: 20, flex: 1 }]}>
 				<View style={[style.row, { gap: 5 }]}>
+					<Icon name="calendar" size={30} />
+					<CustomText size={16} bold>
+						{ride.datetime.toDate().toLocaleString('en-GB', {
+							day: 'numeric',
+							month: 'numeric',
+							year: 'numeric',
+							hour: '2-digit',
+							minute: '2-digit',
+							hour12: true,
+						})}
+					</CustomText>
+				</View>
+				<View style={[style.row, { gap: 5 }]}>
 					<View style={[style.column, {
 						flexDirection: ride.to_campus ? 'column' : 'column-reverse',
 					}]}>
