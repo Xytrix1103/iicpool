@@ -9,6 +9,7 @@ import { GMAPS_API_KEY } from '../../api/location'
 import CustomInput from '../../components/themed/CustomInput'
 import { MD3Colors } from 'react-native-paper/lib/typescript/types'
 import { StyleSheet, View } from 'react-native'
+import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 
 const CustomInputAutoComplete = (
 	{
@@ -44,9 +45,22 @@ const CustomInputAutoComplete = (
 				fetchDetails={true}
 				textInputProps={{
 					InputComp: CustomInput,
+					hideLabelOnFocus: true,
 					label: (toCampus ? 'Pick-Up Location' : 'Drop-Off Location'),
 					editable: true,
-					value: details.formatted_address,
+					value: details.name,
+					rightIcon: (
+						(details.place_id !== '') &&
+						<Icon
+							onPress={() => {
+								handleLocationSelect(null)
+							}}
+							name="close"
+							size={20}
+							// @ts-expect-error colors
+							color={colors.text}
+						/>
+					),
 				}}
 				styles={{
 					container: style.autoCompleteContainer,
@@ -67,6 +81,7 @@ const CustomInputAutoComplete = (
 const style = StyleSheet.create({
 	autoCompleteContainer: {
 		width: '100%',
+		height: '100%',
 	},
 	textInput: {
 		backgroundColor: '#fff',

@@ -95,6 +95,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({ ride, directions, c
 								longitudeDelta: 0.01,
 							}}
 							zoomEnabled={false}
+							// scrollEnabled={false}
 							loadingEnabled={true}
 						>
 							<Marker

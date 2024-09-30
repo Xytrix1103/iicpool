@@ -84,6 +84,9 @@ const AddRide = () => {
 			available_seats: Number(data.available_seats),
 			datetime: Timestamp.fromDate(data.datetime!),
 			created_at: Timestamp.now(),
+			started_at: null,
+			completed_at: null,
+			deleted_at: null,
 			car: data.car,
 			passengers: [],
 		} as Ride

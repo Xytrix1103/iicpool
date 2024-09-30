@@ -54,22 +54,32 @@ const AddRideStep1 = (
 	
 	const handleLocationSelect = (details: GooglePlaceDetail | null) => {
 		if (!details) {
-			return
-		}
-		
-		setValue('not_campus', {
-			place_id: details.place_id,
-			formatted_address: details.formatted_address,
-			name: details.name || details.formatted_address,
-			geometry: {
-				location: {
-					lat: details.geometry.location.lat,
-					lng: details.geometry.location.lng,
+			setValue(toCampus ? 'not_campus' : 'campus', {
+				place_id: '',
+				formatted_address: '',
+				name: '',
+				geometry: {
+					location: {
+						lat: 0,
+						lng: 0,
+					},
 				},
-			},
-		})
-		
-		setShowMap(true)
+			})
+		} else {
+			setValue(toCampus ? 'not_campus' : 'campus', {
+				place_id: details.place_id,
+				formatted_address: details.formatted_address,
+				name: details.name || details.formatted_address,
+				geometry: {
+					location: {
+						lat: details.geometry.location.lat,
+						lng: details.geometry.location.lng,
+					},
+				},
+			})
+			
+			setShowMap(true)
+		}
 	}
 	
 	

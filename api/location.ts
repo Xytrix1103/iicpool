@@ -5,13 +5,14 @@ const GMAPS_API_KEY = 'AIzaSyAZJLOFhRAzXUdviZBokuuKv4pfqyEpyxs'
 const CAMPUS_ADDRESS = '1-Z, Lebuh Bukit Jambul, Bukit Jambul, 11900 Bayan Lepas, Pulau Pinang'
 const CAMPUS_NAME = 'INTI International College Penang'
 
-const getDirections = async ({ origin, destination }: {
+const getDirections = async ({ origin, destination, departure_time }: {
 	origin: string,
-	destination: string
+	destination: string,
+	departure_time?: Date,
 }): Promise<DirectionsResponse | null> => {
 	console.log('getDirections:', origin, destination)
 	const baseUrl = 'https://maps.googleapis.com/maps/api/directions/json'
-	const params = `origin=place_id:${origin}&destination=place_id:${destination}&mode=driving`
+	const params = `origin=place_id:${origin}&destination=place_id:${destination}&mode=driving${departure_time ? `&departure_time=${departure_time.toISOString()}` : ''}`
 	
 	const result = await axios.get<DirectionsResponse>(`${baseUrl}?${params}&key=${GMAPS_API_KEY}`, {
 		headers: {
@@ -97,6 +98,25 @@ const fetchCampusLocation = async (
 	}
 }
 
+const fetchLocationByCoordinates = async ({ latitude, longitude }: { latitude: number, longitude: number }) => {
+	const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GMAPS_API_KEY}`
+	
+	try {
+		const response = await axios.get(url, {
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		})
+		
+		if (response) {
+			console.log('Location:', response.data.results[0])
+			return response.data.results[0]
+		}
+	} catch (error) {
+		console.error('Error fetching address:', error)
+	}
+}
+
 interface GeocodedWaypoint {
 	geocoder_status: string;
 	place_id: string;
@@ -172,4 +192,5 @@ export {
 	decodePolyline,
 	DirectionsResponse,
 	fetchCampusLocation,
+	fetchLocationByCoordinates,
 }
