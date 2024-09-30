@@ -35,16 +35,14 @@ import FirebaseApp from './components/FirebaseApp'
 import Constants from 'expo-constants'
 import * as Notifications from 'expo-notifications'
 import * as TaskManager from 'expo-task-manager'
-import * as Device from 'expo-device'
+import Device from 'expo-device'
 import { doc, getDoc, runTransaction, updateDoc } from 'firebase/firestore'
 import Settings from './screens/Settings'
 import { StatusBar, StatusBarStyle } from 'expo-status-bar'
-import FindRides from './screens/FindRides'
-import MyRides from './screens/MyRides'
 
 const Stack = createNativeStackNavigator()
 
-const { db } = FirebaseApp
+const { auth, db } = FirebaseApp
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -191,14 +189,6 @@ TaskManager.defineTask(
 	},
 )
 
-Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK)
-	.then(() =>
-		console.log('Background notification task registered successfully'),
-	)
-	.catch((error) =>
-		console.error('Error registering background notification task:', error),
-	)
-
 interface AreObjectsEqualProps<T extends object> {
 	obj1: T;
 	obj2: T;
@@ -258,9 +248,7 @@ const App = (): ReactElement => {
 				setExpoPushToken(token ?? '')
 				console.log({ token })
 			})
-			.catch((error: string) => {
-				console.error('Error getting push token:', error)
-			})
+			.catch((error: string) => setExpoPushToken(`${error}`))
 		
 		notificationListener.current =
 			Notifications.addNotificationReceivedListener((notification) => {
@@ -296,6 +284,14 @@ const App = (): ReactElement => {
 				(response) => {
 					redirect(response.notification).then((r) => r)
 				},
+			)
+		
+		Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK)
+			.then(() =>
+				console.log('Background notification task registered successfully'),
+			)
+			.catch((error) =>
+				console.error('Error registering background notification task:', error),
 			)
 		
 		return () => {
@@ -337,7 +333,7 @@ const App = (): ReactElement => {
 		}
 		
 		if (!isReady) {
-			restoreState().then((r) => r)
+			restoreState().then(r => r)
 		}
 	}, [isReady])
 	
@@ -479,8 +475,6 @@ const Routes = ({ expoPushToken }: { expoPushToken: string }) => {
 						<Stack.Screen name="ManageCar" component={ManageCar} />
 						<Stack.Screen name="VerifyEmail" component={VerifyEmail} />
 						<Stack.Screen name="Settings" component={Settings} />
-						<Stack.Screen name="FindRides" component={FindRides} />
-						<Stack.Screen name="MyRides" component={MyRides} />
 					</> :
 					<Stack.Screen name="AccountSetup" component={AccountSetup} />
 			) : (
