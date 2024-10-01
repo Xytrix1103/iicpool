@@ -19,6 +19,7 @@ import { RideFormTypeSingle } from './AddRideComponents/types'
 import { fetchLocationByCoordinates } from '../api/location'
 import CustomInput from '../components/themed/CustomInput'
 import { getPreciseDistance } from 'geolib'
+import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 
 const { db } = FirebaseApp
 
@@ -31,6 +32,7 @@ type FilterFormType = {
 const FindRides = () => {
 	const [rides, setRides] = useState<Ride[]>([])
 	const navigation = useNavigation()
+	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	const form = useForm<FilterFormType>({
 		defaultValues: {
 			to_campus: true,
@@ -80,45 +82,22 @@ const FindRides = () => {
 	}
 	
 	useEffect(() => {
-		(async () => {
-			await wrapPermissions({
-				operation: async () => {
-					const location = await Location.getCurrentPositionAsync({
-						accuracy: Location.Accuracy.Highest,
-					})
-					setCurrentLocation(location)
-				},
-				type: 'location',
-				message: 'We need your location to find rides near you',
-			})
-		})()
-	}, [])
-	
-	useEffect(() => {
-		(async () => {
-			if (currentLocation) {
-				const location = await fetchLocationByCoordinates({
-					latitude: currentLocation.coords.latitude,
-					longitude: currentLocation.coords.longitude,
+		wrapPermissions({
+			operation: async () => {
+				setLoadingOverlay({
+					show: true,
+					message: 'Fetching location...',
 				})
-				console.log(location)
 				
-				setValue('location', {
-					place_id: location.place_id,
-					formatted_address: location.formatted_address,
-					name: location.name || location.formatted_address,
-					geometry: {
-						location: {
-							lat: location.geometry.location.lat,
-							lng: location.geometry.location.lng,
-						},
-					},
+				const location = await Location.getCurrentPositionAsync({
+					accuracy: Location.Accuracy.Highest,
 				})
-			}
-		})()
-	}, [currentLocation])
-	
-	useEffect(() => {
+				setCurrentLocation(location)
+			},
+			type: 'location',
+			message: 'We need your location to find rides near you',
+		}).then()
+		
 		const unsubscribe = onSnapshot(collection(db, 'rides'), (snapshot) => {
 			const ridesData: Ride[] = snapshot.docs.map(doc => ({
 				...doc.data(),
@@ -129,6 +108,36 @@ const FindRides = () => {
 		
 		return () => unsubscribe()
 	}, [])
+	
+	useEffect(() => {
+		if (currentLocation) {
+			fetchLocationByCoordinates({
+				latitude: currentLocation.coords.latitude,
+				longitude: currentLocation.coords.longitude,
+			})
+				.then((location) => {
+					console.log(location)
+					
+					setValue('location', {
+						place_id: location.place_id,
+						formatted_address: location.formatted_address,
+						name: location.name || location.formatted_address,
+						geometry: {
+							location: {
+								lat: location.geometry.location.lat,
+								lng: location.geometry.location.lng,
+							},
+						},
+					})
+				})
+				.finally(() => {
+					setLoadingOverlay({
+						show: false,
+						message: '',
+					})
+				})
+		}
+	}, [currentLocation])
 	
 	const renderItem = ({ ride }: { ride: Ride }) => {
 		//get distance
@@ -154,6 +163,7 @@ const FindRides = () => {
 					// @ts-ignore
 					navigation.navigate('ViewRide', { rideId: ride.id })
 				}}
+				key={ride.id}
 			>
 				<View style={[style.column, {
 					flex: 1,
