@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react'
-import { View } from 'react-native'
+import { Image, View } from 'react-native'
 import { Menu, useTheme } from 'react-native-paper'
 import CustomText from '../components/themed/CustomText'
 import { useNavigation } from '@react-navigation/native'
@@ -143,8 +143,15 @@ const Home = () => {
 				}
 				<CustomLayout>
 					<View style={[style.mainContent]}>
-						<View style={[style.column, { gap: 10, height: '100%' }]}>
-							<View style={style.row}>
+						<View style={[style.column, { gap: 20, height: '100%' }]}>
+							<View style={[style.row, { gap: 10, alignItems: 'center' }]}>
+								<Image
+									source={
+										require('../assets/logo.png')
+									}
+									style={{ width: 40, height: '100%' }}
+									resizeMode="contain"
+								/>
 								<CustomText size={20} color="secondary">
 									Welcome,{' '}
 									<CustomText
