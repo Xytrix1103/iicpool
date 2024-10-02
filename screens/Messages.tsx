@@ -1,28 +1,49 @@
-import { StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import CustomLayout from '../components/themed/CustomLayout'
 import CustomHeader from '../components/themed/CustomHeader'
 import style from '../styles/shared'
 import { useContext, useEffect, useState } from 'react'
 import { Car, Message, MessageType, Profile, Ride } from '../database/schema'
-import { and, collection, doc, getDoc, getDocs, limit, onSnapshot, or, orderBy, query, where } from 'firebase/firestore'
+import {
+	and,
+	collection,
+	doc,
+	getCountFromServer,
+	getDoc,
+	getDocs,
+	limit,
+	onSnapshot,
+	or,
+	orderBy,
+	query,
+	where,
+} from 'firebase/firestore'
 import FirebaseApp from '../components/FirebaseApp'
 import { AuthContext } from '../components/contexts/AuthContext'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import CustomText from '../components/themed/CustomText'
 import CustomListWithDivider from '../components/themed/CustomListWithDivider'
 import { User } from 'firebase/auth'
-import { Avatar } from 'react-native-paper'
+import { Avatar, Badge, useTheme } from 'react-native-paper'
+import { MD3Colors } from 'react-native-paper/lib/typescript/types'
+import { useNavigation } from '@react-navigation/native'
 
 type CustomLocalRide = Ride & {
 	passengersData?: Profile[]
 	driverData?: Profile
 	latestMessage?: Message
 	carData?: Car
+	unreadCount?: number
 }
 
 const { db } = FirebaseApp
 
-const ChatComponent = ({ ride, user }: { ride: CustomLocalRide, user: User | null }) => {
+const ChatComponent = ({ ride, user, colors, navigation }: {
+	ride: CustomLocalRide,
+	user: User | null,
+	colors: MD3Colors,
+	navigation: any
+}) => {
 	let messageDisplay
 	switch (ride.latestMessage?.type) {
 		case MessageType.MESSAGE:
@@ -45,54 +66,70 @@ const ChatComponent = ({ ride, user }: { ride: CustomLocalRide, user: User | nul
 	}
 	
 	return (
-		<View style={[style.row, { gap: 20 }]}>
+		<Pressable
+			style={[style.row, { gap: 15, backgroundColor: 'white', elevation: 5, padding: 20, borderRadius: 30 }]}
+			onPress={() => navigation.navigate('Chat', { rideId: ride.id })}
+		>
 			<View style={[style.column, { width: 'auto' }]}>
-				<Avatar.Image size={60} source={{ uri: ride?.carData?.photo_url || '' }} />
+				<Avatar.Icon
+					size={40}
+					icon="car"
+					style={{ backgroundColor: 'black' }}
+				/>
+				<Badge
+					size={20}
+					style={{ position: 'absolute', top: -5, right: -5 }}
+					visible={ride.unreadCount! > 0}
+				>
+					{ride.unreadCount}
+				</Badge>
 			</View>
 			<View style={[style.column, { flex: 1, gap: 10, height: '100%', width: '100%' }]}>
 				<View style={[style.row, { justifyContent: 'space-between', gap: 20 }]}>
-					<View style={[style.column, { flex: 1 }]}>
-						<CustomText bold size={14} numberOfLines={1} width="auto">
-							{ride.to_campus ? 'From' : 'To'} {ride.location.name}
-						</CustomText>
-					</View>
-					<View style={[style.column, { width: 'auto' }]}>
-						<CustomText size={12} align="right">
-							{ride.datetime.toDate().toLocaleString('en-GB', { dateStyle: 'medium' })}
-						</CustomText>
+					<View style={[style.column, { gap: 5 }]}>
+						<View style={[style.row, { justifyContent: 'space-between', gap: 20 }]}>
+							<View style={[style.column, { flex: 1 }]}>
+								<CustomText bold size={12} numberOfLines={1} width="auto">
+									{ride.driverData?.full_name.split(' ')[0]}'s ride
+									with {ride.passengersData?.length} others
+								</CustomText>
+							</View>
+							<View style={[style.column, { width: 'auto' }]}>
+								<CustomText size={12} align="right">
+									{ride.datetime.toDate().toLocaleString('en-GB', { dateStyle: 'short' })}
+								</CustomText>
+							</View>
+						</View>
+						<View style={[style.row, { justifyContent: 'space-between', gap: 20 }]}>
+							<CustomText size={12} numberOfLines={1} width="auto" color="grey">
+								{ride.to_campus ? 'From' : 'To'} {ride.location.name} at {ride.datetime.toDate().toLocaleString('en-GB', { timeStyle: 'short' })}
+							</CustomText>
+						</View>
 					</View>
 				</View>
 				<View style={[style.row, { justifyContent: 'space-between', gap: 20 }]}>
 					<View style={[style.column, { flex: 1 }]}>
-						<CustomText size={12} color="grey" numberOfLines={1}>
+						<CustomText size={12} numberOfLines={1}>
 							{messageDisplay}
 						</CustomText>
 					</View>
-					<CustomText size={10} color="grey">
-						{
-							//mins, hours, days, weeks, months, or years (like Facebook chat)
-							//if less than 1 min, show "Just now"
-							//if less than 1 hour, show "x mins ago"
-							//if less than 1 day, show "x hours ago"
-							//if less than 1 week, show "x days ago"
-							//if less than 1 month, show "x weeks ago"
-							//if less than 1 year, show "x months ago"
-							//if more than 1 year, show "x years ago"
-							ride.latestMessage &&
-							(
+					{
+						ride.latestMessage &&
+						<CustomText size={10} color="grey">
+							{
 								new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 60000 ? 'Just now' :
-									new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 3600000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 60000)} mins ago` :
-										new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 86400000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 3600000)} hours ago` :
-											new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 604800000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 86400000)} days ago` :
-												new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 2628000000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 604800000)} weeks ago` :
-													new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 31540000000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 2628000000)} months ago` :
-														`${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 31540000000)} years ago`
-							)
-						}
-					</CustomText>
+									new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 3600000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 60000)}m ago` :
+										new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 86400000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 3600000)}h ago` :
+											new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 604800000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 86400000)}d ago` :
+												new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 2628000000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 604800000)}w ago` :
+													new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 31540000000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 2628000000)}mon ago` :
+														`${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 31540000000)}y ago`
+							}
+						</CustomText>
+					}
 				</View>
 			</View>
-		</View>
+		</Pressable>
 	)
 }
 
@@ -100,6 +137,8 @@ const Messages = () => {
 	const [rides, setRides] = useState<CustomLocalRide[]>([])
 	const { user } = useContext(AuthContext)
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
+	const { colors } = useTheme()
+	const navigation = useNavigation()
 	
 	const ridesQuery = query(collection(db, 'rides'), and(where('passengers', '!=', []), or(where('passengers', 'array-contains', user?.uid), where('driver', '==', user?.uid))))
 	// const ridesQuery = query(collection(db, 'rides'), and(where('passengers', '!=', []), where('completed_at', '==', null), where('cancelled_at', '==', null), or(where('passengers', 'array-contains', user?.uid), where('driver', '==', user?.uid))))
@@ -110,6 +149,7 @@ const Messages = () => {
 				show: true,
 				message: 'Loading messages...',
 			})
+			
 			await Promise.all(snapshot.docs.map(async (snapshotDoc) => {
 				const ride = {
 					...snapshotDoc.data(),
@@ -157,6 +197,8 @@ const Messages = () => {
 					return undefined
 				})
 				
+				console.log(latestMessage)
+				
 				const carData = await getDoc(doc(db, 'cars', ride.car)).then((result) => {
 					return {
 						...result.data(),
@@ -167,7 +209,18 @@ const Messages = () => {
 					return undefined
 				})
 				
-				console.log(latestMessage)
+				console.log(carData)
+				
+				const unreadCount = await getCountFromServer(query(collection(doc(db, 'rides', ride?.id || ''), 'messages'), where('read_by', 'array-contains', user?.uid)))
+					.then((count) => {
+						return count.data().count
+					})
+					.catch((error) => {
+						console.error('Error getting unread count:', error)
+						return 0
+					})
+				
+				console.log('Unread count:', unreadCount)
 				
 				return {
 					...ride,
@@ -175,6 +228,7 @@ const Messages = () => {
 					latestMessage,
 					driverData,
 					carData,
+					unreadCount,
 				} as CustomLocalRide
 			}))
 				.then((rides) => {
@@ -206,7 +260,8 @@ const Messages = () => {
 					<CustomListWithDivider
 						items={
 							rides.map((ride) => (
-								<ChatComponent ride={ride} key={ride.id} user={user} />
+								<ChatComponent ride={ride} key={ride.id} user={user} colors={colors}
+								               navigation={navigation} />
 							))
 						}
 						dividerComponent={

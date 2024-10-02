@@ -6,11 +6,15 @@ import { Timestamp } from '@firebase/firestore'
 
 const { db } = FirebaseApp
 
-const sendMessage = async ({ user, ride, message }: { user: User, ride: Ride, message: string }) => {
+const sendMessage = async ({ user, ride, message }: { user: User | null, ride: Ride, message: string }) => {
 	console.log('Sending message', message)
 	
 	if (!ride.id) {
 		throw new Error('Ride ID is missing')
+	}
+	
+	if (!user) {
+		throw new Error('User is missing')
 	}
 	
 	const messageRef = doc(collection(doc(db, 'rides', ride.id), 'messages'))

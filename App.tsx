@@ -43,6 +43,7 @@ import FindRides from './screens/FindRides'
 import MyRides from './screens/MyRides'
 import ViewRide from './screens/ViewRide'
 import Messages from './screens/Messages'
+import Chat from './screens/Chat'
 
 const Stack = createNativeStackNavigator()
 
@@ -483,6 +484,7 @@ const Routes = ({ expoPushToken }: { expoPushToken: string }) => {
 						<Stack.Screen name="FindRides" component={FindRides} />
 						<Stack.Screen name="ViewRide" component={ViewRide} />
 						<Stack.Screen name="Messages" component={Messages} />
+						<Stack.Screen name="Chat" component={Chat} />
 					</> :
 					<Stack.Screen name="AccountSetup" component={AccountSetup} />
 			) : (

@@ -1,6 +1,6 @@
 //custom layout component to handle screen layout with a header and a footer (both optional) and a main content area which may or may not be scrollable
 import { ScrollView, StyleSheet, View } from 'react-native'
-import { FC, ReactElement, ReactNode } from 'react'
+import { FC, ReactElement, ReactNode, useRef } from 'react'
 import { useTheme } from 'react-native-paper'
 import CustomAppbar from './CustomAppbar'
 
@@ -12,14 +12,15 @@ type CustomHeaderProps = {
 }
 
 type LayoutProps = {
-	header?: ReactElement<CustomHeaderProps>
-	footer?: ReactNode
-	hasAppBar?: boolean
-	scrollable?: boolean
-	children: ReactNode
-	contentPadding?: number
-	containerPadding?: number
-	centered?: boolean
+	header?: ReactElement<CustomHeaderProps>,
+	footer?: ReactNode,
+	hasAppBar?: boolean,
+	scrollable?: boolean,
+	children: ReactNode,
+	contentPadding?: number,
+	containerPadding?: number,
+	centered?: boolean,
+	alwaysScrollToBottom?: boolean
 }
 
 const CustomLayout: FC<LayoutProps> = (
@@ -32,9 +33,11 @@ const CustomLayout: FC<LayoutProps> = (
 		containerPadding = 0,
 		contentPadding = 20,
 		centered = false,
+		alwaysScrollToBottom = false,
 	},
 ) => {
 	const { colors } = useTheme()
+	const scrollViewRef = useRef<ScrollView>(null)
 	
 	return (
 		<View style={[style.root, { backgroundColor: colors.background, padding: containerPadding }]}>
@@ -52,7 +55,14 @@ const CustomLayout: FC<LayoutProps> = (
 			{
 				scrollable ?
 					<ScrollView
-						style={[style.scrollViewContent]}>
+						style={[style.scrollViewContent]}
+						ref={scrollViewRef}
+						onContentSizeChange={() => {
+							if (alwaysScrollToBottom) {
+								scrollViewRef.current?.scrollToEnd({ animated: true })
+							}
+						}}
+					>
 						<View style={[style.container, {
 							paddingTop: header && contentPadding > 0 ? 10 : contentPadding,
 							paddingBottom: hasAppBar && contentPadding > 0 ? 10 : contentPadding,
