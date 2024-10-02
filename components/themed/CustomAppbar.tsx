@@ -59,7 +59,7 @@ const CustomAppbar = () => {
 					onPress={() => {
 						console.log('Messages')
 						// @ts-ignore
-						navigation.navigate('Home')
+						navigation.navigate('Messages')
 					}}
 				/>
 				<CustomAppbarItem

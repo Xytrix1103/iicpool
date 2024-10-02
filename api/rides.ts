@@ -1,6 +1,9 @@
 import FirebaseApp from '../components/FirebaseApp'
-import { Profile } from '../database/schema'
-import { doc, getDoc } from 'firebase/firestore'
+import { Message, MessageType, Profile, Ride } from '../database/schema'
+import { arrayRemove, arrayUnion, collection, doc, getDoc, runTransaction } from 'firebase/firestore'
+import { User } from 'firebase/auth'
+import { Alert, ToastAndroid } from 'react-native'
+import { Timestamp } from '@firebase/firestore'
 
 const { db } = FirebaseApp
 
@@ -34,6 +37,97 @@ const getPassengers = async (rideId: string): Promise<(Profile | null)[]> => {
 	return passengers
 }
 
+const handleBookRide = ({ ride, user }: { ride: Ride, user: User | null }) => {
+	Alert.alert(
+		'Book Ride',
+		'Are you sure you want to book this ride?',
+		[
+			{
+				text: 'Cancel',
+				style: 'cancel',
+			},
+			{
+				text: 'Book',
+				onPress: async () => {
+					await runTransaction(db, async (transaction) => {
+						const rideRef = doc(db, 'rides', ride?.id || '')
+						
+						transaction.update(rideRef, {
+							passengers: arrayUnion(user?.uid),
+						})
+						
+						//check if there is a messages sub-collection
+						const messageRef = doc(collection(rideRef, 'messages'))
+						
+						transaction.set(messageRef, {
+							message: null,
+							user: user?.uid,
+							sender: null,
+							timestamp: Timestamp.now(),
+							type: MessageType.NEW_PASSENGER,
+						} as Message)
+					})
+						.then(() => {
+							ToastAndroid.show('Ride booked successfully', ToastAndroid.SHORT)
+						})
+						.catch((error) => {
+							ToastAndroid.show('Failed to book ride', ToastAndroid.SHORT)
+							console.error('Failed to book ride', error)
+						})
+				},
+			},
+		],
+	)
+}
+
+const handleCancelBooking = ({ ride, user }: { ride: Ride, user: User | null }) => {
+	Alert.alert(
+		'Cancel Booking',
+		'Are you sure you want to cancel your booking?',
+		[
+			{
+				text: 'Cancel',
+				style: 'cancel',
+			},
+			{
+				text: 'Cancel Booking',
+				onPress: async () => {
+					await runTransaction(db, async (transaction) => {
+						if (!ride.id) {
+							throw new Error('Ride ID is missing')
+						}
+						
+						const rideRef = doc(db, 'rides', ride?.id || '')
+						
+						transaction.update(rideRef, {
+							passengers: arrayRemove(user?.uid),
+						})
+						
+						//check if there is a messages sub-collection
+						const messageRef = doc(collection(rideRef, 'messages'))
+						
+						transaction.set(messageRef, {
+							message: null,
+							user: user?.uid,
+							sender: null,
+							timestamp: Timestamp.now(),
+							type: MessageType.PASSENGER_CANCELLATION,
+						} as Message)
+					})
+						.then(() => {
+							ToastAndroid.show('Booking cancelled successfully', ToastAndroid.SHORT)
+						})
+						.catch((error) => {
+							ToastAndroid.show('Failed to cancel booking', ToastAndroid.SHORT)
+							console.error('Failed to cancel booking', error)
+						})
+				},
+			},
+		],
+	)
+}
+
 export {
 	getPassengers,
+	handleBookRide,
 }

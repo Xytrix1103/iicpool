@@ -1,14 +1,14 @@
 import React, { useContext } from 'react'
-import { Alert, View } from 'react-native'
+import { View } from 'react-native'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import CustomText from '../../components/themed/CustomText'
 import style from '../../styles/shared'
 import { Profile, Ride } from '../../database/schema'
 import { Avatar } from 'react-native-paper'
 import { AuthContext } from '../../components/contexts/AuthContext'
-import { arrayUnion, doc, runTransaction } from 'firebase/firestore'
 import FirebaseApp from '../../components/FirebaseApp'
 import CustomIconButton from '../../components/themed/CustomIconButton'
+import { handleBookRide } from '../../api/rides'
 
 type PassengersListComponentProps = {
 	ride: Ride,
@@ -20,30 +20,6 @@ const { db } = FirebaseApp
 const PassengersListComponent: React.FC<PassengersListComponentProps> = ({ ride, passengers }) => {
 	const { user } = useContext(AuthContext)
 	
-	const handleBookRide = () => {
-		Alert.alert(
-			'Book Ride',
-			'Are you sure you want to book this ride?',
-			[
-				{
-					text: 'Cancel',
-					style: 'cancel',
-				},
-				{
-					text: 'Book',
-					onPress: async () => {
-						await runTransaction(db, async (transaction) => {
-							const rideRef = doc(db, 'rides', ride?.id || '')
-							
-							transaction.update(rideRef, {
-								passengers: arrayUnion(user?.uid),
-							})
-						})
-					},
-				},
-			],
-		)
-	}
 	
 	return (
 		<View
@@ -91,7 +67,7 @@ const PassengersListComponent: React.FC<PassengersListComponentProps> = ({ ride,
 										size={30}
 										icon="plus-circle-outline"
 										iconColor="black"
-										onPress={handleBookRide}
+										onPress={() => handleBookRide({ ride, user })}
 									/>
 									<CustomText size={14} align="center">
 										{''}

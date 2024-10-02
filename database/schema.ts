@@ -33,6 +33,25 @@ type Car = {
 	deleted_at: Timestamp | null
 }
 
+enum MessageType {
+	NEW_PASSENGER = 'new_passenger',
+	RIDE_UPDATE = 'ride_update',
+	RIDE_CANCELLATION = 'ride_cancellation',
+	PASSENGER_CANCELLATION = 'passenger_cancellation',
+	MESSAGE = 'message',
+	
+}
+
+type Message = {
+	id?: string
+	sender: string | null
+	user?: string
+	message: string | null
+	timestamp: Timestamp
+	type: MessageType
+	read_by: string[]
+}
+
 type Ride = {
 	id?: string
 	driver: string
@@ -56,6 +75,7 @@ type Ride = {
 		},
 	}
 	deleted_at: Timestamp | null
+	messages?: Message[]
 }
 
 enum Role {
@@ -63,4 +83,4 @@ enum Role {
 	PASSENGER = 'passenger',
 }
 
-export { Profile, Car, Ride, Role, ProfileNotificationSettings }
+export { Profile, Car, Ride, Role, ProfileNotificationSettings, Message, MessageType }

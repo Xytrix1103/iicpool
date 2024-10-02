@@ -106,7 +106,13 @@ const FindRides = () => {
 			setRides(ridesData)
 		})
 		
-		return () => unsubscribe()
+		return () => {
+			unsubscribe()
+			setLoadingOverlay({
+				show: false,
+				message: '',
+			})
+		}
 	}, [])
 	
 	useEffect(() => {
