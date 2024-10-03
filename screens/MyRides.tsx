@@ -24,13 +24,14 @@ const RideComponent = ({ ride }: { ride: Ride }) => {
 				borderRadius: 30,
 				backgroundColor: 'white',
 				padding: 20,
-			}]}>
+				height: 'auto',
+			}]}
+		>
 			<View style={[style.column, {
 				flex: 1,
 				gap: 5,
 				justifyContent: 'center',
 				alignItems: 'center',
-				height: '100%',
 			}]}>
 				<Icon name="clock" size={24} color="grey" />
 			</View>
@@ -58,7 +59,6 @@ const RideComponent = ({ ride }: { ride: Ride }) => {
 				justifyContent: 'center',
 				gap: 5,
 				alignItems: 'center',
-				height: '100%',
 			}]}>
 				<Icon name="car" size={20} color="black" />
 				<CustomText align="center" bold>{(ride.passengers ?? []).length}/{ride.available_seats}</CustomText>
@@ -124,7 +124,7 @@ const MyRides = () => {
 			}
 		>
 			<View style={style.mainContent}>
-				<View style={style.column}>
+				<View style={[style.column, { gap: 20 }]}>
 					{
 						rides && ((rides?.length || 0) > 0) ? (
 							rides.map(ride => (

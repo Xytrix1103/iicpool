@@ -210,8 +210,8 @@ const FindRides = () => {
 	
 	return (
 		<CustomLayout
-			contentPadding={20}
-			scrollable={true}
+			scrollable={false}
+			contentPadding={0}
 			header={
 				<CustomHeader
 					title="Available Rides"
@@ -219,14 +219,16 @@ const FindRides = () => {
 				/>
 			}
 		>
-			<View style={[style.column, { gap: 30 }]}>
-				<View style={[style.row]}>
+			<View style={style.mainContent}>
+				<View style={[style.row, { gap: 10, padding: 20 }]}>
 					<View style={[style.column, { gap: 10 }]}>
-						<View style={[style.row, { gap: 10, alignItems: 'center' }]}>
-							<View style={{ flex: 1 }}>
-								<Icon name="map-marker" size={30} color="black" />
-							</View>
-							<View style={{ flex: 9 }}>
+						<View style={[style.row, {
+							gap: 10,
+							alignItems: 'center',
+							justifyContent: 'center',
+							height: 'auto',
+						}]}>
+							<View style={[style.column]}>
 								{
 									location &&
 									(
@@ -275,15 +277,25 @@ const FindRides = () => {
 							]}
 							onValueChange={(value) => setValue('to_campus', value === 'true')}
 							value={to_campus.toString()}
+							multiSelect={false}
 						/>
 					</View>
 				</View>
-				<View style={[style.column, { gap: 10 }]}>
-					{
-						rides.filter(ride => ride.to_campus === to_campus).map((ride) => (
-							renderItem({ ride })
-						))
-					}
+				<View style={[style.row, { flex: 1 }]}>
+					<CustomLayout
+						scrollable={true}
+						contentPadding={20}
+					>
+						<View style={style.mainContent}>
+							<View style={[style.column, { gap: 10 }]}>
+								{
+									rides.filter(ride => ride.to_campus === to_campus).map((ride) => (
+										renderItem({ ride })
+									))
+								}
+							</View>
+						</View>
+					</CustomLayout>
 				</View>
 			</View>
 		</CustomLayout>

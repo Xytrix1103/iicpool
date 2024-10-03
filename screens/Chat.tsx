@@ -1,7 +1,7 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { Car, Message, MessageType, Profile, Ride } from '../database/schema'
 import { useContext, useEffect, useState } from 'react'
-import { collection, doc, getDoc, getDocs, onSnapshot, orderBy, query } from 'firebase/firestore'
+import { collection, doc, getDoc, onSnapshot, orderBy, query } from 'firebase/firestore'
 import FirebaseApp from '../components/FirebaseApp'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import CustomLayout from '../components/themed/CustomLayout'
@@ -16,7 +16,6 @@ import CustomIconButton from '../components/themed/CustomIconButton'
 import { Controller, useForm } from 'react-hook-form'
 import { sendMessage } from '../api/messages'
 import { AuthContext } from '../components/contexts/AuthContext'
-import CustomList from '../components/themed/CustomList'
 
 type ChatRouteParams = RouteProp<{ Chat: { rideId: string } }, 'Chat'>
 
@@ -39,43 +38,36 @@ const MessageComponent = ({ message, photo_url, user, passengerData, driverData 
 		message.type === MessageType.MESSAGE ?
 			<View style={[style.row, {
 				flexDirection: message.sender === user?.uid ? 'row-reverse' : 'row',
-				gap: 5,
+				gap: 10,
 				alignItems: 'flex-start',
 			}]}>
-				<View style={[style.column, {
-					width: 60,
-					alignItems: 'center',
-					justifyContent: 'center',
-					padding: 5,
-				}]}>
-					<Avatar.Image size={50} source={{ uri: photo_url }} />
-				</View>
-				<View style={[style.column, {
-					width: 'auto',
-					maxWidth: '80%',
-					gap: 2,
-				}]}>
-					<View
-						style={[style.row, { justifyContent: message.sender === user?.uid ? 'flex-end' : 'flex-start' }]}>
-						<CustomText size={12}>
-							{passengerData?.find((passenger) => passenger.id === message.sender)?.full_name}
-						</CustomText>
+				{
+					message.sender !== user?.uid &&
+					<View style={[style.column, {
+						width: 'auto',
+						alignItems: message.sender === user?.uid ? 'flex-end' : 'flex-start',
+						justifyContent: 'center',
+					}]}>
+						<Avatar.Image size={50} source={{ uri: photo_url }} />
 					</View>
+				}
+				<View style={[style.column, { maxWidth: '80%', width: 'auto' }]}>
 					<View style={[style.row, {
 						padding: 10,
 						borderRadius: 10,
 						elevation: 5,
 						backgroundColor: 'white',
-						width: '100%',
+						width: 'auto',
+						flexShrink: 1,
 					}]}>
-						<CustomText size={12}>
-							{message.message}
-						</CustomText>
+						<View style={[style.column, { width: 'auto', flexShrink: 1 }]}>
+							<CustomText size={12} width="auto" align="left" style={{ flexShrink: 1 }}>
+								{message.message}
+							</CustomText>
+						</View>
 					</View>
 				</View>
-				<View style={[style.column, { width: '20%' }]}>
-					<></>
-				</View>
+				<View style={[style.column, { flex: 1 }]} />
 			</View> :
 			<View style={[style.row]}>
 				<View style={[style.column]}>
@@ -104,6 +96,7 @@ const Chat = () => {
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	const navigation = useNavigation()
 	const { user } = useContext(AuthContext)
+	const [messages, setMessages] = useState<Message[]>([])
 	
 	const form = useForm<{ message: string }>({
 		defaultValues: {
@@ -175,24 +168,11 @@ const Chat = () => {
 				return undefined
 			})
 			
-			const messages = await getDocs(query(collection(doc(db, 'rides', rideId), 'messages'), orderBy('timestamp', 'asc'))).then((querySnapshot) => {
-				return querySnapshot.docs.map((doc) => {
-					return {
-						...doc.data(),
-						id: doc.id,
-					} as Message
-				})
-			}).catch((error) => {
-				console.error('Error getting messages:', error)
-				return [] as Message[]
-			})
-			
 			setChat({
 				...chatData,
 				passengersData,
 				driverData,
 				carData,
-				messages,
 			})
 			
 			setLoadingOverlay({
@@ -204,6 +184,18 @@ const Chat = () => {
 		return () => unsubscribe()
 	}, [rideId])
 	
+	useEffect(() => {
+		const unsubscribe = onSnapshot(query(collection(doc(db, 'rides', rideId), 'messages'), orderBy('timestamp', 'asc')), (snapshot) => {
+			setMessages(snapshot.docs.map((doc) => {
+				return {
+					...doc.data(),
+					id: doc.id,
+				} as Message
+			}))
+		})
+		
+		return () => unsubscribe()
+	}, [rideId])
 	
 	return (
 		<CustomLayout
@@ -215,32 +207,34 @@ const Chat = () => {
 		>
 			<View style={style.mainContent}>
 				<View style={[style.row, { gap: 20, flex: 1, justifyContent: 'flex-start' }]}>
-					<CustomList items={
-						chat?.messages?.length ?
-							chat.messages.map((message) => (
-								<MessageComponent
-									key={message.id}
-									message={message}
-									photo_url={message.sender === chat?.driver ? chat?.driverData?.photo_url : chat?.passengersData?.find((passenger) => passenger.id === message.sender)?.photo_url}
-									user={user}
-									passengerData={chat.passengersData}
-									driverData={chat.driverData}
-								/>
-							)) :
-							[
-								<View key="no-messages" style={[style.column, {
-									alignItems: 'center',
-									justifyContent: 'center',
-									flex: 1,
-								}]}>
-									<CustomText size={12} color="gray">
-										No messages yet
-									</CustomText>
-								</View>,
-							]
-					} />
+					<CustomLayout
+						scrollable={true}
+						alwaysScrollToBottom={true}
+					>
+						<View style={style.mainContent}>
+							<View style={[style.column, { gap: 20 }]}>
+								{
+									chat &&
+									messages.map((message) => (
+										<MessageComponent
+											key={message.id}
+											message={message}
+											photo_url={
+												message.sender === chat.driver ?
+													chat.driverData?.photo_url :
+													chat.passengersData?.find((passenger) => passenger.id === message.sender)?.photo_url
+											}
+											user={user}
+											passengerData={chat.passengersData}
+											driverData={chat.driverData}
+										/>
+									))
+								}
+							</View>
+						</View>
+					</CustomLayout>
 				</View>
-				<View style={style.row}>
+				<View style={[style.row, { paddingVertical: 10, paddingHorizontal: 20 }]}>
 					<Controller
 						control={form.control}
 						name="message"

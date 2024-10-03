@@ -22,7 +22,6 @@ import FirebaseApp from '../components/FirebaseApp'
 import { AuthContext } from '../components/contexts/AuthContext'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import CustomText from '../components/themed/CustomText'
-import CustomListWithDivider from '../components/themed/CustomListWithDivider'
 import { User } from 'firebase/auth'
 import { Avatar, Badge, useTheme } from 'react-native-paper'
 import { MD3Colors } from 'react-native-paper/lib/typescript/types'
@@ -38,7 +37,7 @@ type CustomLocalRide = Ride & {
 
 const { db } = FirebaseApp
 
-const ChatComponent = ({ ride, user, colors, navigation }: {
+const ChatComponent = ({ ride, user, navigation }: {
 	ride: CustomLocalRide,
 	user: User | null,
 	colors: MD3Colors,
@@ -109,24 +108,44 @@ const ChatComponent = ({ ride, user, colors, navigation }: {
 				</View>
 				<View style={[style.row, { justifyContent: 'space-between', gap: 20 }]}>
 					<View style={[style.column, { flex: 1 }]}>
-						<CustomText size={12} numberOfLines={1}>
-							{messageDisplay}
-						</CustomText>
+						{/*<CustomText size={12} numberOfLines={2}>*/}
+						{
+							//check if it starts with a name/You and colon, if yes, split into 2 columns so the sender
+							//name can be formatted
+							ride.latestMessage?.type === MessageType.MESSAGE ?
+								<View style={[style.row, { alignItems: 'flex-start' }]}>
+									<View style={[style.column, { width: 'auto' }]}>
+										<CustomText size={12} bold>
+											{messageDisplay?.split(':')[0]}:
+										</CustomText>
+									</View>
+									<View style={[style.column, { flex: 1 }]}>
+										<CustomText size={12} numberOfLines={2}>
+											{messageDisplay?.split(':').slice(1).join(':')}
+										</CustomText>
+									</View>
+								</View> :
+								<CustomText size={12} numberOfLines={2}>
+									{messageDisplay}
+								</CustomText>
+						}
 					</View>
-					{
-						ride.latestMessage &&
-						<CustomText size={10} color="grey">
-							{
-								new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 60000 ? 'Just now' :
-									new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 3600000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 60000)}m ago` :
-										new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 86400000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 3600000)}h ago` :
-											new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 604800000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 86400000)}d ago` :
-												new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 2628000000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 604800000)}w ago` :
-													new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 31540000000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 2628000000)}mon ago` :
-														`${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 31540000000)}y ago`
-							}
-						</CustomText>
-					}
+					<View style={[style.column, { width: 'auto', height: '100%' }]}>
+						{
+							ride.latestMessage &&
+							<CustomText size={10} color="grey">
+								{
+									new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 60000 ? 'Just now' :
+										new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 3600000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 60000)}m ago` :
+											new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 86400000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 3600000)}h ago` :
+												new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 604800000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 86400000)}d ago` :
+													new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 2628000000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 604800000)}w ago` :
+														new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 31540000000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 2628000000)}mon ago` :
+															`${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 31540000000)}y ago`
+								}
+							</CustomText>
+						}
+					</View>
 				</View>
 			</View>
 		</Pressable>
@@ -141,7 +160,6 @@ const Messages = () => {
 	const navigation = useNavigation()
 	
 	const ridesQuery = query(collection(db, 'rides'), and(where('passengers', '!=', []), or(where('passengers', 'array-contains', user?.uid), where('driver', '==', user?.uid))))
-	// const ridesQuery = query(collection(db, 'rides'), and(where('passengers', '!=', []), where('completed_at', '==', null), where('cancelled_at', '==', null), or(where('passengers', 'array-contains', user?.uid), where('driver', '==', user?.uid))))
 	
 	useEffect(() => {
 		const unsubscribe = onSnapshot(ridesQuery, async (snapshot) => {
@@ -252,24 +270,23 @@ const Messages = () => {
 	return (
 		<CustomLayout
 			hasAppBar={true}
-			scrollable={true}
+			contentPadding={0}
 			header={<CustomHeader title="Messages" />}
 		>
-			<View style={style.mainContent}>
-				<View style={style.row}>
-					<CustomListWithDivider
-						items={
-							rides.map((ride) => (
-								<ChatComponent ride={ride} key={ride.id} user={user} colors={colors}
-								               navigation={navigation} />
-							))
-						}
-						dividerComponent={
-							<View style={localStyle.divider} />
-						}
-					/>
+			<CustomLayout scrollable={true}>
+				<View style={style.mainContent}>
+					<View style={[style.row]}>
+						<View style={[style.column, { gap: 20 }]}>
+							{
+								rides.map((ride) => (
+									<ChatComponent ride={ride} key={ride.id} user={user} colors={colors}
+									               navigation={navigation} />
+								))
+							}
+						</View>
+					</View>
 				</View>
-			</View>
+			</CustomLayout>
 		</CustomLayout>
 	)
 }
