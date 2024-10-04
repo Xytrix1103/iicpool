@@ -17,6 +17,8 @@ import CustomIconButton from '../components/themed/CustomIconButton'
 import * as ImagePicker from 'expo-image-picker'
 import { getDownloadURL, ref as storageRef, uploadBytesResumable } from 'firebase/storage'
 import CustomTextButton from '../components/themed/CustomTextButton'
+import style from '../styles/shared'
+import { Role } from '../database/schema'
 
 type ProfileData = {
 	full_name: string
@@ -208,7 +210,7 @@ const Profile = () => {
 								size={200}
 							/>
 							{(isEditingImage && isEditing) && (
-								<View style={style.overlay}>
+								<View style={localStyle.overlay}>
 									<CustomIconButton
 										icon="camera"
 										onPress={handleCamera}
@@ -312,6 +314,88 @@ const Profile = () => {
 							/>
 						</View>
 					</View>
+					{
+						!isEditing &&
+						<View style={[style.row, { gap: 10 }]}>
+							<View style={[style.column, { gap: 10 }]}>
+								<CustomText bold size={14}>
+									Roles
+								</CustomText>
+								<View style={[style.row, { gap: 10 }]}>
+									<View
+										style={[style.row, {
+											gap: 10,
+											justifyContent: 'space-between',
+										}]}
+									>
+										<View
+											style={{
+												flexDirection: 'row',
+												alignItems: 'center',
+												gap: 10,
+											}}
+										>
+											<Icon name="seat-passenger" size={30} />
+											<CustomText size={16}>
+												Passenger
+											</CustomText>
+										</View>
+										<View
+											style={{
+												flexDirection: 'row',
+												alignItems: 'center',
+												gap: 10,
+											}}
+										>
+											<CustomIconButton icon="check" containerColor="green" iconColor="white" />
+										</View>
+									</View>
+								</View>
+								<View
+									style={[style.row, {
+										gap: 10,
+										justifyContent: 'space-between',
+									}]}
+								>
+									<View
+										style={{
+											flexDirection: 'row',
+											alignItems: 'center',
+											gap: 10,
+										}}
+									>
+										<Icon name="steering" size={30} />
+										<CustomText size={16}>
+											Driver
+										</CustomText>
+									</View>
+									<View
+										style={{
+											flexDirection: 'row',
+											alignItems: 'center',
+											gap: 10,
+										}}
+									>
+										{/*<CustomText size={14} color="grey">*/}
+										{/*	Inactive*/}
+										{/*</CustomText>*/}
+										{
+											profile?.roles.includes(Role.DRIVER) ?
+												<CustomText size={14} color="green">
+													Active
+												</CustomText> :
+												<CustomTextButton size={14} onPress={() => {
+													//@ts-ignore
+													navigation.navigate('Driver')
+												}}>
+													Activate
+												</CustomTextButton>
+										}
+									</View>
+								</View>
+							</View>
+						</View>
+					}
 					{
 						!isEditing &&
 						<View style={[style.row, { gap: 10 }]}>
@@ -507,34 +591,7 @@ const Profile = () => {
 	)
 }
 
-const style = StyleSheet.create({
-	container: {
-		flex: 1,
-		width: '100%',
-		height: '100%',
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-	map: {
-		width: '100%',
-		height: '100%',
-		alignSelf: 'center',
-	},
-	row: {
-		flexDirection: 'row',
-		width: '100%',
-		alignItems: 'center',
-	},
-	column: {
-		flexDirection: 'column',
-		width: '100%',
-	},
-	mainContent: {
-		flex: 1,
-		width: '100%',
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
+const localStyle = StyleSheet.create({
 	overlay: {
 		position: 'absolute',
 		top: 0,
