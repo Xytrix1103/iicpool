@@ -4,6 +4,7 @@ import { Image, View } from 'react-native'
 import style from '../styles/shared'
 import React, { useContext, useEffect, useState } from 'react'
 import * as ImagePicker from 'expo-image-picker'
+import { CameraType } from 'expo-image-picker'
 import { useForm } from 'react-hook-form'
 import CustomBackgroundButton from '../components/themed/CustomBackgroundButton'
 import { AuthContext } from '../components/contexts/AuthContext'
@@ -53,6 +54,8 @@ const ManageLicense = () => {
 	const handleCamera = async () => {
 		const result = await ImagePicker.launchCameraAsync({
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
+			cameraType: CameraType.back,
+			exif: true,
 			allowsEditing: true,
 			aspect: [17, 11],
 			quality: 1,

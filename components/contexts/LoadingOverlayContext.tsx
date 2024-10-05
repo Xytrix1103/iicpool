@@ -3,7 +3,7 @@ import { createContext, useEffect, useState } from 'react'
 import { ActivityIndicator } from 'react-native-paper'
 import { Modal, StyleSheet, Text, View } from 'react-native'
 
-type LoadingOverlayContextType = {
+export type LoadingOverlayContextType = {
 	loadingOverlay: {
 		show: boolean,
 		message: string,

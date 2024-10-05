@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useRef, useState } from 'react'
+import React, { ReactNode, useRef, useState } from 'react'
 import {
 	DimensionValue,
 	Platform,
@@ -52,14 +52,7 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 	const [isPasswordVisible, setIsPasswordVisible] = useState(false)
 	const { colors } = useTheme()
 	
-	// @ts-expect-error inputRef current value
-	const usedValue = editable ? inputRef.current?.value : value
-	
-	useEffect(() => {
-		if (editable && value !== undefined) {
-			inputRef.current?.setNativeProps({ text: value })
-		}
-	}, [value, editable])
+	console.log('FloatingLabelInput', value)
 	
 	return (
 		<View style={{ width: '100%', flexDirection: 'column', gap: 5 }}>
@@ -72,12 +65,12 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 					},
 				]}
 			>
-				{!((isFocused || (hideLabelOnFocus ? (usedValue?.length || 0) > 0 : true)) && hideLabelOnFocus && label) && (
+				{!((isFocused || (hideLabelOnFocus ? (value?.length || 0) > 0 : true)) && hideLabelOnFocus && label) && (
 					<Text
 						style={[
 							styles.label,
 							{
-								top: isFocused || usedValue ? 0 : 18,
+								top: isFocused || value ? 0 : 18,
 								color: isFocused ? colors.primary : '#aaa',
 							},
 						]}
@@ -90,11 +83,9 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 						autoFocus={props.autoFocus}
 						{...props}
 						ref={inputRef}
-						value={usedValue}
+						value={value}
 						onChangeText={(text) => {
 							onChangeText(text)
-							// @ts-expect-error inputRef current value
-							inputRef.current.value = text
 						}}
 						secureTextEntry={secureTextEntry && !isPasswordVisible}
 						multiline={multiline}
@@ -145,14 +136,14 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 							fontSize: 12,
 							marginBottom: 10,
 							color:
-								(usedValue || 0) > limit
+								(value?.length || 0) > limit
 									? 'red'
 									: isFocused
 										? colors.primary
 										: '#aaa',
 						}}
 					>
-						{usedValue?.length || 0}/{limit}
+						{value?.length || 0}/{limit}
 					</Text>
 				)}
 			</View>

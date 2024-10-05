@@ -5,6 +5,7 @@ import { Avatar } from 'react-native-paper'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import React from 'react'
 import * as ImagePicker from 'expo-image-picker'
+import { CameraType } from 'expo-image-picker'
 import CustomBackgroundButton from '../../components/themed/CustomBackgroundButton'
 
 const AccountSetupStep1 = (
@@ -30,6 +31,8 @@ const AccountSetupStep1 = (
 	const handleCamera = async () => {
 		const result = await ImagePicker.launchCameraAsync({
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
+			cameraType: CameraType.back,
+			exif: true,
 			allowsEditing: true,
 			aspect: [1, 1],
 			quality: 1,

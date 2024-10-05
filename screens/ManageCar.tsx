@@ -12,6 +12,7 @@ import CustomText from '../components/themed/CustomText'
 import CustomInput from '../components/themed/CustomInput'
 import { Controller, useForm } from 'react-hook-form'
 import * as ImagePicker from 'expo-image-picker'
+import { CameraType } from 'expo-image-picker'
 import CustomIconButton from '../components/themed/CustomIconButton'
 import { deleteObject, getDownloadURL, ref as storageRef, uploadBytesResumable } from 'firebase/storage'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
@@ -62,6 +63,8 @@ const ManageCar = () => {
 	const handleCamera = async () => {
 		const result = await ImagePicker.launchCameraAsync({
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
+			cameraType: CameraType.back,
+			exif: true,
 			allowsEditing: true,
 			aspect: [4, 3],
 			quality: 1,
@@ -344,9 +347,9 @@ const ManageCar = () => {
 											autoCapitalize="characters"
 											label="Please enter your car's number plate"
 											hideLabelOnFocus={true}
-											editable={!(!!id)}
+											editable={!id}
 											value={value}
-											onChangeText={route.params?.id ? () => null : onChange}
+											onChangeText={onChange}
 											errorMessage={errors.plate && errors.plate?.message}
 										/>
 									)}

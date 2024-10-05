@@ -15,6 +15,7 @@ import { linkGoogle, unlinkEmailPassword, unlinkGoogle } from '../api/auth'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import CustomIconButton from '../components/themed/CustomIconButton'
 import * as ImagePicker from 'expo-image-picker'
+import { CameraType } from 'expo-image-picker'
 import { getDownloadURL, ref as storageRef, uploadBytesResumable } from 'firebase/storage'
 import CustomTextButton from '../components/themed/CustomTextButton'
 import style from '../styles/shared'
@@ -151,6 +152,8 @@ const Profile = () => {
 	const handleCamera = async () => {
 		const result = await ImagePicker.launchCameraAsync({
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
+			cameraType: CameraType.back,
+			exif: true,
 			allowsEditing: true,
 			aspect: [1, 1],
 			quality: 1,

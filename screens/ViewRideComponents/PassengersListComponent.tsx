@@ -6,7 +6,6 @@ import style from '../../styles/shared'
 import { Profile, Ride } from '../../database/schema'
 import { Avatar } from 'react-native-paper'
 import { AuthContext } from '../../components/contexts/AuthContext'
-import FirebaseApp from '../../components/FirebaseApp'
 import CustomIconButton from '../../components/themed/CustomIconButton'
 import { handleBookRide } from '../../api/rides'
 
@@ -15,15 +14,13 @@ type PassengersListComponentProps = {
 	passengers: (Profile | null)[],
 };
 
-const { db } = FirebaseApp
-
 const PassengersListComponent: React.FC<PassengersListComponentProps> = ({ ride, passengers }) => {
 	const { user } = useContext(AuthContext)
 	
-	
 	return (
 		<View
-			style={[style.row, { backgroundColor: 'white', elevation: 5, padding: 20, borderRadius: 10, gap: 10 }]}>
+			style={[style.row, { backgroundColor: 'white', elevation: 5, padding: 20, borderRadius: 10, gap: 10 }]}
+		>
 			<View style={[style.column, { gap: 10, flex: 1 }]}>
 				<View style={[style.row, { gap: 10 }]}>
 					<View style={[style.column, { gap: 5 }]}>

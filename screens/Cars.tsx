@@ -7,11 +7,12 @@ import { useTheme } from 'react-native-paper'
 import CustomText from '../components/themed/CustomText'
 import { Car } from '../database/schema'
 import FirebaseApp from '../components/FirebaseApp'
-import { collection, doc, onSnapshot, query, runTransaction, where } from 'firebase/firestore'
+import { collection, onSnapshot, query, where } from 'firebase/firestore'
 import { AuthContext } from '../components/contexts/AuthContext'
 import CustomIconButton from '../components/themed/CustomIconButton'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import style from '../styles/shared'
+import { handleDeleteCar } from '../api/cars'
 
 const { db } = FirebaseApp
 
@@ -34,28 +35,6 @@ const Cars = () => {
 		// @ts-ignore
 		navigation.navigate('ManageCar', { id })
 	}, [navigation, isEditing])
-	
-	const handleDeleteCar = useCallback(async (id: string) => {
-		console.log('Delete car', id)
-		
-		setLoadingOverlay({ show: true, message: 'Deleting car...' })
-		
-		await runTransaction(db, async (transaction) => {
-			const carRef = doc(db, 'cars', id)
-			transaction.update(carRef, {
-				deleted_at: new Date(),
-			})
-		})
-			.then(() => {
-				console.log('Car deleted successfully')
-			})
-			.catch((error) => {
-				console.error('Error deleting car', error)
-			})
-			.finally(() => {
-				setLoadingOverlay({ show: false, message: '' })
-			})
-	}, [])
 	
 	useEffect(() => {
 		const unsubscribe = onSnapshot(carsRef, snapshot => {
@@ -93,10 +72,11 @@ const Cars = () => {
 					<View style={[style.column, { gap: 20 }]}>
 						{
 							cars.map((car, index) => (
-								<View key={index} style={[style.row, { gap: 20 }]}>
+								<View key={index} style={[style.row, { gap: 20, height: 'auto' }]}>
 									<View style={[style.column, {
 										flex: 3,
 										width: 'auto',
+										height: 'auto',
 										justifyContent: 'center',
 										alignItems: 'center',
 									}]}>
@@ -113,7 +93,6 @@ const Cars = () => {
 									</View>
 									<View style={[style.column, {
 										flex: 6,
-										height: '100%',
 										width: 'auto',
 										justifyContent: 'space-between',
 									}]}>
@@ -123,7 +102,7 @@ const Cars = () => {
 											</View>
 											<View style={[style.row, { gap: 10 }]}>
 												<CustomText>
-													{properCase(`${car.brand} ${car.model}`)}
+													{properCase(car.brand)} {car.model}
 												</CustomText>
 											</View>
 										</View>
@@ -139,7 +118,6 @@ const Cars = () => {
 									<View
 										style={[style.column, {
 											flex: 1,
-											height: '100%',
 											justifyContent: 'space-between',
 											alignItems: 'center',
 											width: 'auto',
@@ -150,7 +128,7 @@ const Cars = () => {
 										/>
 										<CustomIconButton
 											icon="delete-outline"
-											onPress={() => handleDeleteCar(car.id as string)}
+											onPress={() => handleDeleteCar(car.id as string, setLoadingOverlay)}
 											iconColor={colors.error}
 										/>
 									</View>
