@@ -56,7 +56,6 @@ const ModeSwitchMenu = ({ visible, setVisible, setMode, mode, profile }: {
 				setVisible(false)
 			}}
 			anchorPosition="bottom"
-			style={{ marginTop: 40 }} // Add margin to avoid overlap
 			anchor={
 				<CustomIconButton
 					icon={mode === 'driver' ? 'steering' : 'seat-passenger'}
@@ -68,7 +67,12 @@ const ModeSwitchMenu = ({ visible, setVisible, setMode, mode, profile }: {
 		>
 			<Menu.Item
 				leadingIcon="seat-passenger"
-				title="Passenger Mode"
+				trailingIcon={
+					mode === Role.PASSENGER ?
+						'check' :
+						undefined
+				}
+				title="Passenger Mode "
 				onPress={() => {
 					setMode(Role.PASSENGER)
 					setVisible(false)
@@ -76,7 +80,12 @@ const ModeSwitchMenu = ({ visible, setVisible, setMode, mode, profile }: {
 			/>
 			<Menu.Item
 				leadingIcon="steering"
-				title="Driver Mode"
+				title="Driver Mode "
+				trailingIcon={
+					mode === Role.DRIVER ?
+						'check' :
+						undefined
+				}
 				onPress={() => {
 					setMode(Role.DRIVER)
 					setVisible(false)

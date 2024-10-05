@@ -1,7 +1,7 @@
 import CustomLayout from '../components/themed/CustomLayout'
 import CustomHeader from '../components/themed/CustomHeader'
 import { useNavigation } from '@react-navigation/native'
-import { Image, StyleSheet, View } from 'react-native'
+import { Image, View } from 'react-native'
 import { useCallback, useContext, useEffect, useState } from 'react'
 import { useTheme } from 'react-native-paper'
 import CustomText from '../components/themed/CustomText'
@@ -11,6 +11,7 @@ import { collection, doc, onSnapshot, query, runTransaction, where } from 'fireb
 import { AuthContext } from '../components/contexts/AuthContext'
 import CustomIconButton from '../components/themed/CustomIconButton'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
+import style from '../styles/shared'
 
 const { db } = FirebaseApp
 
@@ -88,12 +89,11 @@ const Cars = () => {
 			}
 		>
 			<View style={style.mainContent}>
-				<View style={[style.column, { gap: 20 }]}>
-					{
-						cars.length === 0 ?
-							<CustomText>No cars found</CustomText> :
+				<View style={[style.row]}>
+					<View style={[style.column, { gap: 20 }]}>
+						{
 							cars.map((car, index) => (
-								<View key={index} style={[style.row, { gap: 20, flex: 1 }]}>
+								<View key={index} style={[style.row, { gap: 20 }]}>
 									<View style={[style.column, {
 										flex: 3,
 										width: 'auto',
@@ -156,41 +156,18 @@ const Cars = () => {
 									</View>
 								</View>
 							))
-					}
+						}
+						{
+							cars.length === 0 &&
+							<CustomText align="center" size={16}>
+								No cars yet. Add a car to get started.
+							</CustomText>
+						}
+					</View>
 				</View>
 			</View>
 		</CustomLayout>
 	)
 }
-
-const style = StyleSheet.create({
-	container: {
-		flex: 1,
-		width: '100%',
-		height: '100%',
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-	map: {
-		width: '100%',
-		height: '100%',
-		alignSelf: 'center',
-	},
-	row: {
-		flexDirection: 'row',
-		width: '100%',
-		alignItems: 'center',
-	},
-	column: {
-		flexDirection: 'column',
-		width: '100%',
-	},
-	mainContent: {
-		flex: 1,
-		width: '100%',
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-})
 
 export default Cars

@@ -1,4 +1,4 @@
-import { View } from 'react-native'
+import { Alert, View } from 'react-native'
 import CustomHeading from './CustomHeading'
 import { FC, ReactNode } from 'react'
 import CustomIconButton from './CustomIconButton'
@@ -6,9 +6,10 @@ import CustomIconButton from './CustomIconButton'
 type CustomHeaderProps = {
 	title: string,
 	navigation?: any,
-	onPress?: () => void
-	rightNode?: ReactNode
-	isHome?: boolean
+	onPress?: () => void,
+	rightNode?: ReactNode,
+	isHome?: boolean,
+	confirmationMessage?: string
 }
 
 const CustomHeader: FC<CustomHeaderProps> = (
@@ -18,6 +19,7 @@ const CustomHeader: FC<CustomHeaderProps> = (
 		onPress,
 		rightNode,
 		isHome = false,
+		confirmationMessage,
 	},
 ) => {
 	return (
@@ -41,9 +43,49 @@ const CustomHeader: FC<CustomHeaderProps> = (
 						icon="arrow-left"
 						onPress={() => {
 							if (onPress) {
-								onPress()
+								if (confirmationMessage) {
+									//show alert dialog
+									Alert.alert(
+										'Go Back',
+										confirmationMessage,
+										[
+											{
+												text: 'Cancel',
+												style: 'cancel',
+											},
+											{
+												text: 'OK',
+												onPress: onPress,
+											},
+										],
+										{ cancelable: false },
+									)
+								} else {
+									onPress()
+								}
 							} else if (navigation) {
-								navigation.goBack()
+								if (confirmationMessage) {
+									//show alert dialog
+									Alert.alert(
+										'Go Back',
+										confirmationMessage,
+										[
+											{
+												text: 'Cancel',
+												style: 'cancel',
+											},
+											{
+												text: 'OK',
+												onPress: () => {
+													navigation.goBack()
+												},
+											},
+										],
+										{ cancelable: false },
+									)
+								} else {
+									navigation.goBack()
+								}
 							}
 						}}
 					/>

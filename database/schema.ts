@@ -11,6 +11,7 @@ type ProfileNotificationSettings = {
 type Profile = {
 	id?: string;
 	roles: Role[];
+	driver_license?: string;
 	full_name: string;
 	mobile_number: string;
 	photo_url: string;

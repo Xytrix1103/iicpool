@@ -283,6 +283,12 @@ const Messages = () => {
 									               navigation={navigation} />
 								))
 							}
+							{
+								rides.length === 0 &&
+								<CustomText align="center" size={16}>
+									No messages yet
+								</CustomText>
+							}
 						</View>
 					</View>
 				</View>

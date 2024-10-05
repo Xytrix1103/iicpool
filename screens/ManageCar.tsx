@@ -90,7 +90,7 @@ const ManageCar = () => {
 			if (imageUpdated) {
 				const blob = await fetch(data.new_photo_uri as string).then(res => res.blob())
 				
-				const storage = storageRef(FirebaseApp.storage, `cars/${data.plate}`)
+				const storage = storageRef(FirebaseApp.storage, `cars/${data.plate}.png`)
 				
 				const uploadTask = uploadBytesResumable(storage, blob)
 				

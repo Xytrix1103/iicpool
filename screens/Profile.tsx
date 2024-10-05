@@ -55,6 +55,26 @@ const Profile = () => {
 			message: 'Updating Profile',
 		})
 		
+		if (data.photo_uri === profile?.photo_url) {
+			await updateDoc(userRef, {
+				full_name: data.full_name,
+				mobile_number: data.mobile_number,
+			})
+				.then(() => {
+					console.log('Profile Updated')
+					Alert.alert('Profile Updated', 'Your profile has been updated successfully.')
+					setIsEditing(false)
+				})
+				.catch((error) => {
+					console.error('Error updating profile: ', error)
+				})
+				.finally(() => {
+					refreshUserRecord()
+					setLoadingOverlay({ show: false, message: '' })
+				})
+			return
+		}
+		
 		const blob = await (await fetch(data.photo_uri)).blob()
 		
 		const newStorageRef = storageRef(FirebaseApp.storage, `users/${user?.uid}.png`)
@@ -113,18 +133,18 @@ const Profile = () => {
 		setValue('mobile_number', profile?.mobile_number || '')
 	}, [profile])
 	
-	const watchPhotoUri = watch('photo_uri')
+	const { full_name, mobile_number, photo_uri: watchPhotoUri } = watch()
 	
 	const handleLibrary = async () => {
 		const result = await ImagePicker.launchImageLibraryAsync({
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
 			allowsEditing: true,
-			aspect: [4, 3],
+			aspect: [1, 1],
 			quality: 1,
 		})
 		
 		if (!result.canceled) {
-			form.setValue('photo_uri', result.assets[0].uri)
+			setValue('photo_uri', result.assets[0].uri)
 		}
 	}
 	
@@ -132,12 +152,12 @@ const Profile = () => {
 		const result = await ImagePicker.launchCameraAsync({
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
 			allowsEditing: true,
-			aspect: [4, 3],
+			aspect: [1, 1],
 			quality: 1,
 		})
 		
 		if (!result.canceled) {
-			form.setValue('photo_uri', result.assets[0].uri)
+			setValue('photo_uri', result.assets[0].uri)
 		}
 	}
 	
@@ -159,6 +179,7 @@ const Profile = () => {
 				<CustomHeader
 					title={isEditing ? 'Edit Profile' : 'Profile'}
 					onPress={isEditing ? () => setIsEditing(false) : undefined}
+					confirmationMessage={isEditing ? 'You have unsaved changes. Are you sure you want to go back?' : ''}
 					rightNode={
 						<View style={[style.row, {
 							gap: 5,
@@ -167,7 +188,7 @@ const Profile = () => {
 							alignItems: 'center',
 						}]}>
 							{
-								!isEditing &&
+								(!isEditing && profile?.roles.includes(Role.DRIVER)) &&
 								<CustomIconButton
 									icon="car"
 									onPress={() => {
@@ -179,7 +200,7 @@ const Profile = () => {
 							<CustomIconButton
 								icon={isEditing ? 'check' : 'pencil-outline'}
 								onPress={
-									isEditing ?
+									(isEditing && (profile?.full_name !== full_name || profile?.mobile_number !== mobile_number || profile?.photo_url !== watchPhotoUri)) ?
 										handleSubmit(updateProfile) : () => setIsEditing(!isEditing)
 								}
 							/>
@@ -319,38 +340,8 @@ const Profile = () => {
 						<View style={[style.row, { gap: 10 }]}>
 							<View style={[style.column, { gap: 10 }]}>
 								<CustomText bold size={14}>
-									Roles
+									Additional Roles
 								</CustomText>
-								<View style={[style.row, { gap: 10 }]}>
-									<View
-										style={[style.row, {
-											gap: 10,
-											justifyContent: 'space-between',
-										}]}
-									>
-										<View
-											style={{
-												flexDirection: 'row',
-												alignItems: 'center',
-												gap: 10,
-											}}
-										>
-											<Icon name="seat-passenger" size={30} />
-											<CustomText size={16}>
-												Passenger
-											</CustomText>
-										</View>
-										<View
-											style={{
-												flexDirection: 'row',
-												alignItems: 'center',
-												gap: 10,
-											}}
-										>
-											<CustomIconButton icon="check" containerColor="green" iconColor="white" />
-										</View>
-									</View>
-								</View>
 								<View
 									style={[style.row, {
 										gap: 10,
@@ -369,30 +360,50 @@ const Profile = () => {
 											Driver
 										</CustomText>
 									</View>
-									<View
-										style={{
-											flexDirection: 'row',
-											alignItems: 'center',
-											gap: 10,
-										}}
-									>
-										{/*<CustomText size={14} color="grey">*/}
-										{/*	Inactive*/}
-										{/*</CustomText>*/}
-										{
-											profile?.roles.includes(Role.DRIVER) ?
-												<CustomText size={14} color="green">
-													Active
-												</CustomText> :
-												<CustomTextButton size={14} onPress={() => {
-													//@ts-ignore
-													navigation.navigate('Driver')
-												}}>
-													Activate
-												</CustomTextButton>
-										}
-									</View>
+									{
+										user?.emailVerified ?
+											<View
+												style={{
+													flexDirection: 'row',
+													alignItems: 'center',
+													gap: 10,
+												}}
+											>
+												{
+													profile?.roles.includes(Role.DRIVER) ?
+														<Icon
+															size={30}
+															name="check-decagram"
+															color="green"
+														/> :
+														<CustomTextButton size={14} onPress={() => {
+															//@ts-ignore
+															navigation.navigate('ManageLicense')
+														}}>
+															Activate
+														</CustomTextButton>
+												}
+											</View> :
+											<CustomText size={14} color="grey">
+												Verify Email to Activate
+											</CustomText>
+									}
 								</View>
+								{
+									//text button to manage driver license
+									profile?.roles.includes(Role.DRIVER) &&
+									<View style={[style.row, { alignItems: 'center' }]}>
+										<CustomText size={12}>
+											Manage your uploaded driver's license{' '}
+										</CustomText>
+										<CustomTextButton onPress={() => {
+											//@ts-ignore
+											navigation.navigate('ManageLicense')
+										}} size={12}>
+											here
+										</CustomTextButton>
+									</View>
+								}
 							</View>
 						</View>
 					}

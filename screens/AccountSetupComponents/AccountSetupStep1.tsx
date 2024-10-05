@@ -3,8 +3,7 @@ import CustomLayout from '../../components/themed/CustomLayout'
 import style from '../../styles/shared'
 import { Avatar } from 'react-native-paper'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
-import React, { useContext, useEffect, useState } from 'react'
-import { AuthContext } from '../../components/contexts/AuthContext'
+import React from 'react'
 import * as ImagePicker from 'expo-image-picker'
 import CustomBackgroundButton from '../../components/themed/CustomBackgroundButton'
 
@@ -15,11 +14,6 @@ const AccountSetupStep1 = (
 		form: any
 	},
 ) => {
-	const {
-		profile,
-	} = useContext(AuthContext)
-	const [imageUri, setImageUri] = useState<string | null>(null)
-	
 	const handleLibrary = async () => {
 		const result = await ImagePicker.launchImageLibraryAsync({
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -29,7 +23,7 @@ const AccountSetupStep1 = (
 		})
 		
 		if (!result.canceled) {
-			setImageUri(result.assets[0].uri)
+			setValue('photo_uri', result.assets[0].uri)
 		}
 	}
 	
@@ -42,17 +36,12 @@ const AccountSetupStep1 = (
 		})
 		
 		if (!result.canceled) {
-			setImageUri(result.assets[0].uri)
+			setValue('photo_uri', result.assets[0].uri)
 		}
 	}
 	
-	const { setValue } = form
-	
-	useEffect(() => {
-		if (imageUri) {
-			setValue('photo_uri', imageUri)
-		}
-	}, [imageUri])
+	const { setValue, watch } = form
+	const watchImage = watch('photo_uri')
 	
 	return (
 		<CustomLayout
@@ -63,8 +52,8 @@ const AccountSetupStep1 = (
 					<View style={[style.row, { justifyContent: 'center' }]}>
 						<Avatar.Image
 							source={
-								imageUri ?
-									{ uri: imageUri } :
+								watchImage ?
+									{ uri: watchImage } :
 									(props: { size: number }) => {
 										return <Icon name="account-circle" size={props.size} />
 									}
@@ -84,7 +73,7 @@ const AccountSetupStep1 = (
 						<CustomBackgroundButton
 							icon="camera"
 							onPress={handleCamera}
-							size={50}
+							size={30}
 							padding={20}
 							backgroundColor="white"
 							borderRadius={20}
@@ -94,7 +83,7 @@ const AccountSetupStep1 = (
 						<CustomBackgroundButton
 							icon="image"
 							onPress={handleLibrary}
-							size={50}
+							size={30}
 							padding={20}
 							backgroundColor="white"
 							borderRadius={20}
