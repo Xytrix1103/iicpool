@@ -1,18 +1,31 @@
-import { createContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { Role } from '../../database/schema'
 import * as SecureStore from 'expo-secure-store'
+import { and, collection, onSnapshot, or, query, where } from 'firebase/firestore'
+import { AuthContext } from './AuthContext'
+import FirebaseApp from '../FirebaseApp'
 
 const ModeContext = createContext<{
 	mode: Role,
-	setMode: (mode: Role) => void
+	setMode: (mode: Role) => void,
+	isInRide: string | null,
+	setIsInRide: (isInRide: string | null) => void,
 }>({
 	mode: Role.PASSENGER,
 	setMode: () => {
 	},
+	isInRide: null,
+	setIsInRide: () => {
+	},
 })
+
+const { db } = FirebaseApp
 
 const ModeProvider = ({ children }: { children: any }) => {
 	const [mode, setMode] = useState<Role>(Role.PASSENGER)
+	const [isInRide, setIsInRide] = useState<string | null>(null)
+	const { user } = useContext(AuthContext)
+	const ridesQuery = query(collection(db, 'rides'), and(or(where('driver', '==', user?.uid || ''), where('passengers', 'array-contains', user?.uid || '')), where('completed_at', '==', null), where('cancelled_at', '==', null)))
 	
 	useEffect(() => {
 		//write to expo secure store
@@ -37,8 +50,31 @@ const ModeProvider = ({ children }: { children: any }) => {
 		})()
 	}, [mode])
 	
+	useEffect(() => {
+		const unsubscribe = onSnapshot(ridesQuery, (snapshot => {
+			if (snapshot.docs.length > 0) {
+				setIsInRide(snapshot.docs[0].id)
+				
+				if (snapshot.docs[0].data().driver === user?.uid) {
+					setMode(Role.DRIVER)
+				} else {
+					setMode(Role.PASSENGER)
+				}
+			} else {
+				setIsInRide(null)
+			}
+		}))
+		
+		return () => unsubscribe()
+	}, [user])
+	
+	useEffect(() => {
+		console.log('Mode', mode)
+		console.log('Is in ride', isInRide)
+	}, [mode, isInRide])
+	
 	return (
-		<ModeContext.Provider value={{ mode, setMode }}>
+		<ModeContext.Provider value={{ mode, setMode, isInRide, setIsInRide }}>
 			{children}
 		</ModeContext.Provider>
 	)

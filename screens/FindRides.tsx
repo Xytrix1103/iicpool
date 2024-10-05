@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import { Pressable, View } from 'react-native'
-import { collection, onSnapshot } from 'firebase/firestore'
+import { collection, onSnapshot, query, where } from 'firebase/firestore'
 import CustomLayout from '../components/themed/CustomLayout'
 import style from '../styles/shared'
 import { Ride } from '../database/schema'
@@ -20,6 +20,7 @@ import { fetchLocationByCoordinates } from '../api/location'
 import CustomInput from '../components/themed/CustomInput'
 import { getPreciseDistance } from 'geolib'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
+import { AuthContext } from '../components/contexts/AuthContext'
 
 const { db } = FirebaseApp
 
@@ -33,6 +34,7 @@ const FindRides = () => {
 	const [rides, setRides] = useState<Ride[]>([])
 	const navigation = useNavigation()
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
+	const { user } = useContext(AuthContext)
 	const form = useForm<FilterFormType>({
 		defaultValues: {
 			to_campus: true,
@@ -42,6 +44,7 @@ const FindRides = () => {
 	})
 	const [locationInputFocused, setLocationInputFocused] = useState(false)
 	const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null)
+	const ridesQuery = query(collection(db, 'rides'), where('datetime', '>=', new Date()), where('driver', '!=', user?.uid), where('completed_at', '==', null), where('cancelled_at', '==', null), where('passengers', 'array-contains', user?.uid))
 	
 	const { setValue, watch, control, formState: { errors } } = form
 	
@@ -98,7 +101,7 @@ const FindRides = () => {
 			message: 'We need your location to find rides near you',
 		}).then()
 		
-		const unsubscribe = onSnapshot(collection(db, 'rides'), (snapshot) => {
+		const unsubscribe = onSnapshot(ridesQuery, (snapshot) => {
 			const ridesData: Ride[] = snapshot.docs.map(doc => ({
 				...doc.data(),
 				id: doc.id,
@@ -172,7 +175,7 @@ const FindRides = () => {
 				key={ride.id}
 			>
 				<View style={[style.column, {
-					flex: 1,
+					width: 'auto',
 					justifyContent: 'center',
 					gap: 5,
 					alignItems: 'center',
@@ -187,9 +190,16 @@ const FindRides = () => {
 				</View>
 				<View style={[style.column, { flex: 4, gap: 5 }]}>
 					<View style={[style.row, { gap: 5 }]}>
-						<CustomText size={14} bold numberOfLines={1}>
-							{`${ride.to_campus ? 'From' : 'To'} ${ride.location?.name}`} ({distance.toFixed(2)} km)
-						</CustomText>
+						<View style={[style.column, { flex: 1 }]}>
+							<CustomText size={14} bold numberOfLines={1}>
+								{`${ride.to_campus ? 'From' : 'To'} ${ride.location?.name}`}
+							</CustomText>
+						</View>
+						<View style={[style.column, { width: 'auto' }]}>
+							<CustomText size={14} bold numberOfLines={1}>
+								{`(${distance.toFixed(2)} km)`}
+							</CustomText>
+						</View>
 					</View>
 					<View style={[style.row, { gap: 5 }]}>
 						<CustomText size={14}>
@@ -211,7 +221,7 @@ const FindRides = () => {
 	return (
 		<CustomLayout
 			scrollable={false}
-			contentPadding={0}
+			contentPadding={20}
 			header={
 				<CustomHeader
 					title="Available Rides"
@@ -220,7 +230,7 @@ const FindRides = () => {
 			}
 		>
 			<View style={style.mainContent}>
-				<View style={[style.row, { gap: 10, padding: 20 }]}>
+				<View style={[style.row, { gap: 10 }]}>
 					<View style={[style.column, { gap: 10 }]}>
 						<View style={[style.row, {
 							gap: 10,
@@ -247,7 +257,7 @@ const FindRides = () => {
 													<CustomInput
 														editable={false}
 														onPressIn={() => setLocationInputFocused(true)}
-														label={to_campus ? 'Campus' : 'Drop-Off Location'}
+														label={to_campus ? 'Pick-Up Location' : 'Drop-Off Location'}
 														value={location.formatted_address}
 														onChangeText={() => null}
 														onPress={() => setLocationInputFocused(true)}
@@ -284,7 +294,6 @@ const FindRides = () => {
 				<View style={[style.row, { flex: 1 }]}>
 					<CustomLayout
 						scrollable={true}
-						contentPadding={20}
 					>
 						<View style={style.mainContent}>
 							<View style={[style.column, { gap: 10 }]}>
@@ -292,6 +301,12 @@ const FindRides = () => {
 									rides.filter(ride => ride.to_campus === to_campus).map((ride) => (
 										renderItem({ ride })
 									))
+								}
+								{
+									rides.filter(ride => ride.to_campus === to_campus).length === 0 &&
+									<CustomText align="center" size={16}>
+										No rides found
+									</CustomText>
 								}
 							</View>
 						</View>

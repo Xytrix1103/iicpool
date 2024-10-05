@@ -7,6 +7,10 @@ import { Timestamp } from '@firebase/firestore'
 
 const { db } = FirebaseApp
 
+const BASE_FARE = 1
+const RATE_PER_KM = 0.5
+const RATE_PER_MINUTE = 0.02
+
 const getPassengers = async (rideId: string): Promise<(Profile | null)[]> => {
 	const passengers: (Profile | null)[] = []
 	
