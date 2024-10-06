@@ -17,6 +17,7 @@ import { CustomDirectionsResponse } from './AddRideComponents/types'
 import PassengerView from './ViewRideComponents/PassengerView'
 import { getPassengers } from '../api/rides'
 import { AuthContext } from '../components/contexts/AuthContext'
+import CustomIconButton from '../components/themed/CustomIconButton'
 
 type ViewRideProps = RouteProp<{ ViewRide: { rideId?: string } }, 'ViewRide'>;
 const { db } = FirebaseApp
@@ -201,6 +202,15 @@ const ViewRide = () => {
 				<CustomHeader
 					title="Ride Details"
 					navigation={navigation}
+					rightNode={
+						<CustomIconButton
+							icon="message-text"
+							onPress={() => {
+								// @ts-ignore
+								navigation.navigate('Chat', { rideId })
+							}}
+						/>
+					}
 				/>
 			}
 			scrollable={true}

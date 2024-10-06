@@ -52,24 +52,33 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 			]}
 		>
 			<View style={[style.column, { gap: 20, flex: 1 }]}>
-				<View style={[style.row, { gap: 5 }]}>
-					<Icon name="calendar" size={30} />
-					<CustomText size={16} bold>
-						{ride.datetime.toDate().toLocaleString('en-GB', {
-							day: 'numeric',
-							month: 'numeric',
-							year: 'numeric',
-							hour: '2-digit',
-							minute: '2-digit',
-							hour12: true,
-						})}
-					</CustomText>
-				</View>
-				<View style={[style.row, { gap: 5 }]}>
-					<Icon name="cash" size={30} />
-					<CustomText size={16} bold>
-						RM {ride.fare}
-					</CustomText>
+				<View style={[style.row, { gap: 10 }]}>
+					<View style={[style.row, { width: 'auto', gap: 5 }]}>
+						<Icon name="calendar" size={20} />
+						<CustomText size={14} bold>
+							{ride.datetime.toDate().toLocaleString('en-GB', {
+								day: 'numeric',
+								month: 'numeric',
+								year: 'numeric',
+							})}
+						</CustomText>
+					</View>
+					<View style={[style.row, { width: 'auto', gap: 5 }]}>
+						<Icon name="clock" size={20} />
+						<CustomText size={14} bold>
+							{ride.datetime.toDate().toLocaleString('en-GB', {
+								hour: '2-digit',
+								minute: '2-digit',
+								hour12: true,
+							})}
+						</CustomText>
+					</View>
+					<View style={[style.row, { width: 'auto', gap: 5 }]}>
+						<Icon name="cash" size={20} />
+						<CustomText size={14} bold>
+							RM {ride.fare}
+						</CustomText>
+					</View>
 				</View>
 				<View style={[style.row, { gap: 5 }]}>
 					<View style={[style.column, {

@@ -284,7 +284,7 @@ const FindRides = () => {
 														editable={false}
 														onPressIn={() => setLocationInputFocused(true)}
 														label={to_campus ? 'Pick-Up Location' : 'Drop-Off Location'}
-														value={location.formatted_address}
+														value={location.name}
 														onChangeText={() => null}
 														onPress={() => setLocationInputFocused(true)}
 													/>
