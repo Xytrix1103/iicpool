@@ -15,11 +15,10 @@ type Profile = {
 	full_name: string;
 	mobile_number: string;
 	photo_url: string;
-	deleted: boolean;
 	expoPushToken?: string;
 	notification_settings: ProfileNotificationSettings;
 	created_at: Timestamp;
-	deleted_at?: Timestamp;
+	deleted_at: Timestamp | null;
 }
 
 type Car = {
@@ -63,7 +62,9 @@ type Ride = {
 	datetime: Timestamp
 	created_at: Timestamp
 	completed_at: Timestamp | null
+	cancelled_at: Timestamp | null
 	started_at: Timestamp | null
+	fare: number
 	location: {
 		place_id: string
 		formatted_address: string
@@ -76,7 +77,6 @@ type Ride = {
 		},
 	}
 	deleted_at: Timestamp | null
-	messages?: Message[]
 }
 
 enum Role {

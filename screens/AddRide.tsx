@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
-import { View } from 'react-native'
+import { Alert, View } from 'react-native'
 import CustomLayout from '../components/themed/CustomLayout'
 import { useTheme } from 'react-native-paper'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
@@ -23,6 +23,8 @@ import CustomModal from '../components/themed/CustomModal'
 import CustomHeading from '../components/themed/CustomHeading'
 import CustomText from '../components/themed/CustomText'
 import CustomTextButton from '../components/themed/CustomTextButton'
+import { getDirections } from '../api/location'
+import { BASE_FARE, RATE_PER_KM, RATE_PER_MINUTE } from '../api/rides'
 
 const { db } = FirebaseApp
 
@@ -77,6 +79,29 @@ const AddRide = () => {
 		
 		setLoadingOverlay({ show: true, message: 'Adding ride...' })
 		
+		const directions = await getDirections({
+			origin: data.campus.place_id,
+			destination: data.not_campus.place_id,
+			departure_time: data.datetime,
+		})
+		
+		console.log('Directions:', directions)
+		
+		if (!directions) {
+			setLoadingOverlay({ show: false, message: '' })
+			Alert.alert('Error', 'Could not get directions')
+			return
+		}
+		
+		const routeDuration = directions.routes[0].legs.reduce((acc, leg) => acc + leg.duration.value, 0) / 60
+		const routeDistance = directions.routes[0].legs.reduce((acc, leg) => acc + leg.distance.value, 0) / 1000
+		
+		let fare = Math.floor(routeDistance) * RATE_PER_KM + Math.floor(routeDuration) * RATE_PER_MINUTE
+		fare = fare < BASE_FARE ? BASE_FARE : fare
+		fare = Math.floor(fare)
+		
+		console.log('Fare:', fare)
+		
 		const rideData = {
 			driver: user?.uid,
 			location: data.not_campus,
@@ -86,9 +111,11 @@ const AddRide = () => {
 			created_at: Timestamp.now(),
 			started_at: null,
 			completed_at: null,
+			cancelled_at: null,
 			deleted_at: null,
 			car: data.car,
 			passengers: [],
+			fare: fare,
 		} as Ride
 		
 		await runTransaction(db, async (transaction) => {

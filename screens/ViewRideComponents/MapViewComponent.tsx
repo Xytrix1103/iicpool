@@ -5,21 +5,42 @@ import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import { CAMPUS_NAME, decodePolyline } from '../../api/location'
 import { GooglePlaceDetail } from 'react-native-google-places-autocomplete'
 import { CustomDirectionsResponse } from '../AddRideComponents/types'
-import { Ride } from '../../database/schema'
+import { Profile, Ride } from '../../database/schema'
 import { MD3Colors } from 'react-native-paper/lib/typescript/types'
 import style from '../../styles/shared'
 import CustomText from '../../components/themed/CustomText'
+import CustomOutlinedButton from '../../components/themed/CustomOutlinedButton'
+import { handleBookRide, handleCancelBooking } from '../../api/rides'
+import CustomSolidButton from '../../components/themed/CustomSolidButton'
+import { User } from 'firebase/auth'
 
 type MapViewComponentProps = {
-	ride: Ride;
-	directions: CustomDirectionsResponse | null;
-	campusLocation: GooglePlaceDetail | null;
-	colors: MD3Colors;
-	mapRef: React.MutableRefObject<MapView | null>;
+	ride: Ride,
+	directions: CustomDirectionsResponse | null,
+	campusLocation: GooglePlaceDetail | null,
+	colors: MD3Colors,
+	mapRef: React.MutableRefObject<MapView | null>,
+	passengers: (Profile | null)[],
+	isInRide: string | null,
+	currentRide?: Ride | null,
+	user: User | null
 };
 
-const MapViewComponent: React.FC<MapViewComponentProps> = ({ ride, directions, campusLocation, colors, mapRef }) => {
+const MapViewComponent: React.FC<MapViewComponentProps> = (
+	{
+		ride,
+		directions,
+		campusLocation,
+		colors,
+		mapRef,
+		passengers,
+		isInRide,
+		currentRide,
+		user,
+	},
+) => {
 	const routeDuration = directions?.routes[0].legs?.reduce((acc, leg) => acc + (leg.duration?.value || 0), 0) || 0
+	const routeDistance = directions?.routes[0].legs?.reduce((acc, leg) => acc + (leg.distance?.value || 0), 0) || 0
 	
 	return (
 		<View
@@ -45,6 +66,12 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({ ride, directions, c
 					</CustomText>
 				</View>
 				<View style={[style.row, { gap: 5 }]}>
+					<Icon name="cash" size={30} />
+					<CustomText size={16} bold>
+						RM {ride.fare}
+					</CustomText>
+				</View>
+				<View style={[style.row, { gap: 5 }]}>
 					<View style={[style.column, {
 						flexDirection: ride.to_campus ? 'column' : 'column-reverse',
 					}]}>
@@ -64,7 +91,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({ ride, directions, c
 							</View>
 							<View style={[style.column, { gap: 5, flex: 6 }]}>
 								<CustomText size={14}>
-									~ {Math.ceil(routeDuration / 60)} minutes
+									~ {Math.ceil(routeDuration / 60)} minutes ({(routeDistance / 1000).toFixed(2)} km)
 								</CustomText>
 							</View>
 						</View>
@@ -81,7 +108,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({ ride, directions, c
 					</View>
 				</View>
 				<View style={[style.row, { gap: 5 }]}>
-					<View style={[style.column, { gap: 10 }]}>
+					<View style={[style.column, { gap: 20 }]}>
 						<MapView
 							provider={PROVIDER_GOOGLE}
 							style={[localStyle.map]}
@@ -95,7 +122,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({ ride, directions, c
 								longitudeDelta: 0.01,
 							}}
 							zoomEnabled={false}
-							// scrollEnabled={false}
+							scrollEnabled={false}
 							loadingEnabled={true}
 						>
 							<Marker
@@ -140,6 +167,31 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({ ride, directions, c
 									Google Maps
 								</CustomText>
 							</CustomText>
+						</View>
+						<View style={[style.row, { gap: 10 }]}>
+							{
+								isInRide ? (
+									(isInRide === ride.id && passengers.some((passenger) => passenger?.id === user?.uid)) ?
+										<CustomOutlinedButton
+											onPress={() => {
+												handleCancelBooking({ ride: currentRide!, user })
+											}}
+										>
+											Cancel Ride
+										</CustomOutlinedButton> :
+										null
+								) : null
+							}
+							{
+								passengers.every((passenger) => passenger?.id !== user?.uid) &&
+								<CustomSolidButton
+									onPress={() => {
+										handleBookRide({ ride, user, isInRide })
+									}}
+								>
+									Book Ride
+								</CustomSolidButton>
+							}
 						</View>
 					</View>
 				</View>

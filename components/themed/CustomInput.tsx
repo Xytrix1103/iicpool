@@ -52,8 +52,6 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = (
 	const [isPasswordVisible, setIsPasswordVisible] = useState(false)
 	const { colors } = useTheme()
 	
-	console.log('FloatingLabelInput', value)
-	
 	return (
 		<View style={{ width: '100%', flexDirection: 'column', gap: 5 }}>
 			<View

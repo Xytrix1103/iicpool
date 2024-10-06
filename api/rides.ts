@@ -8,8 +8,8 @@ import { Timestamp } from '@firebase/firestore'
 const { db } = FirebaseApp
 
 const BASE_FARE = 1
-const RATE_PER_KM = 0.5
-const RATE_PER_MINUTE = 0.02
+const RATE_PER_KM = 0.2
+const RATE_PER_MINUTE = 0.1
 
 const getPassengers = async (rideId: string): Promise<(Profile | null)[]> => {
 	const passengers: (Profile | null)[] = []
@@ -41,10 +41,10 @@ const getPassengers = async (rideId: string): Promise<(Profile | null)[]> => {
 	return passengers
 }
 
-const handleBookRide = ({ ride, user }: { ride: Ride, user: User | null }) => {
+const handleBookRide = ({ ride, user, isInRide }: { ride: Ride, user: User | null, isInRide: string | null }) => {
 	Alert.alert(
 		'Book Ride',
-		'Are you sure you want to book this ride?',
+		'Are you sure you want to book this ride?' + (isInRide ? ' This will cancel your current booking.' : ''),
 		[
 			{
 				text: 'Cancel',
@@ -54,6 +54,26 @@ const handleBookRide = ({ ride, user }: { ride: Ride, user: User | null }) => {
 				text: 'Book',
 				onPress: async () => {
 					await runTransaction(db, async (transaction) => {
+						if (isInRide) {
+							//cancel the current ride
+							const currentRideRef = doc(db, 'rides', isInRide)
+							
+							transaction.update(currentRideRef, {
+								passengers: arrayRemove(user?.uid),
+							})
+							
+							//check if there is a messages sub-collection
+							const messageRef = doc(collection(currentRideRef, 'messages'))
+							
+							transaction.set(messageRef, {
+								message: null,
+								user: user?.uid,
+								sender: null,
+								timestamp: Timestamp.now(),
+								type: MessageType.PASSENGER_CANCELLATION,
+							} as Message)
+						}
+						
 						const rideRef = doc(db, 'rides', ride?.id || '')
 						
 						transaction.update(rideRef, {
@@ -134,4 +154,8 @@ const handleCancelBooking = ({ ride, user }: { ride: Ride, user: User | null }) 
 export {
 	getPassengers,
 	handleBookRide,
+	handleCancelBooking,
+	BASE_FARE,
+	RATE_PER_KM,
+	RATE_PER_MINUTE,
 }

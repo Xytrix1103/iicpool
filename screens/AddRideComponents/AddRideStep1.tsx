@@ -156,11 +156,6 @@ const AddRideStep1 = (
 				}, 1000)
 				
 				setDirections(null)
-				
-				setLoadingOverlay({
-					show: false,
-					message: '',
-				})
 			}
 		}
 	}, [watchNotCampus, watchCampus, location])
@@ -187,6 +182,11 @@ const AddRideStep1 = (
 				longitudeDelta,
 			}, 1000)
 		}
+		
+		setLoadingOverlay({
+			show: false,
+			message: '',
+		})
 	}, [directions])
 	
 	return (

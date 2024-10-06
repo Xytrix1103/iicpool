@@ -10,9 +10,6 @@ import DriverInfoComponent from './DriverInfoComponent'
 import CarInfoComponent from './CarInfoComponent'
 import PassengersListComponent from './PassengersListComponent'
 import MapView from 'react-native-maps'
-import CustomOutlinedButton from '../../components/themed/CustomOutlinedButton'
-import CustomSolidButton from '../../components/themed/CustomSolidButton'
-import { handleBookRide } from '../../api/rides'
 import { AuthContext } from '../../components/contexts/AuthContext'
 import { ModeContext } from '../../components/contexts/ModeContext'
 import { doc, onSnapshot } from 'firebase/firestore'
@@ -67,33 +64,13 @@ const PassengerView: React.FC<PassengerViewProps> = (
 	}, [user, isInRide])
 	
 	return (
-		<View style={[style.column, { gap: 10 }]}>
-			<View style={[style.row, { gap: 10 }]}>
-				{
-					isInRide ? (
-						(isInRide === ride.id && passengers.some((passenger) => passenger?.id === user?.uid)) ?
-							<CustomOutlinedButton
-								onPress={() => {
-									//cancel ride
-									console.log('cancel ride')
-								}}
-							>
-								Cancel Ride
-							</CustomOutlinedButton> :
-							null
-					) : null
-				}
-				<CustomSolidButton
-					onPress={() => handleBookRide({ ride, user })}
-				>
-					Book Ride
-				</CustomSolidButton>
-			</View>
+		<View style={[style.column, { gap: 20 }]}>
 			<MapViewComponent ride={ride} directions={directions} campusLocation={campusLocation} colors={colors}
-			                  mapRef={mapRef} />
+			                  mapRef={mapRef} passengers={passengers} isInRide={isInRide} currentRide={currentRide}
+			                  user={user} />
 			<DriverInfoComponent driver={driver} />
 			<CarInfoComponent car={car} />
-			<PassengersListComponent ride={ride} passengers={passengers} />
+			<PassengersListComponent ride={ride} passengers={passengers} isInRide={isInRide} />
 		</View>
 	)
 }

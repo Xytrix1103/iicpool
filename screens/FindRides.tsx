@@ -11,7 +11,7 @@ import CustomText from '../components/themed/CustomText'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import * as Location from 'expo-location'
 import { PermissionContext } from '../components/contexts/PermissionContext'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { SegmentedButtons, useTheme } from 'react-native-paper'
 import { GooglePlaceDetail, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete'
 import CustomInputAutoComplete from './AddRideComponents/CustomInputAutoComplete'
@@ -21,6 +21,9 @@ import CustomInput from '../components/themed/CustomInput'
 import { getPreciseDistance } from 'geolib'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import { AuthContext } from '../components/contexts/AuthContext'
+import { Timestamp } from '@firebase/firestore'
+import { ModeContext } from '../components/contexts/ModeContext'
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 
 const { db } = FirebaseApp
 
@@ -28,31 +31,38 @@ type FilterFormType = {
 	to_campus: boolean;
 	location: RideFormTypeSingle | null;
 	date: Date;
+	filter: 'datetime' | 'distance';
 };
 
+type CustomRide = Ride & {
+	distance: number;
+}
+
 const FindRides = () => {
-	const [rides, setRides] = useState<Ride[]>([])
+	const [rides, setRides] = useState<CustomRide[]>([])
 	const navigation = useNavigation()
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	const { user } = useContext(AuthContext)
+	const { isInRide } = useContext(ModeContext)
 	const form = useForm<FilterFormType>({
 		defaultValues: {
 			to_campus: true,
 			location: null,
 			date: new Date(),
+			filter: 'datetime',
 		},
 	})
 	const [locationInputFocused, setLocationInputFocused] = useState(false)
 	const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null)
-	const ridesQuery = query(collection(db, 'rides'), where('datetime', '>=', new Date()), where('driver', '!=', user?.uid), where('completed_at', '==', null), where('cancelled_at', '==', null), where('passengers', 'array-contains', user?.uid))
+	const ridesQuery = query(collection(db, 'rides'), where('datetime', '>=', Timestamp.now()), where('driver', '!=', user?.uid), where('completed_at', '==', null), where('cancelled_at', '==', null))
 	
-	const { setValue, watch, control, formState: { errors } } = form
+	const { setValue, watch } = form
 	
 	const { wrapPermissions } = useContext(PermissionContext)
 	const autocompleteRef = useRef<GooglePlacesAutocompleteRef | null>(null)
 	const { colors } = useTheme()
 	
-	const { to_campus, location, date } = watch()
+	const { to_campus, location, date, filter } = watch()
 	
 	const handleLocationSelect = (details: GooglePlaceDetail | null) => {
 		if (!details) {
@@ -100,22 +110,6 @@ const FindRides = () => {
 			type: 'location',
 			message: 'We need your location to find rides near you',
 		}).then()
-		
-		const unsubscribe = onSnapshot(ridesQuery, (snapshot) => {
-			const ridesData: Ride[] = snapshot.docs.map(doc => ({
-				...doc.data(),
-				id: doc.id,
-			})) as Ride[]
-			setRides(ridesData)
-		})
-		
-		return () => {
-			unsubscribe()
-			setLoadingOverlay({
-				show: false,
-				message: '',
-			})
-		}
 	}, [])
 	
 	useEffect(() => {
@@ -148,16 +142,31 @@ const FindRides = () => {
 		}
 	}, [currentLocation])
 	
-	const renderItem = ({ ride }: { ride: Ride }) => {
-		//get distance
-		const distance = getPreciseDistance({
-			latitude: location?.geometry.location.lat || 0,
-			longitude: location?.geometry.location.lng || 0,
-		}, {
-			latitude: ride.location.geometry.location.lat,
-			longitude: ride.location.geometry.location.lng,
-		}, 1) / 1000
+	useEffect(() => {
+		const unsubscribe = onSnapshot(ridesQuery, (snapshot) => {
+			const ridesData: CustomRide[] = snapshot.docs.map(doc => ({
+				...doc.data(),
+				id: doc.id,
+				distance: getPreciseDistance({
+					latitude: location?.geometry.location.lat || 0,
+					longitude: location?.geometry.location.lng || 0,
+				}, {
+					latitude: doc.data().location.geometry.location.lat,
+					longitude: doc.data().location.geometry.location.lng,
+				}, 1) / 1000,
+			})) as CustomRide[]
+			
+			//order by distance in ascending order first, then by datetime (positive) difference from selected date in ascending order
+			ridesData.sort((a, b) => a.distance - b.distance || Math.abs(a.datetime.toDate().getTime() - date.getTime()) - Math.abs(b.datetime.toDate().getTime() - date.getTime()))
+			setRides(ridesData)
+		})
 		
+		return () => {
+			unsubscribe()
+		}
+	}, [location, date])
+	
+	const renderItem = ({ ride }: { ride: CustomRide }) => {
 		return (
 			<Pressable
 				style={[style.row, {
@@ -165,8 +174,7 @@ const FindRides = () => {
 					elevation: 10,
 					borderRadius: 20,
 					backgroundColor: 'white',
-					paddingHorizontal: 20,
-					paddingVertical: 10,
+					padding: 20,
 				}]}
 				onPress={() => {
 					// @ts-ignore
@@ -184,6 +192,7 @@ const FindRides = () => {
 					<CustomText
 						align="center"
 						bold
+						size={14}
 					>
 						{ride.available_seats - ride.passengers.length}/{ride.available_seats}
 					</CustomText>
@@ -197,21 +206,38 @@ const FindRides = () => {
 						</View>
 						<View style={[style.column, { width: 'auto' }]}>
 							<CustomText size={14} bold numberOfLines={1}>
-								{`(${distance.toFixed(2)} km)`}
+								{`(${ride.distance.toFixed(2)} km)`}
 							</CustomText>
 						</View>
 					</View>
 					<View style={[style.row, { gap: 5 }]}>
-						<CustomText size={14}>
-							{ride.datetime.toDate().toLocaleString('en-GB', {
-								day: 'numeric',
-								month: 'numeric',
-								year: 'numeric',
-								hour: '2-digit',
-								minute: '2-digit',
-								hour12: true,
-							})}
-						</CustomText>
+						<View style={[style.column, { flex: 1 }]}>
+							<CustomText size={14}>
+								{ride.datetime.toDate().toLocaleString('en-GB', {
+									day: 'numeric',
+									month: 'numeric',
+									year: 'numeric',
+									hour: '2-digit',
+									minute: '2-digit',
+									hour12: true,
+								})}
+							</CustomText>
+						</View>
+						<View style={[style.column, { width: 'auto' }]}>
+							<CustomText
+								size={14}
+								bold
+								color={
+									ride.passengers?.length === ride.available_seats || ride.passengers?.some((passenger) => passenger === user?.uid) ? 'red' : 'green'
+								}
+							>
+								{
+									isInRide ?
+										isInRide === ride.id ? 'Booked' : 'Available'
+										: ride.passengers?.length === ride.available_seats ? 'Full' : 'Available'
+								}
+							</CustomText>
+						</View>
 					</View>
 				</View>
 			</Pressable>
@@ -221,7 +247,7 @@ const FindRides = () => {
 	return (
 		<CustomLayout
 			scrollable={false}
-			contentPadding={20}
+			contentPadding={0}
 			header={
 				<CustomHeader
 					title="Available Rides"
@@ -230,7 +256,7 @@ const FindRides = () => {
 			}
 		>
 			<View style={style.mainContent}>
-				<View style={[style.row, { gap: 10 }]}>
+				<View style={[style.row, { gap: 10, marginHorizontal: 20, marginVertical: 10, width: 'auto' }]}>
 					<View style={[style.column, { gap: 10 }]}>
 						<View style={[style.row, {
 							gap: 10,
@@ -261,18 +287,6 @@ const FindRides = () => {
 														value={location.formatted_address}
 														onChangeText={() => null}
 														onPress={() => setLocationInputFocused(true)}
-														rightIcon={
-															location.place_id !== '' &&
-															<Icon
-																onPress={() => {
-																	handleLocationSelect(null)
-																}}
-																name="close"
-																size={20}
-																// @ts-expect-error colors
-																color={colors.text}
-															/>
-														}
 													/>
 												</Pressable>
 											)
@@ -280,6 +294,73 @@ const FindRides = () => {
 								}
 							</View>
 						</View>
+						<Controller
+							control={form.control}
+							render={({ field: { onChange, value } }) => (
+								<View style={[style.row, { gap: 10, justifyContent: 'center' }]}>
+									<Pressable
+										style={{ flex: 1 }}
+										onPress={() => {
+											DateTimePickerAndroid.open({
+												mode: 'date',
+												value: value ?? new Date(),
+												onChange: (event, selectedDate) => {
+													if (event.type === 'set') {
+														onChange(selectedDate)
+													}
+												},
+											})
+										}}
+									>
+										<CustomInput
+											label="Date"
+											value={value.toLocaleString('en-GB', {
+												day: 'numeric',
+												month: 'numeric',
+												year: 'numeric',
+											})}
+											onChangeText={() => null}
+											editable={false}
+										/>
+									</Pressable>
+									<Pressable
+										style={{ flex: 1 }}
+										onPress={() => {
+											DateTimePickerAndroid.open({
+												mode: 'time',
+												value: value ?? new Date(),
+												onChange: (event, selectedDate) => {
+													if (event.type === 'set') {
+														onChange(selectedDate)
+													}
+												},
+											})
+										}}
+									>
+										<CustomInput
+											label="Time"
+											value={value.toLocaleString('en-GB', {
+												hour: '2-digit',
+												minute: '2-digit',
+												hour12: true,
+											})}
+											onChangeText={() => null}
+											editable={false}
+										/>
+									</Pressable>
+								</View>
+							)}
+							name="date"
+						/>
+						<SegmentedButtons
+							buttons={[
+								{ value: 'datetime', label: 'Sort by Datetime' },
+								{ value: 'distance', label: 'Sort by Distance' },
+							]}
+							onValueChange={(value) => setValue('filter', value as 'datetime' | 'distance')}
+							value={filter}
+							multiSelect={false}
+						/>
 						<SegmentedButtons
 							buttons={[
 								{ value: 'true', label: 'To Campus' },
@@ -291,27 +372,25 @@ const FindRides = () => {
 						/>
 					</View>
 				</View>
-				<View style={[style.row, { flex: 1 }]}>
-					<CustomLayout
-						scrollable={true}
-					>
-						<View style={style.mainContent}>
-							<View style={[style.column, { gap: 10 }]}>
-								{
-									rides.filter(ride => ride.to_campus === to_campus).map((ride) => (
-										renderItem({ ride })
-									))
-								}
-								{
-									rides.filter(ride => ride.to_campus === to_campus).length === 0 &&
-									<CustomText align="center" size={16}>
-										No rides found
-									</CustomText>
-								}
-							</View>
+				<CustomLayout
+					scrollable={true}
+				>
+					<View style={style.mainContent}>
+						<View style={[style.column, { gap: 10 }]}>
+							{
+								rides.filter(ride => ride.to_campus === to_campus).sort((a, b) => filter === 'datetime' ? Math.abs(a.datetime.toDate().getTime() - date.getTime()) - Math.abs(b.datetime.toDate().getTime() - date.getTime()) : a.distance - b.distance).map(ride => (
+									renderItem({ ride })
+								))
+							}
+							{
+								rides.filter(ride => ride.to_campus === to_campus).length === 0 &&
+								<CustomText align="center" size={16}>
+									No rides found
+								</CustomText>
+							}
 						</View>
-					</CustomLayout>
-				</View>
+					</View>
+				</CustomLayout>
 			</View>
 		</CustomLayout>
 	)

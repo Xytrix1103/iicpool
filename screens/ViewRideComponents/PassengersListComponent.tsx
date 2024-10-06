@@ -6,15 +6,14 @@ import style from '../../styles/shared'
 import { Profile, Ride } from '../../database/schema'
 import { Avatar } from 'react-native-paper'
 import { AuthContext } from '../../components/contexts/AuthContext'
-import CustomIconButton from '../../components/themed/CustomIconButton'
-import { handleBookRide } from '../../api/rides'
 
 type PassengersListComponentProps = {
 	ride: Ride,
 	passengers: (Profile | null)[],
+	isInRide: string | null,
 };
 
-const PassengersListComponent: React.FC<PassengersListComponentProps> = ({ ride, passengers }) => {
+const PassengersListComponent: React.FC<PassengersListComponentProps> = ({ ride, passengers, isInRide }) => {
 	const { user } = useContext(AuthContext)
 	
 	return (
@@ -60,15 +59,12 @@ const PassengersListComponent: React.FC<PassengersListComponentProps> = ({ ride,
 								</View> :
 								passengers.every((passenger) => passenger?.id !== user?.uid) &&
 								<View key={index} style={[style.column, { gap: 5, width: 'auto' }]}>
-									<CustomIconButton
-										size={30}
-										icon="plus-circle-outline"
-										iconColor="black"
-										onPress={() => handleBookRide({ ride, user })}
-									/>
-									<CustomText size={14} align="center">
-										{''}
-									</CustomText>
+									{
+										passengers.some((passenger) => passenger != null) &&
+										<CustomText size={14} align="center">
+											{''}
+										</CustomText>
+									}
 								</View>
 						))
 					}

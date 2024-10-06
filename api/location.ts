@@ -12,15 +12,22 @@ const getDirections = async ({ origin, destination, departure_time }: {
 }): Promise<DirectionsResponse | null> => {
 	console.log('getDirections:', origin, destination)
 	const baseUrl = 'https://maps.googleapis.com/maps/api/directions/json'
-	const params = `origin=place_id:${origin}&destination=place_id:${destination}&mode=driving${departure_time ? `&departure_time=${departure_time.toISOString()}` : ''}`
+	
+	// Convert departure_time to seconds since epoch if provided
+	const departureTimeInSeconds = departure_time ? Math.floor(departure_time.getTime() / 1000) : undefined
+	const params = `origin=place_id:${origin}&destination=place_id:${destination}&mode=driving${departureTimeInSeconds ? `&departure_time=${departureTimeInSeconds}` : ''}`
 	
 	const result = await axios.get<DirectionsResponse>(`${baseUrl}?${params}&key=${GMAPS_API_KEY}`, {
 		headers: {
 			'Content-Type': 'application/json',
 		},
+	}).then((r) => r).catch((e) => {
+		console.error('Error fetching directions:', e)
+		return e
 	})
 	
 	if (result.data.status === 'OK') {
+		console.log('Directions:', result.data)
 		return result.data
 	} else {
 		console.error('Error fetching directions:', result.data)

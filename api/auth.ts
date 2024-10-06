@@ -103,7 +103,7 @@ const register = async (
 					full_name: '',
 					mobile_number: '',
 					roles: [Role.PASSENGER],
-					deleted: false,
+					deleted_at: null,
 					notification_settings: notificationSettings,
 					created_at: Timestamp.now(),
 				} as Profile)
@@ -215,7 +215,7 @@ const googleLogin = async (
 						full_name: userCredential.user.displayName ?? '',
 						mobile_number: userCredential.user.phoneNumber ?? '',
 						roles: [Role.PASSENGER],
-						deleted: false,
+						deleted_at: null,
 						notification_settings: notificationSettings,
 						created_at: Timestamp.now(),
 					} as Profile)

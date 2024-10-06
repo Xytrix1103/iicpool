@@ -1,4 +1,4 @@
-import { RefObject } from 'react'
+import { RefObject, useEffect, useState } from 'react'
 import {
 	GooglePlaceDetail,
 	GooglePlacesAutocomplete,
@@ -26,6 +26,12 @@ const CustomInputAutoComplete = (
 		colors: MD3Colors
 	},
 ) => {
+	const [inputText, setInputText] = useState(details.name || '')
+	
+	useEffect(() => {
+		setInputText(details.name || '')
+	}, [details])
+	
 	return (
 		<View style={{ width: '100%', height: '100%' }}>
 			<GooglePlacesAutocomplete
@@ -48,7 +54,10 @@ const CustomInputAutoComplete = (
 					hideLabelOnFocus: true,
 					label: (toCampus ? 'Pick-Up Location' : 'Drop-Off Location'),
 					editable: true,
-					value: details.name,
+					value: inputText,
+					onChangeText: (text: string) => {
+						setInputText(text)
+					},
 					rightIcon: (
 						(details.place_id !== '') &&
 						<Icon
