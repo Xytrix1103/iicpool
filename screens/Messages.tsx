@@ -8,7 +8,6 @@ import {
 	and,
 	collection,
 	doc,
-	getCountFromServer,
 	getDoc,
 	getDocs,
 	limit,
@@ -229,9 +228,9 @@ const Messages = () => {
 				
 				console.log(carData)
 				
-				const unreadCount = await getCountFromServer(query(collection(doc(db, 'rides', ride?.id || ''), 'messages'), where('read_by', 'array-contains', user?.uid)))
-					.then((count) => {
-						return count.data().count
+				const unreadCount = await getDocs(query(collection(doc(db, 'rides', ride?.id || ''), 'messages')))
+					.then((snapshot) => {
+						return snapshot.docs.filter((doc) => !doc.data().read_by.includes(user?.uid)).length
 					})
 					.catch((error) => {
 						console.error('Error getting unread count:', error)

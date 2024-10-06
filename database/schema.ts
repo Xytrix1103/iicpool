@@ -1,17 +1,15 @@
 import { Timestamp } from '@firebase/firestore'
 
 type ProfileNotificationSettings = {
-	new_rides: boolean;
-	ride_updates: boolean;
 	new_messages: boolean;
 	new_passengers: boolean;
 	booking_confirmation: boolean;
+	ride_cancellation: boolean;
 }
 
 type Profile = {
 	id?: string;
 	roles: Role[];
-	driver_license?: string;
 	full_name: string;
 	mobile_number: string;
 	photo_url: string;

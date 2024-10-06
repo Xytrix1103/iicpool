@@ -7,9 +7,8 @@ import { ModeContext } from '../components/contexts/ModeContext'
 import { Car, Profile, Ride, Role } from '../database/schema'
 import { doc, onSnapshot } from 'firebase/firestore'
 import FirebaseApp from '../components/FirebaseApp'
-import CustomText from '../components/themed/CustomText'
 import style from '../styles/shared'
-import MapView, { Marker } from 'react-native-maps'
+import MapView from 'react-native-maps'
 import { useTheme } from 'react-native-paper'
 import { CAMPUS_NAME, fetchCampusLocation, getDirections } from '../api/location'
 import { GooglePlaceDetail } from 'react-native-google-places-autocomplete'
@@ -18,66 +17,10 @@ import PassengerView from './ViewRideComponents/PassengerView'
 import { getPassengers } from '../api/rides'
 import { AuthContext } from '../components/contexts/AuthContext'
 import CustomIconButton from '../components/themed/CustomIconButton'
+import DriverView from './ViewRideComponents/DriverView'
 
 type ViewRideProps = RouteProp<{ ViewRide: { rideId?: string } }, 'ViewRide'>;
 const { db } = FirebaseApp
-
-
-const DriverView = ({ ride, car, driver }: { ride: Ride, car: Car | null, driver: Profile | null }) => {
-	return (
-		<View style={[style.column, { gap: 20 }]}>
-			<View style={style.row}>
-				<CustomText size={16} bold>
-					{ride.to_campus ? 'From' : 'To'} {ride.location?.name}
-				</CustomText>
-			</View>
-			<View style={style.row}>
-				<CustomText size={14}>
-					{ride.datetime.toDate().toLocaleString('en-GB', {
-						day: 'numeric',
-						month: 'numeric',
-						year: 'numeric',
-						hour: '2-digit',
-						minute: '2-digit',
-						hour12: true,
-					})}
-				</CustomText>
-			</View>
-			<View style={style.row}>
-				<CustomText size={14}>
-					Vehicle: {car?.brand} {car?.model} ({car?.plate})
-				</CustomText>
-			</View>
-			<View style={style.row}>
-				<CustomText size={14}>
-					Available Seats: {ride.available_seats}
-				</CustomText>
-			</View>
-			<View style={style.row}>
-				<CustomText size={14}>
-					Passengers: {(ride.passengers ?? []).length}/{ride.available_seats}
-				</CustomText>
-			</View>
-			<MapView
-				style={{ height: 300, width: '100%' }}
-				initialRegion={{
-					latitude: ride.location?.geometry.location.lat || 0,
-					longitude: ride.location?.geometry.location.lng || 0,
-					latitudeDelta: 0.01,
-					longitudeDelta: 0.01,
-				}}
-			>
-				<Marker
-					coordinate={{
-						latitude: ride.location?.geometry.location.lat || 0,
-						longitude: ride.location?.geometry.location.lng || 0,
-					}}
-					title={ride.location?.name}
-				/>
-			</MapView>
-		</View>
-	)
-}
 
 const ViewRide = () => {
 	const { mode } = useContext(ModeContext)
@@ -231,7 +174,16 @@ const ViewRide = () => {
 						/>
 						:
 						(ride && car && driver) &&
-						<DriverView ride={ride} car={car} driver={driver} />
+						<DriverView
+							ride={ride}
+							car={car}
+							driver={driver}
+							campusLocation={campusLocation}
+							directions={directions}
+							colors={colors}
+							mapRef={mapRef}
+							passengers={passengers}
+						/>
 				}
 			</View>
 		</CustomLayout>

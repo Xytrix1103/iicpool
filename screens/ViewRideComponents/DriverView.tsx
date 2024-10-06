@@ -15,7 +15,7 @@ import { ModeContext } from '../../components/contexts/ModeContext'
 import { doc, onSnapshot } from 'firebase/firestore'
 import FirebaseApp from '../../components/FirebaseApp'
 
-type PassengerViewProps = {
+type DriverViewProps = {
 	ride: Ride,
 	car: Car | null,
 	colors: MD3Colors,
@@ -28,7 +28,7 @@ type PassengerViewProps = {
 
 const { db } = FirebaseApp
 
-const PassengerView: React.FC<PassengerViewProps> = (
+const DriverView: React.FC<DriverViewProps> = (
 	{
 		ride,
 		car,
@@ -75,4 +75,4 @@ const PassengerView: React.FC<PassengerViewProps> = (
 	)
 }
 
-export default PassengerView
+export default DriverView

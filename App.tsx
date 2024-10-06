@@ -45,6 +45,7 @@ import ViewRide from './screens/ViewRide'
 import Messages from './screens/Messages'
 import Chat from './screens/Chat'
 import ManageLicense from './screens/ManageLicense'
+import { RideProvider } from './components/contexts/RideContext'
 
 const Stack = createNativeStackNavigator()
 
@@ -357,35 +358,37 @@ const App = (): ReactElement => {
 							<LoadingOverlayProvider>
 								<AuthProvider>
 									<ModeProvider>
-										<NavigationContainer
-											initialState={initialState}
-											onStateChange={(state) => {
-												AsyncStorage.setItem(
-													PERSISTENCE_KEY,
-													JSON.stringify(state),
-												).then((r) => r)
-											}}
-										>
-											<SafeAreaView
-												style={style.safeArea}
+										<RideProvider>
+											<NavigationContainer
+												initialState={initialState}
+												onStateChange={(state) => {
+													AsyncStorage.setItem(
+														PERSISTENCE_KEY,
+														JSON.stringify(state),
+													).then((r) => r)
+												}}
 											>
-												<StatusBar
-													style={
-														'dark' as StatusBarStyle
-													}
-													hidden={false}
-													translucent={false}
-													backgroundColor={
-														'transparent'
-													}
-												/>
-												<Routes
-													expoPushToken={
-														expoPushToken
-													}
-												/>
-											</SafeAreaView>
-										</NavigationContainer>
+												<SafeAreaView
+													style={style.safeArea}
+												>
+													<StatusBar
+														style={
+															'dark' as StatusBarStyle
+														}
+														hidden={false}
+														translucent={false}
+														backgroundColor={
+															'transparent'
+														}
+													/>
+													<Routes
+														expoPushToken={
+															expoPushToken
+														}
+													/>
+												</SafeAreaView>
+											</NavigationContainer>
+										</RideProvider>
 									</ModeProvider>
 								</AuthProvider>
 							</LoadingOverlayProvider>

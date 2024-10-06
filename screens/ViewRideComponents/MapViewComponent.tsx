@@ -10,7 +10,7 @@ import { MD3Colors } from 'react-native-paper/lib/typescript/types'
 import style from '../../styles/shared'
 import CustomText from '../../components/themed/CustomText'
 import CustomOutlinedButton from '../../components/themed/CustomOutlinedButton'
-import { handleBookRide, handleCancelBooking } from '../../api/rides'
+import { handleBookRide, handleCancelBooking, handleCancelRide, handleStartRide } from '../../api/rides'
 import CustomSolidButton from '../../components/themed/CustomSolidButton'
 import { User } from 'firebase/auth'
 
@@ -24,6 +24,7 @@ type MapViewComponentProps = {
 	isInRide: string | null,
 	currentRide?: Ride | null,
 	user: User | null
+	mode: 'driver' | 'passenger'
 };
 
 const MapViewComponent: React.FC<MapViewComponentProps> = (
@@ -37,6 +38,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 		isInRide,
 		currentRide,
 		user,
+		mode,
 	},
 ) => {
 	const routeDuration = directions?.routes[0].legs?.reduce((acc, leg) => acc + (leg.duration?.value || 0), 0) || 0
@@ -52,6 +54,17 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 			]}
 		>
 			<View style={[style.column, { gap: 20, flex: 1 }]}>
+				<View style={[style.row, { gap: 5, alignItems: 'center', justifyContent: 'center' }]}>
+					<CustomText size={16} bold align="center"
+					            color={ride.cancelled_at ? 'red' : ride.completed_at ? 'green' : ride.started_at ? 'blue' : 'black'}>
+						{
+							ride.cancelled_at ? 'CANCELLED' :
+								ride.completed_at ? 'COMPLETED' :
+									ride.started_at ? 'ONGOING' :
+										'PENDING'
+						}
+					</CustomText>
+				</View>
 				<View style={[style.row, { gap: 10 }]}>
 					<View style={[style.row, { width: 'auto', gap: 5 }]}>
 						<Icon name="calendar" size={20} />
@@ -177,31 +190,52 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 								</CustomText>
 							</CustomText>
 						</View>
-						<View style={[style.row, { gap: 10 }]}>
-							{
-								isInRide ? (
-									(isInRide === ride.id && passengers.some((passenger) => passenger?.id === user?.uid)) ?
+						{
+							mode === 'passenger' ?
+								<View style={[style.row, { gap: 10 }]}>
+									{
+										isInRide ? (
+											(isInRide === ride.id && passengers.some((passenger) => passenger?.id === user?.uid)) ?
+												<CustomOutlinedButton
+													onPress={() => {
+														handleCancelBooking({ ride: currentRide!, user })
+													}}
+												>
+													Cancel Booking
+												</CustomOutlinedButton> :
+												null
+										) : null
+									}
+									{
+										passengers.every((passenger) => passenger?.id !== user?.uid) &&
+										<CustomSolidButton
+											onPress={() => {
+												handleBookRide({ ride, user, isInRide })
+											}}
+										>
+											Book Ride
+										</CustomSolidButton>
+									}
+								</View> :
+								!ride.started_at && !ride.completed_at && !ride.cancelled_at && (
+									<View style={[style.row, { gap: 10 }]}>
+										<CustomSolidButton
+											onPress={() => {
+												handleStartRide({ ride: currentRide!, user })
+											}}
+										>
+											Start Ride
+										</CustomSolidButton>
 										<CustomOutlinedButton
 											onPress={() => {
-												handleCancelBooking({ ride: currentRide!, user })
+												handleCancelRide({ ride: currentRide!, user })
 											}}
 										>
 											Cancel Ride
-										</CustomOutlinedButton> :
-										null
-								) : null
-							}
-							{
-								passengers.every((passenger) => passenger?.id !== user?.uid) &&
-								<CustomSolidButton
-									onPress={() => {
-										handleBookRide({ ride, user, isInRide })
-									}}
-								>
-									Book Ride
-								</CustomSolidButton>
-							}
-						</View>
+										</CustomOutlinedButton>
+									</View>
+								)
+						}
 					</View>
 				</View>
 			</View>

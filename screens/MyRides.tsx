@@ -1,7 +1,7 @@
 import CustomLayout from '../components/themed/CustomLayout'
-import { View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import style from '../styles/shared'
-import { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { Ride } from '../database/schema'
 import { useNavigation } from '@react-navigation/native'
 import { collection, onSnapshot, query, where } from 'firebase/firestore'
@@ -15,55 +15,80 @@ import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayCont
 
 const { db } = FirebaseApp
 
-const RideComponent = ({ ride }: { ride: Ride }) => {
+const RideComponent = ({ ride, navigation }: { ride: Ride, navigation: any }) => {
 	return (
-		<View
+		<Pressable
 			style={[style.row, {
-				gap: 20,
-				elevation: 10,
-				borderRadius: 30,
+				gap: 15,
 				backgroundColor: 'white',
+				elevation: 5,
 				padding: 20,
-				height: 'auto',
+				borderRadius: 30,
 			}]}
+			onPress={
+				() => {
+					// @ts-ignore
+					navigation.navigate('ViewRide', { rideId: ride.id })
+				}
+			}
 		>
-			<View style={[style.column, {
-				flex: 1,
-				gap: 5,
-				justifyContent: 'center',
-				alignItems: 'center',
-			}]}>
-				<Icon name="clock" size={24} color="grey" />
-			</View>
-			<View style={[style.column, { flex: 5, gap: 5 }]}>
+			<View style={[style.column, { gap: 20, flex: 1 }]}>
 				<View style={[style.row, { gap: 5 }]}>
-					<CustomText size={14} bold numberOfLines={1}>
-						{`${ride.to_campus ? 'From' : 'To'} ${ride.location?.name}`}
-					</CustomText>
+					<View style={[style.row, { gap: 5, flex: 1 }]}>
+						<Icon
+							name="map-marker"
+							size={20}
+						/>
+						<CustomText
+							size={14}
+							numberOfLines={1}
+							width="70%"
+						>
+							{ride.to_campus ? 'From' : 'To'} {ride.location.name}
+						</CustomText>
+					</View>
+					<View style={[style.row, { gap: 5, width: 'auto' }]}>
+						<CustomText size={12} bold
+						            color={ride.cancelled_at ? 'red' : ride.completed_at ? 'green' : ride.started_at ? 'blue' : 'black'}>
+							{
+								ride.cancelled_at ? 'Cancelled' :
+									ride.completed_at ? 'Completed' :
+										ride.started_at ? 'Ongoing' :
+											'Pending'
+							}
+						</CustomText>
+					</View>
 				</View>
-				<View style={[style.row, { gap: 5 }]}>
-					<CustomText size={14}>
-						{ride.datetime.toDate().toLocaleString('en-GB', {
-							day: 'numeric',
-							month: 'numeric',
-							year: 'numeric',
-							hour: '2-digit',
-							minute: '2-digit',
-							hour12: true,
-						})}
-					</CustomText>
+				<View style={[style.row, { gap: 10 }]}>
+					<View style={[style.row, { gap: 5, width: 'auto' }]}>
+						<Icon name="calendar" size={20} />
+						<CustomText size={12} bold>
+							{ride.datetime.toDate().toLocaleString('en-GB', {
+								day: 'numeric',
+								month: 'numeric',
+								year: 'numeric',
+							})}
+						</CustomText>
+					</View>
+					<View style={[style.row, { gap: 5, width: 'auto' }]}>
+						<Icon name="clock" size={20} />
+						<CustomText size={12} bold>
+							{ride.datetime.toDate().toLocaleString('en-GB', {
+								hour: '2-digit',
+								minute: '2-digit',
+								hour12: true,
+							})}
+						</CustomText>
+					</View>
+					<View style={[style.row, { gap: 5, width: 'auto' }]}>
+						<Icon name="cash" size={20} />
+						<CustomText size={12} bold>
+							RM {ride.fare}
+						</CustomText>
+					</View>
 				</View>
 			</View>
-			<View style={[style.column, {
-				flex: 1,
-				justifyContent: 'center',
-				gap: 5,
-				alignItems: 'center',
-			}]}>
-				<Icon name="car" size={20} color="black" />
-				<CustomText align="center" bold>{(ride.passengers ?? []).length}/{ride.available_seats}</CustomText>
-			</View>
-		</View>
+		</Pressable>
 	)
 }
 
@@ -128,7 +153,7 @@ const MyRides = () => {
 					{
 						rides && ((rides?.length || 0) > 0) ? (
 							rides.map(ride => (
-								<RideComponent key={ride.id} ride={ride} />
+								<RideComponent key={ride.id} ride={ride} navigation={navigation} />
 							))
 						) : (
 							<View style={[style.row, { alignItems: 'center', justifyContent: 'center' }]}>

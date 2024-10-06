@@ -151,10 +151,123 @@ const handleCancelBooking = ({ ride, user }: { ride: Ride, user: User | null }) 
 	)
 }
 
+const handleCancelRide = ({ ride, user }: { ride: Ride, user: User | null }) => {
+	//check if the ride is 30 minutes away
+	const now = new Date()
+	
+	if (ride.datetime.toDate().getTime() - now.getTime() < 30 * 60 * 1000) {
+		Alert.alert(
+			'Cancel Ride',
+			'You cannot cancel a ride that is less than 30 minutes away',
+			[
+				{
+					text: 'OK',
+					style: 'cancel',
+				},
+			],
+		)
+		
+		return
+	}
+	
+	Alert.alert(
+		'Cancel Ride',
+		'Are you sure you want to cancel this ride?',
+		[
+			{
+				text: 'Cancel',
+				style: 'cancel',
+			},
+			{
+				text: 'Cancel Ride',
+				onPress: async () => {
+					await runTransaction(db, async (transaction) => {
+						if (!ride.id) {
+							throw new Error('Ride ID is missing')
+						}
+						
+						const rideRef = doc(db, 'rides', ride?.id || '')
+						
+						transaction.update(rideRef, {
+							cancelled_at: Timestamp.now(),
+						})
+						
+						//check if there is a messages sub-collection
+						const messageRef = doc(collection(rideRef, 'messages'))
+						
+						transaction.set(messageRef, {
+							message: null,
+							sender: null,
+							timestamp: Timestamp.now(),
+							type: MessageType.RIDE_CANCELLATION,
+							read_by: [user?.uid as string],
+						} as Message)
+					})
+						.then(() => {
+							ToastAndroid.show('Ride cancelled successfully', ToastAndroid.SHORT)
+						})
+						.catch((error) => {
+							ToastAndroid.show('Failed to cancel ride', ToastAndroid.SHORT)
+							console.error('Failed to cancel ride', error)
+						})
+				},
+			},
+		],
+	)
+}
+
+const handleStartRide = ({ ride, user }: { ride: Ride, user: User | null }) => {
+	Alert.alert(
+		'Start Ride',
+		'Are you sure you want to start this ride?',
+		[
+			{
+				text: 'Cancel',
+				style: 'cancel',
+			},
+			{
+				text: 'Start Ride',
+				onPress: async () => {
+					await runTransaction(db, async (transaction) => {
+						if (!ride.id) {
+							throw new Error('Ride ID is missing')
+						}
+						
+						const rideRef = doc(db, 'rides', ride?.id || '')
+						
+						transaction.update(rideRef, {
+							started_at: Timestamp.now(),
+						})
+						
+						//check if there is a messages sub-collection
+						const messageRef = doc(collection(rideRef, 'messages'))
+						
+						transaction.set(messageRef, {
+							message: null,
+							sender: null,
+							timestamp: Timestamp.now(),
+							type: MessageType.RIDE_UPDATE,
+						} as Message)
+					})
+						.then(() => {
+							ToastAndroid.show('Ride started successfully', ToastAndroid.SHORT)
+						})
+						.catch((error) => {
+							ToastAndroid.show('Failed to start ride', ToastAndroid.SHORT)
+							console.error('Failed to start ride', error)
+						})
+				},
+			},
+		],
+	)
+}
+
 export {
 	getPassengers,
 	handleBookRide,
 	handleCancelBooking,
+	handleCancelRide,
+	handleStartRide,
 	BASE_FARE,
 	RATE_PER_KM,
 	RATE_PER_MINUTE,

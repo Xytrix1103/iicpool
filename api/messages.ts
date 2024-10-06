@@ -25,6 +25,7 @@ const sendMessage = async ({ user, ride, message }: { user: User | null, ride: R
 			message: message,
 			timestamp: Timestamp.now(),
 			type: 'message',
+			read_by: [user.uid],
 		} as Message)
 	})
 }

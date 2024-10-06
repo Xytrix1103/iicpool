@@ -22,11 +22,10 @@ const NotificationSettingsProvider: React.FC<
 > = ({ children }) => {
 	const [notificationSettings, setNotificationSettings] =
 		useState<ProfileNotificationSettings>({
-			new_rides: false,
-			ride_updates: false,
 			new_messages: false,
 			new_passengers: false,
 			booking_confirmation: false,
+			ride_cancellation: false,
 		})
 	
 	useEffect(() => {
@@ -46,11 +45,10 @@ const NotificationSettingsProvider: React.FC<
 						console.error('Stored settings do not match the ProfileNotificationSettings interface')
 						
 						setNotificationSettings({
-							new_rides: false,
-							ride_updates: false,
 							new_messages: false,
 							new_passengers: false,
 							booking_confirmation: false,
+							ride_cancellation: false,
 						})
 					}
 				}

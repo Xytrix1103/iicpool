@@ -1,7 +1,17 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { Car, Message, MessageType, Profile, Ride } from '../database/schema'
-import { useContext, useEffect, useState } from 'react'
-import { collection, doc, getDoc, onSnapshot, orderBy, query } from 'firebase/firestore'
+import React, { useContext, useEffect, useState } from 'react'
+import {
+	arrayUnion,
+	collection,
+	doc,
+	getDoc,
+	getDocs,
+	onSnapshot,
+	orderBy,
+	query,
+	runTransaction,
+} from 'firebase/firestore'
 import FirebaseApp from '../components/FirebaseApp'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import CustomLayout from '../components/themed/CustomLayout'
@@ -10,12 +20,14 @@ import { View } from 'react-native'
 import CustomText from '../components/themed/CustomText'
 import style from '../styles/shared'
 import { User } from 'firebase/auth'
-import { Avatar } from 'react-native-paper'
+import { Avatar, useTheme } from 'react-native-paper'
 import CustomInput from '../components/themed/CustomInput'
 import CustomIconButton from '../components/themed/CustomIconButton'
 import { Controller, useForm } from 'react-hook-form'
 import { sendMessage } from '../api/messages'
 import { AuthContext } from '../components/contexts/AuthContext'
+import Icon from '@expo/vector-icons/MaterialCommunityIcons'
+import { ModeContext } from '../components/contexts/ModeContext'
 
 type ChatRouteParams = RouteProp<{ Chat: { rideId: string } }, 'Chat'>
 
@@ -27,66 +39,81 @@ type CustomChat = Ride & {
 
 const { db } = FirebaseApp
 
-const MessageComponent = ({ message, photo_url, user, passengerData, driverData }: {
-	message: Message,
+const MessageComponent = ({ group, photo_url, user, passengerData, driverData }: {
+	group: MessageGroupBySender,
 	photo_url?: string,
 	user: User | null,
 	passengerData?: Profile[],
 	driverData?: Profile,
 }) => {
 	return (
-		message.type === MessageType.MESSAGE ?
-			<View style={[style.row, {
-				flexDirection: message.sender === user?.uid ? 'row-reverse' : 'row',
-				gap: 10,
-				alignItems: 'flex-start',
-			}]}>
-				{
-					message.sender !== user?.uid &&
-					<View style={[style.column, {
-						width: 'auto',
-						alignItems: message.sender === user?.uid ? 'flex-end' : 'flex-start',
-						justifyContent: 'center',
-					}]}>
-						<Avatar.Image size={50} source={{ uri: photo_url }} />
-					</View>
-				}
-				<View style={[style.column, { maxWidth: '80%', width: 'auto' }]}>
-					<View style={[style.row, {
-						padding: 10,
-						borderRadius: 10,
-						elevation: 5,
-						backgroundColor: 'white',
-						width: 'auto',
-						flexShrink: 1,
-					}]}>
-						<View style={[style.column, { width: 'auto', flexShrink: 1 }]}>
-							<CustomText size={12} width="auto" align="left" style={{ flexShrink: 1 }}>
-								{message.message}
+		<View style={[style.row, { gap: 10, alignItems: 'flex-start' }]}>
+			{
+				group.sender === null ?
+					<View style={[style.row]}>
+						<View style={[style.column]}>
+							<CustomText color="gray" size={12} align="center">
+								{
+									group.type === MessageType.NEW_PASSENGER ?
+										`${passengerData?.find((passenger) => passenger.id === group.user)?.full_name} has joined the ride` :
+										group.type === MessageType.PASSENGER_CANCELLATION ?
+											`${passengerData?.find((passenger) => passenger.id === group.user)?.full_name} has left the ride` :
+											group.type === MessageType.RIDE_CANCELLATION ?
+												`${driverData?.full_name} has cancelled the ride` :
+												group.type === MessageType.RIDE_UPDATE ?
+													'Ride has been updated' :
+													null
+								}
 							</CustomText>
 						</View>
-					</View>
-				</View>
-				<View style={[style.column, { flex: 1 }]} />
-			</View> :
-			<View style={[style.row]}>
-				<View style={[style.column]}>
-					<CustomText color="gray" size={12} align="center">
+					</View> :
+					<View
+						style={[style.row, {
+							justifyContent: group.sender === user?.uid ? 'flex-end' : 'flex-start',
+							alignItems: 'flex-end',
+						}]}>
 						{
-							message.type === MessageType.NEW_PASSENGER ?
-								`${passengerData?.find((passenger) => passenger.id === message.user)?.full_name} has joined the ride` :
-								message.type === MessageType.PASSENGER_CANCELLATION ?
-									`${passengerData?.find((passenger) => passenger.id === message.user)?.full_name} has left the ride` :
-									message.type === MessageType.RIDE_CANCELLATION ?
-										`${driverData?.full_name} has cancelled the ride` :
-										message.type === MessageType.RIDE_UPDATE ?
-											'Ride has been updated' :
-											null
+							group.sender !== user?.uid &&
+							<View style={[style.column, {
+								width: 60,
+								alignItems: 'flex-start',
+								justifyContent: 'center',
+							}]}>
+								<Avatar.Image size={50} source={{ uri: photo_url }} />
+							</View>
 						}
-					</CustomText>
-				</View>
-			</View>
+						<View style={[style.column, { gap: 10, maxWidth: '80%', width: 'auto' }]}>
+							{
+								group.messages.map((message, index) => (
+									<View key={message.id} style={[style.row, {
+										padding: 10,
+										borderRadius: 10,
+										elevation: 5,
+										backgroundColor: 'white',
+										width: 'auto',
+										flexShrink: 1,
+										alignSelf: message.sender === user?.uid ? 'flex-end' : 'flex-start',
+									}]}>
+										<View style={[style.column, { width: 'auto', flexShrink: 1 }]}>
+											<CustomText size={12} width="auto" align="left" style={{ flexShrink: 1 }}>
+												{message.message}
+											</CustomText>
+										</View>
+									</View>
+								))
+							}
+						</View>
+					</View>
+			}
+		</View>
 	)
+}
+
+type MessageGroupBySender = {
+	sender: string | null
+	type: MessageType
+	user?: string
+	messages: Message[]
 }
 
 const Chat = () => {
@@ -96,7 +123,10 @@ const Chat = () => {
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	const navigation = useNavigation()
 	const { user } = useContext(AuthContext)
+	const { mode, isInRide } = useContext(ModeContext)
 	const [messages, setMessages] = useState<Message[]>([])
+	const [messageGroups, setMessageGroups] = useState<MessageGroupBySender[]>([])
+	const { colors } = useTheme()
 	
 	const form = useForm<{ message: string }>({
 		defaultValues: {
@@ -186,9 +216,10 @@ const Chat = () => {
 	
 	useEffect(() => {
 		const unsubscribe = onSnapshot(query(collection(doc(db, 'rides', rideId), 'messages'), orderBy('timestamp', 'asc')), (snapshot) => {
-			setMessages(snapshot.docs.map((doc) => {
+			setMessages(snapshot.docs.map((doc, index) => {
+				const data = doc.data() as Message
 				return {
-					...doc.data(),
+					...data,
 					id: doc.id,
 				} as Message
 			}))
@@ -197,12 +228,78 @@ const Chat = () => {
 		return () => unsubscribe()
 	}, [rideId])
 	
+	// on load, mark all messages as read
+	useEffect(() => {
+		(async () => {
+			await runTransaction(db, async (transaction) => {
+				const messageRef = collection(doc(db, 'rides', rideId), 'messages')
+				
+				const snapshot = await getDocs(messageRef)
+				
+				snapshot.docs.forEach((doc) => {
+					transaction.update(doc.ref, {
+						read_by: arrayUnion(user?.uid),
+					})
+				})
+			})
+				.then(() => {
+					console.log('Messages marked as read')
+				})
+				.catch((error) => {
+					console.error('Error marking messages as read:', error)
+				})
+		})()
+	}, [rideId])
+	
+	useEffect(() => {
+		const groups: MessageGroupBySender[] = []
+		let currentGroup: MessageGroupBySender | null = null
+		
+		messages.forEach((message) => {
+			if (message.sender === null) {
+				// System message, create a new group for each
+				groups.push({
+					sender: null,
+					type: message.type,
+					user: message.user,
+					messages: [message],
+				})
+			} else if (currentGroup === null || currentGroup.sender !== message.sender || currentGroup.type !== message.type) {
+				// New group for different sender or message type
+				currentGroup = {
+					sender: message.sender,
+					type: message.type,
+					user: message.user,
+					messages: [message],
+				}
+				groups.push(currentGroup)
+			} else {
+				// Add to current group
+				currentGroup.messages.push(message)
+			}
+		})
+		
+		setMessageGroups(groups)
+	}, [messages])
+	
 	return (
 		<CustomLayout
 			scrollable={false}
 			contentPadding={0}
 			header={
-				<CustomHeader title="Chat" navigation={navigation} />
+				<CustomHeader
+					title="Chat"
+					navigation={navigation}
+					rightNode={
+						<CustomIconButton
+							icon="information-outline"
+							onPress={() => {
+								// @ts-ignore
+								navigation.navigate('ViewRide', { rideId })
+							}}
+						/>
+					}
+				/>
 			}
 		>
 			<View style={style.mainContent}>
@@ -215,14 +312,81 @@ const Chat = () => {
 							<View style={[style.column, { gap: 20 }]}>
 								{
 									chat &&
-									messages.map((message) => (
+									<View
+										style={[style.row, {
+											gap: 15,
+											backgroundColor: 'white',
+											elevation: 5,
+											padding: 20,
+											borderRadius: 30,
+										}]}
+									>
+										<View style={[style.column, { gap: 20, flex: 1 }]}>
+											<View style={[style.row, { gap: 5, justifyContent: 'space-between' }]}>
+												<View style={[style.row, { gap: 5, width: 'auto' }]}>
+													<Icon
+														name="map-marker"
+														size={20}
+													/>
+													<CustomText
+														size={14}
+														numberOfLines={1}
+													>
+														{chat.to_campus ? 'From' : 'To'} {chat.location.name}
+													</CustomText>
+												</View>
+												<View style={[style.row, { gap: 5, width: 'auto' }]}>
+													<CustomText size={12} bold
+													            color={chat.completed_at ? 'green' : chat.started_at ? 'blue' : 'black'}>
+														{
+															chat.completed_at ? 'Completed' :
+																chat.started_at ? 'Ongoing' :
+																	'Pending'
+														}
+													</CustomText>
+												</View>
+											</View>
+											<View style={[style.row, { gap: 10 }]}>
+												<View style={[style.row, { gap: 5, width: 'auto' }]}>
+													<Icon name="calendar" size={20} />
+													<CustomText size={12} bold>
+														{chat.datetime.toDate().toLocaleString('en-GB', {
+															day: 'numeric',
+															month: 'numeric',
+															year: 'numeric',
+														})}
+													</CustomText>
+												</View>
+												<View style={[style.row, { gap: 5, width: 'auto' }]}>
+													<Icon name="clock" size={20} />
+													<CustomText size={12} bold>
+														{chat.datetime.toDate().toLocaleString('en-GB', {
+															hour: '2-digit',
+															minute: '2-digit',
+															hour12: true,
+														})}
+													</CustomText>
+												</View>
+												<View style={[style.row, { gap: 5, width: 'auto' }]}>
+													<Icon name="cash" size={20} />
+													<CustomText size={12} bold>
+														RM {chat.fare}
+													</CustomText>
+												</View>
+											</View>
+										</View>
+									</View>
+								}
+								{
+									chat &&
+									messageGroups.map((group) => (
 										<MessageComponent
-											key={message.id}
-											message={message}
+											key={group.messages[0].id}
+											group={group}
 											photo_url={
-												message.sender === chat.driver ?
+												group.sender === chat.driver ?
 													chat.driverData?.photo_url :
-													chat.passengersData?.find((passenger) => passenger.id === message.sender)?.photo_url
+													chat.passengersData?.find((passenger) => passenger.id === group.sender)?.photo_url
 											}
 											user={user}
 											passengerData={chat.passengersData}
