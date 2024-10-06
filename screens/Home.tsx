@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { Image, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
 import { Menu, useTheme } from 'react-native-paper'
 import CustomText from '../components/themed/CustomText'
 import { useNavigation } from '@react-navigation/native'
@@ -128,7 +128,10 @@ const Home = () => {
 		if (user && isInRide) {
 			unsubscribe = onSnapshot(doc(db, 'rides', isInRide), (snapshot) => {
 				if (snapshot.exists()) {
-					setCurrentRide(snapshot.data() as Ride)
+					setCurrentRide({
+						id: snapshot.id,
+						...snapshot.data(),
+					} as Ride)
 				} else {
 					setCurrentRide(null)
 				}
@@ -217,7 +220,7 @@ const Home = () => {
 							</View>
 							{
 								currentRide ?
-									<View
+									<Pressable
 										style={[
 											style.row,
 											{
@@ -228,18 +231,60 @@ const Home = () => {
 												gap: 10,
 											},
 										]}
+										onPress={() => {
+											// @ts-ignore
+											navigation.navigate('ViewRide', { rideId: currentRide.id })
+										}}
 									>
 										<View style={[style.column, { gap: 20, flex: 1 }]}>
-											<CustomText size={16} bold>
-												{currentRide.datetime.toDate().toLocaleString('en-GB', {
-													day: 'numeric',
-													month: 'numeric',
-													year: 'numeric',
-													hour: '2-digit',
-													minute: '2-digit',
-													hour12: true,
-												})}
-											</CustomText>
+											<View style={[style.row, { gap: 5, justifyContent: 'space-between' }]}>
+												<CustomText
+													size={14}
+													bold
+													width="auto"
+													color={colors.primary}
+												>
+													Current Ride ({mode === 'driver' ? 'Driver' : 'Passenger'})
+												</CustomText>
+												<View style={[style.row, { gap: 5, width: 'auto' }]}>
+													<CustomText size={12} bold
+													            color={currentRide.completed_at ? 'green' : currentRide.started_at ? 'blue' : 'black'}>
+														{
+															currentRide.completed_at ? 'Completed' :
+																currentRide.started_at ? 'Ongoing' :
+																	'Pending'
+														}
+													</CustomText>
+												</View>
+											</View>
+											<View style={[style.row, { gap: 10 }]}>
+												<View style={[style.row, { gap: 5, width: 'auto' }]}>
+													<Icon name="calendar" size={20} />
+													<CustomText size={12} bold>
+														{currentRide.datetime.toDate().toLocaleString('en-CA', {
+															day: 'numeric',
+															month: 'numeric',
+															year: 'numeric',
+														})}
+													</CustomText>
+												</View>
+												<View style={[style.row, { gap: 5, width: 'auto' }]}>
+													<Icon name="clock" size={20} />
+													<CustomText size={12} bold>
+														{currentRide.datetime.toDate().toLocaleString('en-CA', {
+															hour: '2-digit',
+															minute: '2-digit',
+															hour12: true,
+														})}
+													</CustomText>
+												</View>
+												<View style={[style.row, { gap: 5, width: 'auto' }]}>
+													<Icon name="cash" size={20} />
+													<CustomText size={12} bold>
+														RM {currentRide.fare}
+													</CustomText>
+												</View>
+											</View>
 											<View style={[style.row, { gap: 5 }]}>
 												<View style={[style.column, {
 													flexDirection: currentRide.to_campus ? 'column' : 'column-reverse',
@@ -272,7 +317,7 @@ const Home = () => {
 												</View>
 											</View>
 										</View>
-									</View> :
+									</Pressable> :
 									<></>
 							}
 							{roleContent.find(content => content.role === mode)?.component}
