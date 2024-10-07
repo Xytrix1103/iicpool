@@ -49,6 +49,7 @@ import Chat from './screens/Chat'
 import ManageLicense from './screens/ManageLicense'
 import { BACKGROUND_UPDATE_LOCATION_TASK, RideProvider } from './components/contexts/RideContext'
 import { Timestamp } from '@firebase/firestore'
+import Activity from './screens/Activity'
 
 const Stack = createNativeStackNavigator()
 
@@ -536,6 +537,7 @@ const Routes = ({ expoPushToken }: { expoPushToken: string }) => {
 						<Stack.Screen name="Messages" component={Messages} />
 						<Stack.Screen name="Chat" component={Chat} />
 						<Stack.Screen name="ManageLicense" component={ManageLicense} />
+						<Stack.Screen name="Activity" component={Activity} />
 					</> :
 					<Stack.Screen name="AccountSetup" component={AccountSetup} />
 			) : (

@@ -49,7 +49,7 @@ const CustomAppbar = () => {
 					onPress={() => {
 						console.log('Activity')
 						// @ts-ignore
-						navigation.navigate('Home')
+						navigation.navigate('Activity')
 					}}
 				/>
 				<CustomAppbarItem
