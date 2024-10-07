@@ -6,6 +6,7 @@ import { Profile } from '../../database/schema'
 import { httpsCallable } from 'firebase/functions'
 import { Alert } from 'react-native'
 import { backgroundLogout } from '../../api/auth'
+import * as SecureStore from 'expo-secure-store'
 
 const AuthContext = createContext<AuthContextType>({
 	loading: true,
@@ -87,6 +88,7 @@ const AuthProvider = ({ children }: any) => {
 				if (!newUser) {
 					console.log('auth state changed, user is null')
 					setUser(newUser)
+					await SecureStore.deleteItemAsync('userId')
 				} else {
 					console.log('auth state changed, user is not null')
 					
@@ -113,6 +115,7 @@ const AuthProvider = ({ children }: any) => {
 							
 							setTimeout(() => {
 								setUser(newUser)
+								SecureStore.setItemAsync('userId', newUser.uid)
 							}, 3000)
 						} else {
 							console.log('old user')
@@ -123,6 +126,7 @@ const AuthProvider = ({ children }: any) => {
 										throw new Error('User not found')
 									} else {
 										setUser(newUser)
+										SecureStore.setItemAsync('userId', newUser.uid)
 									}
 								})
 								.catch(async (error) => {
@@ -131,6 +135,7 @@ const AuthProvider = ({ children }: any) => {
 									await backgroundLogout({
 										callback: () => {
 											setUser(null)
+											SecureStore.deleteItemAsync('userId')
 										},
 									})
 										.then(() => {
@@ -155,6 +160,7 @@ const AuthProvider = ({ children }: any) => {
 									throw new Error('User not found')
 								} else {
 									setUser(newUser)
+									SecureStore.setItemAsync('userId', newUser.uid)
 								}
 							})
 							.catch(async (error) => {
@@ -163,6 +169,7 @@ const AuthProvider = ({ children }: any) => {
 								await backgroundLogout({
 									callback: () => {
 										setUser(null)
+										SecureStore.deleteItemAsync('userId')
 									},
 								})
 									.then(() => {
@@ -188,6 +195,7 @@ const AuthProvider = ({ children }: any) => {
 				await backgroundLogout({
 					callback: () => {
 						setUser(null)
+						SecureStore.deleteItemAsync('userId')
 					},
 				})
 					.then(() => {
@@ -242,6 +250,7 @@ const AuthProvider = ({ children }: any) => {
 									callback: () => {
 										setProfile(null)
 										setLoading(false)
+										SecureStore.deleteItemAsync('userId')
 									},
 								})
 									.then(() => {
@@ -273,6 +282,7 @@ const AuthProvider = ({ children }: any) => {
 							setUser(null)
 							setProfile(null)
 							setLoading(false)
+							SecureStore.deleteItemAsync('userId')
 						},
 					})
 						.then(() => {

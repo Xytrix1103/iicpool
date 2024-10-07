@@ -56,7 +56,7 @@ const ChatComponent = ({ ride, user, navigation }: {
 		case MessageType.RIDE_CANCELLATION:
 			messageDisplay = `${ride.driverData?.full_name} has cancelled the ride`
 			break
-		case MessageType.RIDE_UPDATE:
+		case MessageType.RIDE_COMPLETION:
 			messageDisplay = ride.latestMessage?.message
 			break
 		default:
@@ -264,7 +264,7 @@ const Messages = () => {
 		})
 		
 		return () => unsubscribe()
-	}, [])
+	}, [user])
 	
 	return (
 		<CustomLayout

@@ -15,6 +15,7 @@ type PassengersListComponentProps = {
 
 const PassengersListComponent: React.FC<PassengersListComponentProps> = ({ ride, passengers, isInRide }) => {
 	const { user } = useContext(AuthContext)
+	const isRideOngoing = ride.started_at && !ride.completed_at && !ride.cancelled_at
 	
 	return (
 		<View
@@ -28,19 +29,22 @@ const PassengersListComponent: React.FC<PassengersListComponentProps> = ({ ride,
 							<CustomText size={16} bold>
 								Passengers ({ride.passengers?.length}/{ride.available_seats})
 							</CustomText>
-							<CustomText
-								size={14}
-								bold
-								color={ride.passengers?.length === ride.available_seats || passengers?.some((passenger) => passenger?.id === user?.uid) ? 'red' : 'green'}
-							>
-								{
-									passengers?.every((passenger) => passenger?.id !== user?.uid) ?
-										ride.passengers?.length === ride.available_seats
-											? 'Full' :
-											'Available'
-										: 'Booked'
-								}
-							</CustomText>
+							{
+								(!ride.started_at && !ride.completed_at && !ride.cancelled_at) &&
+								<CustomText
+									size={14}
+									bold
+									color={ride.passengers?.length === ride.available_seats || passengers?.some((passenger) => passenger?.id === user?.uid) ? 'red' : 'green'}
+								>
+									{
+										passengers?.every((passenger) => passenger?.id !== user?.uid) ?
+											ride.passengers?.length === ride.available_seats
+												? 'Full' :
+												'Available'
+											: 'Booked'
+									}
+								</CustomText>
+							}
 						</View>
 					</View>
 				</View>

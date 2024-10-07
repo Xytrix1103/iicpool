@@ -33,7 +33,7 @@ type Car = {
 
 enum MessageType {
 	NEW_PASSENGER = 'new_passenger',
-	RIDE_UPDATE = 'ride_update',
+	RIDE_COMPLETION = 'ride_completion',
 	RIDE_CANCELLATION = 'ride_cancellation',
 	PASSENGER_CANCELLATION = 'passenger_cancellation',
 	MESSAGE = 'message',
@@ -77,9 +77,17 @@ type Ride = {
 	deleted_at: Timestamp | null
 }
 
+type Signal = {
+	id?: string
+	user: string
+	latitude: number
+	longitude: number
+	timestamp: Timestamp
+}
+
 enum Role {
 	DRIVER = 'driver',
 	PASSENGER = 'passenger',
 }
 
-export { Profile, Car, Ride, Role, ProfileNotificationSettings, Message, MessageType }
+export { Profile, Car, Ride, Role, ProfileNotificationSettings, Message, MessageType, Signal }

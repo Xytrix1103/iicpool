@@ -20,14 +20,13 @@ import { View } from 'react-native'
 import CustomText from '../components/themed/CustomText'
 import style from '../styles/shared'
 import { User } from 'firebase/auth'
-import { Avatar, useTheme } from 'react-native-paper'
+import { Avatar } from 'react-native-paper'
 import CustomInput from '../components/themed/CustomInput'
 import CustomIconButton from '../components/themed/CustomIconButton'
 import { Controller, useForm } from 'react-hook-form'
 import { sendMessage } from '../api/messages'
 import { AuthContext } from '../components/contexts/AuthContext'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
-import { ModeContext } from '../components/contexts/ModeContext'
 
 type ChatRouteParams = RouteProp<{ Chat: { rideId: string } }, 'Chat'>
 
@@ -49,7 +48,7 @@ const MessageComponent = ({ group, photo_url, user, passengerData, driverData }:
 	return (
 		<View style={[style.row, { gap: 10, alignItems: 'flex-start' }]}>
 			{
-				group.sender === null ?
+				group.type !== MessageType.MESSAGE ?
 					<View style={[style.row]}>
 						<View style={[style.column]}>
 							<CustomText color="gray" size={12} align="center">
@@ -60,8 +59,8 @@ const MessageComponent = ({ group, photo_url, user, passengerData, driverData }:
 											`${passengerData?.find((passenger) => passenger.id === group.user)?.full_name} has left the ride` :
 											group.type === MessageType.RIDE_CANCELLATION ?
 												`${driverData?.full_name} has cancelled the ride` :
-												group.type === MessageType.RIDE_UPDATE ?
-													'Ride has been updated' :
+												group.type === MessageType.RIDE_COMPLETION ?
+													'Ride has been completed' :
 													null
 								}
 							</CustomText>
@@ -123,10 +122,8 @@ const Chat = () => {
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	const navigation = useNavigation()
 	const { user } = useContext(AuthContext)
-	const { mode, isInRide } = useContext(ModeContext)
 	const [messages, setMessages] = useState<Message[]>([])
 	const [messageGroups, setMessageGroups] = useState<MessageGroupBySender[]>([])
-	const { colors } = useTheme()
 	
 	const form = useForm<{ message: string }>({
 		defaultValues: {
@@ -165,8 +162,24 @@ const Chat = () => {
 				id: snapshotDoc.id,
 			} as Ride
 			
+			//get all users involved in messages
+			const messageRef = collection(doc(db, 'rides', rideId), 'messages')
+			const messageSnapshot = await getDocs(messageRef)
+			
+			const users = new Set<string>()
+			
+			messageSnapshot.docs.forEach((doc) => {
+				const data = doc.data() as Message
+				
+				if (data.sender && !users.has(data.sender)) {
+					users.add(data.sender)
+				} else if (data.user && !users.has(data.user)) {
+					users.add(data.user)
+				}
+			})
+			
 			const passengersData = await Promise.all(
-				chatData.passengers.map(async (passengerId) => {
+				Array.from(users).map(async (passengerId) => {
 					const result = await getDoc(doc(db, 'users', passengerId))
 					return {
 						...result.data(),
@@ -290,15 +303,6 @@ const Chat = () => {
 				<CustomHeader
 					title="Chat"
 					navigation={navigation}
-					rightNode={
-						<CustomIconButton
-							icon="information-outline"
-							onPress={() => {
-								// @ts-ignore
-								navigation.navigate('ViewRide', { rideId })
-							}}
-						/>
-					}
 				/>
 			}
 		>

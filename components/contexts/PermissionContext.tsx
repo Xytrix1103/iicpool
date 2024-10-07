@@ -15,29 +15,34 @@ const PermissionContext = createContext<{
 		camera: PermissionStatus;
 		notifications: PermissionStatus;
 		location: PermissionStatus;
+		backgroundLocation: PermissionStatus;
 	};
 	setPermissionStatus: (status: {
 		camera: PermissionStatus;
 		notifications: PermissionStatus;
 		location: PermissionStatus;
+		backgroundLocation: PermissionStatus;
 	}) => void;
 	renderToken: string;
 	setRenderToken: (token: string) => void;
-	wrapPermissions: ({
-		                  operation,
-		                  type,
-		                  message,
-	                  }: {
-		operation: () => Promise<void>;
-		type: 'notifications' | 'location' | 'camera';
-		message: string;
-	}) => Promise<void>;
+	wrapPermissions: (
+		{
+			operation,
+			type,
+			message,
+		}: {
+			operation: () => Promise<void>;
+			type: 'notifications' | 'location' | 'camera' | 'backgroundLocation';
+			message: string;
+		},
+	) => Promise<void>;
 	loading: boolean;
 }>({
 	permissionStatus: {
 		camera: PermissionStatus.UNDETERMINED,
 		notifications: PermissionStatus.UNDETERMINED,
 		location: PermissionStatus.UNDETERMINED,
+		backgroundLocation: PermissionStatus.UNDETERMINED,
 	},
 	// eslint-disable-next-line @typescript-eslint/no-empty-function
 	setPermissionStatus: () => {
@@ -57,10 +62,12 @@ const PermissionProvider = ({ children }: { children: ReactElement }) => {
 		camera: PermissionStatus;
 		notifications: PermissionStatus;
 		location: PermissionStatus;
+		backgroundLocation: PermissionStatus;
 	}>({
 		camera: PermissionStatus.UNDETERMINED,
 		notifications: PermissionStatus.UNDETERMINED,
 		location: PermissionStatus.UNDETERMINED,
+		backgroundLocation: PermissionStatus.UNDETERMINED,
 	})
 	const [renderToken, setRenderToken] = useState('')
 	const [loading, setLoading] = useState(true)
@@ -73,6 +80,7 @@ const PermissionProvider = ({ children }: { children: ReactElement }) => {
 				camera: permissionStatus.camera,
 				notifications: permissionStatus.notifications,
 				location: permissionStatus.location,
+				backgroundLocation: permissionStatus.backgroundLocation,
 			}
 			
 			await Notifications.requestPermissionsAsync()
@@ -86,12 +94,20 @@ const PermissionProvider = ({ children }: { children: ReactElement }) => {
 					)
 				})
 			
-			await Location.requestForegroundPermissionsAsync()
-				.then(({ status }) => {
-					finalStatus.location = status
+			await Location.enableNetworkProviderAsync()
+				.then(async () => {
+					console.log('Network provider enabled')
+					
+					await Location.requestForegroundPermissionsAsync()
+						.then(({ status }) => {
+							finalStatus.location = status
+						})
+						.catch((error) => {
+							console.error('Error getting location permissions:', error)
+						})
 				})
 				.catch((error) => {
-					console.error('Error getting location permissions:', error)
+					console.error('Error enabling network provider:', error)
 				})
 			
 			await ImagePicker.requestCameraPermissionsAsync()
@@ -100,6 +116,14 @@ const PermissionProvider = ({ children }: { children: ReactElement }) => {
 				})
 				.catch((error) => {
 					console.error('Error getting camera permissions:', error)
+				})
+			
+			await Location.requestBackgroundPermissionsAsync()
+				.then(({ status }) => {
+					finalStatus.backgroundLocation = status
+				})
+				.catch((error) => {
+					console.error('Error getting background location permissions:', error)
 				})
 			
 			if (finalStatus !== permissionStatus) {
@@ -123,15 +147,21 @@ const PermissionProvider = ({ children }: { children: ReactElement }) => {
 			message,
 		}: {
 			operation: () => Promise<void>;
-			type: 'notifications' | 'location' | 'camera';
+			type: 'notifications' | 'location' | 'camera' | 'backgroundLocation';
 			message: string;
 		}) => {
 		let { status } = await (
 			type === 'notifications'
 				? Notifications.getPermissionsAsync()
 				: type === 'location'
-					? Location.getForegroundPermissionsAsync()
-					: ImagePicker.getCameraPermissionsAsync()
+					? Location.enableNetworkProviderAsync()
+						.then(() => Location.getForegroundPermissionsAsync())
+					: type === 'camera'
+						? ImagePicker.getCameraPermissionsAsync()
+						: type === 'backgroundLocation'
+							? Location.enableNetworkProviderAsync()
+								.then(() => Location.getBackgroundPermissionsAsync())
+							: Promise.reject(new Error('Invalid permission type'))
 		)
 		
 		console.log('wrapPermissions -> status', status)
@@ -141,8 +171,40 @@ const PermissionProvider = ({ children }: { children: ReactElement }) => {
 			const { status: newStatus } = await (type === 'notifications'
 				? Notifications.requestPermissionsAsync()
 				: type === 'location'
-					? Location.requestForegroundPermissionsAsync()
-					: ImagePicker.requestCameraPermissionsAsync())
+					? Location.enableNetworkProviderAsync()
+						.then(() => Location.requestForegroundPermissionsAsync()
+							.then(({ status }) => {
+								console.log('Location permissions:', status)
+								return { status }
+							})
+							.catch((error) => {
+								console.error('Error getting location permissions:', error)
+								return { status: PermissionStatus.DENIED }
+							}),
+						)
+						.catch((error) => {
+							console.error('Error getting location permissions:', error)
+							return { status: PermissionStatus.DENIED }
+						})
+					: type === 'camera'
+						? ImagePicker.requestCameraPermissionsAsync()
+						: type === 'backgroundLocation'
+							? Location.enableNetworkProviderAsync()
+								.then(() => Location.requestBackgroundPermissionsAsync()
+									.then(({ status }) => {
+										console.log('Background location permissions:', status)
+										return { status }
+									})
+									.catch((error) => {
+										console.error('Error getting background location permissions:', error)
+										return { status: PermissionStatus.DENIED }
+									}),
+								)
+								.catch((error) => {
+									console.error('Error getting background location permissions:', error)
+									return { status: PermissionStatus.DENIED }
+								})
+							: Promise.reject(new Error('Invalid permission type')))
 			status = newStatus
 		}
 		

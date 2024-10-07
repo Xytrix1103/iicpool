@@ -3,6 +3,12 @@ import { Ride } from '../../database/schema'
 import { ModeContext } from './ModeContext'
 import { doc, onSnapshot } from 'firebase/firestore'
 import FirebaseApp from '../FirebaseApp'
+import * as Location from 'expo-location'
+import * as SecureStore from 'expo-secure-store'
+import { AuthContext } from './AuthContext'
+import { PermissionContext } from './PermissionContext'
+
+export const BACKGROUND_UPDATE_LOCATION_TASK = 'BACKGROUND_UPDATE_LOCATION_TASK'
 
 export const RideContext = createContext<RideContextType>({
 	currentRide: null,
@@ -20,6 +26,8 @@ const { db } = FirebaseApp
 export const RideProvider = ({ children }: { children: ReactNode }) => {
 	const [currentRide, setCurrentRide] = useState<Ride | null>(null)
 	const { isInRide, mode } = useContext(ModeContext)
+	const { user } = useContext(AuthContext)
+	const { wrapPermissions } = useContext(PermissionContext)
 	
 	useEffect(() => {
 		let unsubscribe: () => void
@@ -42,26 +50,64 @@ export const RideProvider = ({ children }: { children: ReactNode }) => {
 		}
 	}, [isInRide])
 	
+	//update secure storage with the current ride
+	useEffect(() => {
+		(async () => {
+			if (isInRide) {
+				await SecureStore.setItemAsync('currentRide', isInRide)
+			} else {
+				await SecureStore.deleteItemAsync('currentRide')
+			}
+		})()
+	}, [isInRide])
+	
+	
 	//use Location.startLocationUpdatesAsync and Location.stopLocationUpdatesAsync to update the ride's location in real time
 	useEffect(() => {
-		if (currentRide) {
-			console.log('currentRide', currentRide)
+		if (currentRide && isInRide) {
+			if (currentRide.driver === user?.uid && mode === 'driver' && currentRide.started_at !== null && currentRide.completed_at === null && currentRide.cancelled_at === null) {
+				// Location.startLocationUpdatesAsync(BACKGROUND_UPDATE_LOCATION_TASK, {
+				// 	accuracy: Location.Accuracy.Highest,
+				// 	timeInterval: 5000,
+				// 	distanceInterval: 5,
+				// }).then(r => console.log(r)).catch(e => console.error(e))
+				(async () => {
+					console.log('Starting location updates')
+					await wrapPermissions({
+						operation: async () => {
+							await Location.startLocationUpdatesAsync(BACKGROUND_UPDATE_LOCATION_TASK, {
+								accuracy: Location.Accuracy.BestForNavigation,
+								timeInterval: 5000,
+								distanceInterval: 5,
+								deferredUpdatesDistance: 5,
+								deferredUpdatesInterval: 5000,
+								mayShowUserSettingsDialog: true,
+							})
+						},
+						type: 'backgroundLocation',
+						message: 'We need background location permissions to update your ride location in real time',
+					})
+				})()
+			} else {
+				console.log('Stopping location updates')
+			}
+		} else {
+			(async () => {
+				console.log('Stopping location updates')
+				await wrapPermissions({
+					operation: async () => {
+						await Location.stopLocationUpdatesAsync(BACKGROUND_UPDATE_LOCATION_TASK)
+					},
+					type: 'backgroundLocation',
+					message: 'We need background location permissions to update your ride location in real time',
+				})
+			})()
 		}
-	}, [])
+	}, [currentRide, isInRide])
 	
 	return (
 		<RideContext.Provider value={{ currentRide, setCurrentRide }}>
 			{children}
 		</RideContext.Provider>
 	)
-}
-
-export const useRide = () => {
-	const context = useContext(RideContext)
-	
-	if (!context) {
-		throw new Error('useRide must be used within a RideProvider')
-	}
-	
-	return context
 }

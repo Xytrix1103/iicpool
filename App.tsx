@@ -5,7 +5,7 @@ import NavigationContainer from '@react-navigation/native/src/NavigationContaine
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { AppState, Linking, LogBox, Platform, StyleSheet } from 'react-native'
-import { Profile as ProfileType, ProfileNotificationSettings } from './database/schema'
+import { Profile as ProfileType, ProfileNotificationSettings, Signal } from './database/schema'
 import {
 	Poppins_400Regular as Poppins,
 	Poppins_500Medium as Poppins_Medium,
@@ -36,6 +36,8 @@ import Constants from 'expo-constants'
 import * as Notifications from 'expo-notifications'
 import * as TaskManager from 'expo-task-manager'
 import * as Device from 'expo-device'
+import * as Location from 'expo-location'
+import * as SecureStore from 'expo-secure-store'
 import { doc, getDoc, runTransaction, updateDoc } from 'firebase/firestore'
 import Settings from './screens/Settings'
 import { StatusBar, StatusBarStyle } from 'expo-status-bar'
@@ -45,7 +47,8 @@ import ViewRide from './screens/ViewRide'
 import Messages from './screens/Messages'
 import Chat from './screens/Chat'
 import ManageLicense from './screens/ManageLicense'
-import { RideProvider } from './components/contexts/RideContext'
+import { BACKGROUND_UPDATE_LOCATION_TASK, RideProvider } from './components/contexts/RideContext'
+import { Timestamp } from '@firebase/firestore'
 
 const Stack = createNativeStackNavigator()
 
@@ -191,6 +194,49 @@ TaskManager.defineTask(
 					data: data,
 				},
 				trigger: null,
+			})
+		}
+	},
+)
+
+TaskManager.defineTask(
+	BACKGROUND_UPDATE_LOCATION_TASK,
+	async ({ data, error }) => {
+		if (error) {
+			console.error(error)
+			return
+		}
+		if (data) {
+			const { locations } = data as { locations: Location.LocationObject[] }
+			const location = locations[0]
+			console.log('Location:', location)
+			
+			// Update the ride's location in the database
+			const rideId = await SecureStore.getItemAsync('currentRide')
+			const userId = await SecureStore.getItemAsync('userId')
+			
+			if (!rideId || !userId) {
+				console.error('Ride ID or user ID is missing, but location updates still running')
+				return
+			} else {
+				console.log('Updating location for ride:', rideId, 'and user:', userId)
+			}
+			
+			await runTransaction(db, async (transaction) => {
+				//create new signal object in the signals subcollection of the ride document
+				const signalRef = doc(db, 'rides', rideId, 'signals', Timestamp.now().toMillis().toString())
+				const signalDoc = await transaction.get(signalRef)
+				
+				console.log('Signal doc:', signalDoc.data())
+				
+				if (!signalDoc.exists()) {
+					transaction.set(signalRef, {
+						user: userId,
+						latitude: location.coords.latitude,
+						longitude: location.coords.longitude,
+						timestamp: Timestamp.fromMillis(location.timestamp),
+					} as Signal)
+				}
 			})
 		}
 	},

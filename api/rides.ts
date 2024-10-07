@@ -246,7 +246,7 @@ const handleStartRide = ({ ride, user }: { ride: Ride, user: User | null }) => {
 							message: null,
 							sender: null,
 							timestamp: Timestamp.now(),
-							type: MessageType.RIDE_UPDATE,
+							type: MessageType.RIDE_COMPLETION,
 						} as Message)
 					})
 						.then(() => {
@@ -262,12 +262,59 @@ const handleStartRide = ({ ride, user }: { ride: Ride, user: User | null }) => {
 	)
 }
 
+const handleCompleteRide = ({ ride, user }: { ride: Ride, user: User | null }) => {
+	Alert.alert(
+		'Complete Ride',
+		'Are you sure you want to complete this ride?',
+		[
+			{
+				text: 'Cancel',
+				style: 'cancel',
+			},
+			{
+				text: 'Complete Ride',
+				onPress: async () => {
+					await runTransaction(db, async (transaction) => {
+						if (!ride.id) {
+							throw new Error('Ride ID is missing')
+						}
+						
+						const rideRef = doc(db, 'rides', ride?.id || '')
+						
+						transaction.update(rideRef, {
+							completed_at: Timestamp.now(),
+						})
+						
+						//check if there is a messages sub-collection
+						const messageRef = doc(collection(rideRef, 'messages'))
+						
+						transaction.set(messageRef, {
+							message: 'Ride has been completed',
+							sender: null,
+							timestamp: Timestamp.now(),
+							type: MessageType.RIDE_COMPLETION,
+						} as Message)
+					})
+						.then(() => {
+							ToastAndroid.show('Ride completed successfully', ToastAndroid.SHORT)
+						})
+						.catch((error) => {
+							ToastAndroid.show('Failed to complete ride', ToastAndroid.SHORT)
+							console.error('Failed to complete ride', error)
+						})
+				},
+			},
+		],
+	)
+}
+
 export {
 	getPassengers,
 	handleBookRide,
 	handleCancelBooking,
 	handleCancelRide,
 	handleStartRide,
+	handleCompleteRide,
 	BASE_FARE,
 	RATE_PER_KM,
 	RATE_PER_MINUTE,

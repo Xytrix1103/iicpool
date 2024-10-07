@@ -35,6 +35,36 @@ const getDirections = async ({ origin, destination, departure_time }: {
 	}
 }
 
+const getDirectionsByCoordinates = async ({ origin, destination, departure_time }: {
+	origin: LatLng,
+	destination: LatLng,
+	departure_time?: Date,
+}): Promise<DirectionsResponse | null> => {
+	console.log('getDirectionsByCoordinates:', origin, destination)
+	const baseUrl = 'https://maps.googleapis.com/maps/api/directions/json'
+	
+	// Convert departure_time to seconds since epoch if provided
+	const departureTimeInSeconds = departure_time ? Math.floor(departure_time.getTime() / 1000) : undefined
+	const params = `origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&mode=driving${departureTimeInSeconds ? `&departure_time=${departureTimeInSeconds}` : ''}`
+	
+	const result = await axios.get<DirectionsResponse>(`${baseUrl}?${params}&key=${GMAPS_API_KEY}`, {
+		headers: {
+			'Content-Type': 'application/json',
+		},
+	}).then((r) => r).catch((e) => {
+		console.error('Error fetching directions:', e)
+		return e
+	})
+	
+	if (result.data.status === 'OK') {
+		console.log('Directions:', result.data)
+		return result.data
+	} else {
+		console.error('Error fetching directions:', result.data)
+		return null
+	}
+}
+
 function decodePolyline(encoded: string): LatLng[] {
 	let index = 0
 	const len = encoded.length
@@ -200,4 +230,5 @@ export {
 	DirectionsResponse,
 	fetchCampusLocation,
 	fetchLocationByCoordinates,
+	getDirectionsByCoordinates,
 }
