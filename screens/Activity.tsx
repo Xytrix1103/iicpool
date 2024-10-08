@@ -10,60 +10,98 @@ import CustomHeader from '../components/themed/CustomHeader'
 import { Ride } from '../database/schema'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
+import { MD3Colors } from 'react-native-paper/lib/typescript/types'
+import { useTheme } from 'react-native-paper'
+import { useNavigation } from '@react-navigation/native'
 
 const { db } = FirebaseApp
 
-const RideComponent = ({ ride }: { ride: Ride }) => {
+const RideComponent = ({ ride, colors, mode, navigation }: {
+	ride: Ride,
+	colors: MD3Colors,
+	mode: 'driver' | 'passenger',
+	navigation: any
+}) => {
 	return (
 		<Pressable
-			style={[style.row, {
-				gap: 20,
-				elevation: 10,
-				borderRadius: 20,
-				backgroundColor: 'white',
-				padding: 20,
-			}]}
+			style={[
+				style.row,
+				{
+					backgroundColor: 'white',
+					elevation: 5,
+					padding: 20,
+					borderRadius: 10,
+					gap: 10,
+				},
+			]}
 			onPress={() => {
 				// @ts-ignore
 				navigation.navigate('ViewRide', { rideId: ride.id })
 			}}
-			key={ride.id}
 		>
-			<View style={[style.column, {
-				width: 'auto',
-				justifyContent: 'center',
-				gap: 5,
-				alignItems: 'center',
-			}]}>
-				<Icon name="car" size={20} color="black" />
-				<CustomText
-					align="center"
-					bold
-					size={14}
-				>
-					{ride.available_seats - ride.passengers.length}/{ride.available_seats}
-				</CustomText>
-			</View>
-			<View style={[style.column, { flex: 4, gap: 5 }]}>
-				<View style={[style.row, { gap: 5 }]}>
-					<View style={[style.column, { flex: 1 }]}>
-						<CustomText size={14} bold numberOfLines={1}>
-							{`${ride.to_campus ? 'From' : 'To'} ${ride.location?.name}`}
+			<View style={[style.column, { gap: 20, flex: 1 }]}>
+				<View style={[style.row, { gap: 5, justifyContent: 'space-between' }]}>
+					<CustomText
+						size={14}
+						bold
+						width="auto"
+						color={colors.primary}
+					>
+						{mode === 'driver' ? 'Driver' : 'Passenger'}
+					</CustomText>
+					<View style={[style.row, { gap: 5, width: 'auto' }]}>
+						<CustomText size={12} bold
+						            color={ride.completed_at ? 'green' : ride.started_at ? 'blue' : 'black'}>
+							{
+								ride.completed_at ? 'Completed' :
+									ride.started_at ? 'Ongoing' :
+										'Pending'
+							}
 						</CustomText>
 					</View>
 				</View>
-				<View style={[style.row, { gap: 5 }]}>
-					<View style={[style.column, { flex: 1 }]}>
-						<CustomText size={14}>
+				<View style={[style.row, { gap: 10 }]}>
+					<View style={[style.row, { gap: 5, width: 'auto' }]}>
+						<Icon name="calendar" size={20} />
+						<CustomText size={12}>
 							{ride.datetime.toDate().toLocaleString('en-GB', {
 								day: 'numeric',
 								month: 'numeric',
 								year: 'numeric',
+							})}
+						</CustomText>
+					</View>
+					<View style={[style.row, { gap: 5, width: 'auto' }]}>
+						<Icon name="clock" size={20} />
+						<CustomText size={12}>
+							{ride.datetime.toDate().toLocaleString('en-GB', {
 								hour: '2-digit',
 								minute: '2-digit',
 								hour12: true,
 							})}
 						</CustomText>
+					</View>
+					<View style={[style.row, { gap: 5, width: 'auto' }]}>
+						<Icon name="cash" size={20} />
+						<CustomText size={12}>
+							RM {ride.fare}
+						</CustomText>
+					</View>
+				</View>
+				<View style={[style.row, { gap: 5 }]}>
+					<View style={[style.column, {
+						flexDirection: ride.to_campus ? 'column' : 'column-reverse',
+					}]}>
+						<View style={[style.row, { gap: 5 }]}>
+							<View style={[style.column, { gap: 5, width: 'auto' }]}>
+								<Icon name="map-marker" size={24} />
+							</View>
+							<View style={[style.column, { gap: 5, flex: 1 }]}>
+								<CustomText size={14} numberOfLines={2}>
+									{ride.to_campus ? 'From' : 'To'} {ride.location.name} {ride.to_campus ? 'to campus' : 'from campus'}
+								</CustomText>
+							</View>
+						</View>
 					</View>
 				</View>
 			</View>
@@ -75,6 +113,8 @@ const Activity = () => {
 	const { user } = useContext(AuthContext)
 	const [rides, setRides] = useState<Ride[]>([])
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
+	const { colors } = useTheme()
+	const navigation = useNavigation()
 	
 	useEffect(() => {
 		if (!user) return
@@ -119,7 +159,8 @@ const Activity = () => {
 					<View style={style.row}>
 						<View style={[style.column, { gap: 20 }]}>
 							{rides.map((ride) => (
-								<RideComponent ride={ride} key={ride.id} />
+								<RideComponent ride={ride} key={ride.id} colors={colors} navigation={navigation}
+								               mode={ride.driver === user?.uid ? 'driver' : 'passenger'} />
 							))}
 							{rides.length === 0 && (
 								<CustomText align="center" size={16}>

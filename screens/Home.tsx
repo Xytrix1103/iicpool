@@ -16,7 +16,6 @@ import DriverHome from './HomeComponents/DriverHome'
 import PassengerHome from './HomeComponents/PassengerHome'
 import { doc, onSnapshot } from 'firebase/firestore'
 import FirebaseApp from '../components/FirebaseApp'
-import { CAMPUS_NAME } from '../api/location'
 
 const { db } = FirebaseApp
 
@@ -180,10 +179,10 @@ const Home = () => {
 					!user?.emailVerified &&
 					<UnverifiedEmailAlert navigation={navigation} />
 				}
-				<CustomLayout scrollable={true}>
+				<CustomLayout scrollable={true} contentPadding={0}>
 					<View style={[style.mainContent]}>
 						<View style={[style.column, { gap: 20, height: '100%' }]}>
-							<View style={[style.column, { gap: 10 }]}>
+							<View style={[style.column, { gap: 10, paddingHorizontal: 20 }]}>
 								<View style={[style.row, { gap: 10, alignItems: 'center' }]}>
 									<Image
 										source={
@@ -261,7 +260,7 @@ const Home = () => {
 												<View style={[style.row, { gap: 5, width: 'auto' }]}>
 													<Icon name="calendar" size={20} />
 													<CustomText size={12} bold>
-														{currentRide.datetime.toDate().toLocaleString('en-CA', {
+														{currentRide.datetime.toDate().toLocaleString('en-GB', {
 															day: 'numeric',
 															month: 'numeric',
 															year: 'numeric',
@@ -271,7 +270,7 @@ const Home = () => {
 												<View style={[style.row, { gap: 5, width: 'auto' }]}>
 													<Icon name="clock" size={20} />
 													<CustomText size={12} bold>
-														{currentRide.datetime.toDate().toLocaleString('en-CA', {
+														{currentRide.datetime.toDate().toLocaleString('en-GB', {
 															hour: '2-digit',
 															minute: '2-digit',
 															hour12: true,
@@ -290,27 +289,12 @@ const Home = () => {
 													flexDirection: currentRide.to_campus ? 'column' : 'column-reverse',
 												}]}>
 													<View style={[style.row, { gap: 5 }]}>
+														<View style={[style.column, { gap: 5, width: 'auto' }]}>
+															<Icon name="map-marker" size={24} />
+														</View>
 														<View style={[style.column, { gap: 5, flex: 1 }]}>
-															<Icon name="map-marker" size={30} />
-														</View>
-														<View style={[style.column, { gap: 5, flex: 6 }]}>
-															<CustomText size={14} bold>
-																{currentRide.location?.name}
-															</CustomText>
-														</View>
-													</View>
-													<View style={[style.row, { gap: 5 }]}>
-														<View style={[style.column, { gap: 5, flex: 1 }]}>
-															<Icon name="dots-vertical" size={30} />
-														</View>
-													</View>
-													<View style={[style.row, { gap: 5 }]}>
-														<View style={[style.column, { gap: 5, flex: 1 }]}>
-															<Icon name="school" size={30} />
-														</View>
-														<View style={[style.column, { gap: 5, flex: 6 }]}>
-															<CustomText size={14} bold>
-																{CAMPUS_NAME}
+															<CustomText size={14} numberOfLines={2}>
+																{currentRide.to_campus ? 'From' : 'To'} {currentRide.location.name} {currentRide.to_campus ? 'to campus' : 'from campus'}
 															</CustomText>
 														</View>
 													</View>

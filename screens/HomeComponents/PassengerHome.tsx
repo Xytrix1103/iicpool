@@ -15,13 +15,14 @@ const PassengerHome = (
 		<CustomLayout scrollable={true} contentPadding={0}>
 			<View style={style.mainContent}>
 				<View style={style.column}>
-					<View style={[style.row, { padding: 20 }]}>
+					<View style={[style.row]}>
 						<CustomBackgroundButton
 							icon="hail"
 							size={40}
 							onPress={() => {
 								navigation.navigate('FindRides')
 							}}
+							style={{ flex: 1 }}
 							elevation={10}
 							backgroundColor="white"
 							padding={20}

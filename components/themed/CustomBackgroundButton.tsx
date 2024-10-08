@@ -1,5 +1,5 @@
 import React, { ReactNode, useContext } from 'react'
-import { Pressable, PressableProps, StyleSheet, View, ViewStyle } from 'react-native'
+import { Pressable, PressableProps, StyleSheet, ViewStyle } from 'react-native'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import { LoadingOverlayContext } from '../contexts/LoadingOverlayContext'
 
@@ -39,28 +39,23 @@ const CustomBackgroundButton: React.FC<CustomBackgroundButtonProps> = (
 			disabled={loadingOverlay.show || props.disabled}
 			style={({ pressed }) => [
 				styles.pressable,
-				{ opacity: pressed ? 0.8 : 1 },
+				{
+					backgroundColor,
+					padding,
+					borderRadius,
+					elevation,
+					borderColor,
+					borderWidth: borderColor ? 1 : 0,
+					opacity: pressed ? 0.8 : 1,
+					width: 'auto',
+				},
 				style,
 			]}
 			{...props}
 		>
-			<View
-				style={[
-					styles.container,
-					{
-						backgroundColor,
-						padding,
-						borderRadius,
-						elevation,
-						borderColor,
-						borderWidth: borderColor ? 1 : 0,
-					},
-				]}
-			>
-				{/* @ts-ignore */}
-				<Icon name={icon} size={size} color={iconColor} />
-				{children}
-			</View>
+			{/* @ts-ignore */}
+			<Icon name={icon} size={size} color={iconColor} />
+			{children}
 		</Pressable>
 	)
 }
