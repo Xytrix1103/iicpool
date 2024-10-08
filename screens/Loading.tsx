@@ -1,20 +1,27 @@
 import { ActivityIndicator } from 'react-native-paper'
-import { StyleSheet, View } from 'react-native'
+import { View } from 'react-native'
+import CustomLayout from '../components/themed/CustomLayout'
+import style from '../styles/shared'
+import CustomText from '../components/themed/CustomText'
 
 const Loading = () => {
 	return (
-		<View style={style.container}>
-			<ActivityIndicator size="large" color="darkred" />
-		</View>
+		<CustomLayout>
+			<View style={[style.mainContent, { justifyContent: 'center' }]}>
+				<View style={[style.column, { gap: 20 }]}>
+					<View style={[style.row, { alignItems: 'center', justifyContent: 'center' }]}>
+						<ActivityIndicator animating={true} size="large" />
+						<CustomText
+							size={16}
+							bold
+						>
+							Loading...
+						</CustomText>
+					</View>
+				</View>
+			</View>
+		</CustomLayout>
 	)
 }
-
-const style = StyleSheet.create({
-	container: {
-		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-})
 
 export default Loading

@@ -1,5 +1,5 @@
 import CustomLayout from '../components/themed/CustomLayout'
-import { Pressable, View } from 'react-native'
+import { Alert, Pressable, View } from 'react-native'
 import style from '../styles/shared'
 import React, { useContext, useEffect, useState } from 'react'
 import { Ride } from '../database/schema'
@@ -12,6 +12,7 @@ import CustomHeader from '../components/themed/CustomHeader'
 import CustomIconButton from '../components/themed/CustomIconButton'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
+import { RideContext } from '../components/contexts/RideContext'
 
 const { db } = FirebaseApp
 
@@ -97,6 +98,7 @@ const MyRides = () => {
 	const navigation = useNavigation()
 	const { user } = useContext(AuthContext)
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
+	const { currentRide } = useContext(RideContext)
 	
 	useEffect(() => {
 		let unsubscribe: () => void
@@ -140,6 +142,21 @@ const MyRides = () => {
 						<CustomIconButton
 							icon="plus"
 							onPress={() => {
+								if (currentRide) {
+									Alert.alert(
+										'Ride in Progress',
+										'You cannot add a new ride while you have a ride in progress',
+										[
+											{
+												text: 'OK',
+												onPress: () => {
+												},
+											},
+										],
+									)
+									return
+								}
+								
 								// @ts-ignore
 								navigation.navigate('AddRide')
 							}}

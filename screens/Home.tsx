@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { Image, Pressable, View } from 'react-native'
+import { Image, View } from 'react-native'
 import { Menu, useTheme } from 'react-native-paper'
 import CustomText from '../components/themed/CustomText'
 import { useNavigation } from '@react-navigation/native'
@@ -100,6 +100,20 @@ const ModeSwitchMenu = ({ visible: parentVisible, setMode, mode, profile }: {
 	)
 }
 
+type DriverRidesSummary = {
+	earned: number | null;
+	completed: number | null;
+	cancelled: number | null;
+	passengers: number | null;
+	hours: number | null;
+}
+
+type PassengerRidesSummary = {
+	total: number | null;
+	paid: number | null;
+	
+}
+
 const Home = () => {
 	const { user } = useContext(AuthContext)
 	const navigation = useNavigation()
@@ -112,12 +126,12 @@ const Home = () => {
 		{
 			role: Role.DRIVER,
 			icon: 'steering',
-			component: <DriverHome navigation={navigation} />,
+			component: <DriverHome navigation={navigation} currentRide={currentRide} mode={mode} />,
 		},
 		{
 			role: Role.PASSENGER,
 			icon: 'seat-passenger',
-			component: <PassengerHome navigation={navigation} />,
+			component: <PassengerHome navigation={navigation} currentRide={currentRide} mode={mode} />,
 		},
 	]
 	
@@ -181,8 +195,8 @@ const Home = () => {
 				}
 				<CustomLayout scrollable={true} contentPadding={0}>
 					<View style={[style.mainContent]}>
-						<View style={[style.column, { gap: 20, height: '100%' }]}>
-							<View style={[style.column, { gap: 10, paddingHorizontal: 20 }]}>
+						<View style={[style.column, { gap: 30, height: '100%', paddingHorizontal: 20 }]}>
+							<View style={[style.column, { gap: 10 }]}>
 								<View style={[style.row, { gap: 10, alignItems: 'center' }]}>
 									<Image
 										source={
@@ -218,93 +232,8 @@ const Home = () => {
 								</View>
 							</View>
 							{
-								currentRide ?
-									<Pressable
-										style={[
-											style.row,
-											{
-												backgroundColor: 'white',
-												elevation: 5,
-												padding: 20,
-												borderRadius: 10,
-												gap: 10,
-											},
-										]}
-										onPress={() => {
-											// @ts-ignore
-											navigation.navigate('ViewRide', { rideId: currentRide.id })
-										}}
-									>
-										<View style={[style.column, { gap: 20, flex: 1 }]}>
-											<View style={[style.row, { gap: 5, justifyContent: 'space-between' }]}>
-												<CustomText
-													size={14}
-													bold
-													width="auto"
-													color={colors.primary}
-												>
-													Current Ride ({mode === 'driver' ? 'Driver' : 'Passenger'})
-												</CustomText>
-												<View style={[style.row, { gap: 5, width: 'auto' }]}>
-													<CustomText size={12} bold
-													            color={currentRide.completed_at ? 'green' : currentRide.started_at ? 'blue' : 'black'}>
-														{
-															currentRide.completed_at ? 'Completed' :
-																currentRide.started_at ? 'Ongoing' :
-																	'Pending'
-														}
-													</CustomText>
-												</View>
-											</View>
-											<View style={[style.row, { gap: 10 }]}>
-												<View style={[style.row, { gap: 5, width: 'auto' }]}>
-													<Icon name="calendar" size={20} />
-													<CustomText size={12} bold>
-														{currentRide.datetime.toDate().toLocaleString('en-GB', {
-															day: 'numeric',
-															month: 'numeric',
-															year: 'numeric',
-														})}
-													</CustomText>
-												</View>
-												<View style={[style.row, { gap: 5, width: 'auto' }]}>
-													<Icon name="clock" size={20} />
-													<CustomText size={12} bold>
-														{currentRide.datetime.toDate().toLocaleString('en-GB', {
-															hour: '2-digit',
-															minute: '2-digit',
-															hour12: true,
-														})}
-													</CustomText>
-												</View>
-												<View style={[style.row, { gap: 5, width: 'auto' }]}>
-													<Icon name="cash" size={20} />
-													<CustomText size={12} bold>
-														RM {currentRide.fare}
-													</CustomText>
-												</View>
-											</View>
-											<View style={[style.row, { gap: 5 }]}>
-												<View style={[style.column, {
-													flexDirection: currentRide.to_campus ? 'column' : 'column-reverse',
-												}]}>
-													<View style={[style.row, { gap: 5 }]}>
-														<View style={[style.column, { gap: 5, width: 'auto' }]}>
-															<Icon name="map-marker" size={24} />
-														</View>
-														<View style={[style.column, { gap: 5, flex: 1 }]}>
-															<CustomText size={14} numberOfLines={2}>
-																{currentRide.to_campus ? 'From' : 'To'} {currentRide.location.name} {currentRide.to_campus ? 'to campus' : 'from campus'}
-															</CustomText>
-														</View>
-													</View>
-												</View>
-											</View>
-										</View>
-									</Pressable> :
-									<></>
+								roleContent.find((content) => content.role === mode)?.component
 							}
-							{roleContent.find(content => content.role === mode)?.component}
 						</View>
 					</View>
 				</CustomLayout>
