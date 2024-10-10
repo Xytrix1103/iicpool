@@ -83,6 +83,7 @@ const AuthProvider = ({ children }: any) => {
 				if (newUser) {
 					setLoading(true)
 					await newUser.reload()
+					refreshUserRecord().then(r => r)
 				}
 				
 				if (!newUser) {

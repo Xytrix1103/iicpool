@@ -174,6 +174,10 @@ const Profile = () => {
 		}
 	}, [isEditing])
 	
+	useEffect(() => {
+		refreshUserRecord()
+	}, [])
+	
 	return (
 		<CustomLayout
 			hasAppBar={!isEditing}
