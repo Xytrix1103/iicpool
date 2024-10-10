@@ -31,6 +31,8 @@ const ViewRide = () => {
 	const [ride, setRide] = useState<Ride | null>(null)
 	const [car, setCar] = useState<Car | null>(null)
 	const [driver, setDriver] = useState<Profile | null>(null)
+	const [sosCar, setSosCar] = useState<Car | null>(null)
+	const [sosResponder, setSosResponder] = useState<Profile | null>(null)
 	const [campusLocation, setCampusLocation] = useState<GooglePlaceDetail | null>(null)
 	const [directions, setDirections] = useState<DirectionsResponse | null>(null)
 	const [passengers, setPassengers] = useState<(Profile | null)[]>([])
@@ -46,7 +48,7 @@ const ViewRide = () => {
 					}
 				} else if (mode === Role.DRIVER) {
 					if (ride.driver !== user?.uid) {
-						if (ride.sos?.responded_by !== user?.uid) {
+						if (ride.sos?.responded_by && ride.sos?.responded_by !== user?.uid) {
 							navigation.goBack()
 						}
 					}
@@ -61,6 +63,10 @@ const ViewRide = () => {
 	
 	useEffect(() => {
 		let unsubscribe: () => void
+		let unsubscribeCar: () => void
+		let unsubscribeDriver: () => void
+		let unsubscribeSosResponder: () => void
+		let unsubscribeSosCar: () => void
 		
 		if (rideId) {
 			fetchCampusLocation({
@@ -76,7 +82,7 @@ const ViewRide = () => {
 					} as Ride)
 					
 					if (snapshot.data()?.car) {
-						onSnapshot(doc(db, 'cars', snapshot.data()?.car), (carSnapshot) => {
+						unsubscribeCar = onSnapshot(doc(db, 'cars', snapshot.data()?.car), (carSnapshot) => {
 							if (carSnapshot.exists()) {
 								setCar({
 									...carSnapshot.data(),
@@ -89,7 +95,7 @@ const ViewRide = () => {
 					}
 					
 					if (snapshot.data()?.driver) {
-						onSnapshot(doc(db, 'users', snapshot.data()?.driver), (driverSnapshot) => {
+						unsubscribeDriver = onSnapshot(doc(db, 'users', snapshot.data()?.driver), (driverSnapshot) => {
 							if (driverSnapshot.exists()) {
 								setDriver({
 									...driverSnapshot.data(),
@@ -100,18 +106,48 @@ const ViewRide = () => {
 							}
 						})
 					}
+					
+					if (snapshot.data()?.sos?.responded_by) {
+						unsubscribeSosResponder = onSnapshot(doc(db, 'users', snapshot.data()?.sos?.responded_by), (sosResponderSnapshot) => {
+							if (sosResponderSnapshot.exists()) {
+								setSosResponder({
+									...sosResponderSnapshot.data(),
+									id: sosResponderSnapshot.id,
+								} as Profile)
+							} else {
+								setSosResponder(null)
+							}
+						})
+					}
+					
+					if (snapshot.data()?.sos?.car) {
+						unsubscribeSosCar = onSnapshot(doc(db, 'cars', snapshot.data()?.sos?.car), (sosCarSnapshot) => {
+							if (sosCarSnapshot.exists()) {
+								setSosCar({
+									...sosCarSnapshot.data(),
+									id: sosCarSnapshot.id,
+								} as Car)
+							} else {
+								setSosCar(null)
+							}
+						})
+					}
 				} else {
 					setRide(null)
 					setCar(null)
 					setDriver(null)
+					setSosResponder(null)
+					setSosCar(null)
 				}
 			})
 		}
 		
 		return () => {
-			if (unsubscribe) {
-				unsubscribe()
-			}
+			unsubscribe?.()
+			unsubscribeCar?.()
+			unsubscribeDriver?.()
+			unsubscribeSosResponder?.()
+			unsubscribeSosCar?.()
 		}
 	}, [rideId])
 	
@@ -148,6 +184,7 @@ const ViewRide = () => {
 	useEffect(() => {
 		console.log('Ride updated:', ride)
 		console.log('Campus location updated:', campusLocation)
+		
 		//get directions
 		if (ride && campusLocation) {
 			getDirections({
@@ -193,6 +230,8 @@ const ViewRide = () => {
 							colors={colors}
 							mapRef={mapRef}
 							passengers={passengers}
+							sosCar={sosCar}
+							sosResponder={sosResponder}
 						/>
 						:
 						(ride && car && driver) &&
@@ -205,6 +244,8 @@ const ViewRide = () => {
 							colors={colors}
 							mapRef={mapRef}
 							passengers={passengers}
+							sosCar={sosCar}
+							sosResponder={sosResponder}
 						/>
 				}
 			</View>

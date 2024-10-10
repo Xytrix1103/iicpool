@@ -90,7 +90,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 			})
 		}
 	}, [signals])
-
+	
 	useEffect(() => {
 		const unsubscribe = onSnapshot(query(collection(db, 'cars'), where('owner', '==', user?.uid)), (snapshot) => {
 			setCars(snapshot.docs.map(doc => ({
@@ -98,7 +98,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 				...doc.data(),
 			}) as Car))
 		})
-
+		
 		return () => {
 			unsubscribe()
 		}
@@ -110,7 +110,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 		let unsubscribeSOS: () => void
 		
 		(async () => {
-			if (mode === Role.DRIVER) {
+			if (mode === Role.DRIVER && ride.driver !== user?.uid && isRideAwaitingSOSResponse && isRideOngoing) {
 				await wrapPermissions({
 					operation: async () => {
 						const location = await Location.getCurrentPositionAsync()
@@ -122,7 +122,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 			}
 		})()
 		
-		if (ride.started_at && !ride.completed_at && !ride.cancelled_at) {
+		if (isRideOngoing) {
 			unsubscribe = onSnapshot(query(collection(db, 'rides', ride.id || '', 'signals'), where('user', '==', ride.driver), orderBy('timestamp', 'desc')), (snapshot) => {
 				setSignals(snapshot.docs.map((doc) => ({
 					id: doc.id,
@@ -130,12 +130,14 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 				}) as Signal))
 			})
 			
-			unsubscribeSOS = onSnapshot(query(collection(db, 'rides', ride.id || '', 'signals'), where('user', '==', ride.sos?.responded_by), orderBy('timestamp', 'desc')), (snapshot) => {
-				setSOSResponderSignals(snapshot.docs.map((doc) => ({
-					id: doc.id,
-					...doc.data(),
-				}) as Signal))
-			})
+			if (ride.sos?.responded_by) {
+				unsubscribeSOS = onSnapshot(query(collection(db, 'rides', ride.id || '', 'signals'), where('user', '==', ride.sos?.responded_by), orderBy('timestamp', 'desc')), (snapshot) => {
+					setSOSResponderSignals(snapshot.docs.map((doc) => ({
+						id: doc.id,
+						...doc.data(),
+					}) as Signal))
+				})
+			}
 		}
 		
 		return () => {
@@ -146,7 +148,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 				unsubscribeSOS()
 			}
 		}
-	}, [ride, mode])
+	}, [ride, mode, user])
 	
 	//get the real time route from the latest location of the driver to the destination
 	useEffect(() => {
@@ -315,6 +317,12 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 			}, 1000)
 		}
 	}, [realTimeRoute, signals, sosResponderSignals, ride, campusLocation, directions])
+	
+	useEffect(() => {
+		if (cars && cars.length > 0) {
+			setSelectedCar(cars[0])
+		}
+	}, [cars])
 	
 	return (
 		//another map to show the live location of the driver
@@ -753,8 +761,15 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 															handleCompleteRide({ ride, user })
 														}}
 													>
-														Complete Ride
+														Complete
 													</CustomSolidButton>
+													<CustomOutlinedButton
+														onPress={() => {
+															handleTriggerSOS({ ride, user })
+														}}
+													>
+														SOS
+													</CustomOutlinedButton>
 												</View>
 											)
 										) : (
@@ -763,7 +778,10 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 													((cars?.length || 0) > 0 && selectedCar) ? (
 														<>
 															<View style={[style.row, { gap: 10 }]}>
-																<View style={[style.column, { alignItems: 'flex-start', width: '100%' }]}>
+																<View style={[style.column, {
+																	alignItems: 'flex-start',
+																	width: '100%',
+																}]}>
 																	{cars?.map((car, index) => (
 																		<RadioButton.Item
 																			key={index}
@@ -783,7 +801,11 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 															<View style={[style.row, { gap: 10 }]}>
 																<CustomSolidButton
 																	onPress={() => {
-																		handleRespondSOS({ ride, user, car: selectedCar })
+																		handleRespondSOS({
+																			ride,
+																			user,
+																			car: selectedCar,
+																		})
 																	}}
 																>
 																	Respond to SOS
@@ -813,7 +835,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 																		})
 																	}}
 																>
-																	Complete SOS Ride
+																	Complete SOS
 																</CustomSolidButton>
 															</View>
 														) : (
@@ -823,7 +845,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 																		handleStartSOSRide({ ride, user })
 																	}}
 																>
-																	Start SOS Ride
+																	Start SOS
 																</CustomSolidButton>
 															</View>
 														)

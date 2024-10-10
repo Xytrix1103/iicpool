@@ -24,6 +24,8 @@ type DriverViewProps = {
 	campusLocation: GooglePlaceDetail | null,
 	mapRef: React.MutableRefObject<MapView | null>,
 	passengers: (Profile | null)[],
+	sosCar?: Car | null,
+	sosResponder?: Profile | null
 };
 
 const { db } = FirebaseApp
@@ -38,6 +40,8 @@ const DriverView: React.FC<DriverViewProps> = (
 		campusLocation,
 		mapRef,
 		passengers,
+		sosCar,
+		sosResponder,
 	},
 ) => {
 	const { user } = useContext(AuthContext)
@@ -68,8 +72,8 @@ const DriverView: React.FC<DriverViewProps> = (
 			<MapViewComponent ride={ride} directions={directions} campusLocation={campusLocation} colors={colors}
 			                  mapRef={mapRef} passengers={passengers} isInRide={isInRide} currentRide={currentRide}
 			                  user={user} mode={mode} />
-			<DriverInfoComponent driver={driver} />
-			<CarInfoComponent car={car} />
+			<DriverInfoComponent driver={driver} sosResponder={sosResponder} />
+			<CarInfoComponent car={car} sosCar={sosCar} />
 			<PassengersListComponent ride={ride} passengers={passengers} isInRide={isInRide} />
 		</View>
 	)
