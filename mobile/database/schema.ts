@@ -68,6 +68,7 @@ type Ride = {
 		responded_at: Timestamp | null
 		responded_by: string | null
 		started_at: Timestamp | null
+		car: string | null
 	} | null
 	fare: number
 	location: {

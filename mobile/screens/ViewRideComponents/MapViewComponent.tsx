@@ -10,7 +10,7 @@ import {
 	getDirectionsByCoordinates,
 } from '../../api/location'
 import { GooglePlaceDetail } from 'react-native-google-places-autocomplete'
-import { Profile, Ride, Role, Signal } from '../../database/schema'
+import { Car, Profile, Ride, Role, Signal } from '../../database/schema'
 import { MD3Colors } from 'react-native-paper/lib/typescript/types'
 import style from '../../styles/shared'
 import CustomText from '../../components/themed/CustomText'
@@ -32,6 +32,7 @@ import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestor
 import FirebaseApp from '../../components/FirebaseApp'
 import * as Location from 'expo-location'
 import { PermissionContext } from '../../components/contexts/PermissionContext'
+import { RadioButton } from 'react-native-paper'
 
 type MapViewComponentProps = {
 	ride: Ride,
@@ -76,6 +77,8 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 	const originToWaypointDistance = realTimeRoute?.routes?.[0]?.legs?.[0]?.distance?.value || 0
 	const waypointToDestinationDistance = realTimeRoute?.routes?.[0]?.legs?.[1]?.distance?.value || 0
 	const [waypoint, setWaypoint] = useState<GooglePlaceDetail | null>(null)
+	const [cars, setCars] = useState<Car[] | null>(null)
+	const [selectedCar, setSelectedCar] = useState<Car | null>(cars?.[0] || null)
 	
 	useEffect(() => {
 		if (signals && signals.length > 0) {
@@ -87,6 +90,19 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 			})
 		}
 	}, [signals])
+
+	useEffect(() => {
+		const unsubscribe = onSnapshot(query(collection(db, 'cars'), where('owner', '==', user?.uid)), (snapshot) => {
+			setCars(snapshot.docs.map(doc => ({
+				id: doc.id,
+				...doc.data(),
+			}) as Car))
+		})
+
+		return () => {
+			unsubscribe()
+		}
+	}, [user])
 	
 	//get the real time route
 	useEffect(() => {
@@ -744,15 +760,47 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 										) : (
 											ride.sos ? (
 												ride.sos.triggered_at && !ride.sos.responded_by ? (
-													<View style={[style.row, { gap: 10 }]}>
-														<CustomSolidButton
-															onPress={() => {
-																handleRespondSOS({ ride, user })
-															}}
-														>
-															Respond to SOS
-														</CustomSolidButton>
-													</View>
+													((cars?.length || 0) > 0 && selectedCar) ? (
+														<>
+															<View style={[style.row, { gap: 10 }]}>
+																<View style={[style.column, { alignItems: 'flex-start', width: '100%' }]}>
+																	{cars?.map((car, index) => (
+																		<RadioButton.Item
+																			key={index}
+																			label={`${car.plate} - ${car.brand} ${car.model}`}
+																			value={car.id as string}
+																			color={colors.primary}
+																			status={selectedCar === car ? 'checked' : 'unchecked'}
+																			position="leading"
+																			style={{ paddingVertical: 0 }}
+																			onPress={() => {
+																				setSelectedCar(car)
+																			}}
+																		/>
+																	))}
+																</View>
+															</View>
+															<View style={[style.row, { gap: 10 }]}>
+																<CustomSolidButton
+																	onPress={() => {
+																		handleRespondSOS({ ride, user, car: selectedCar })
+																	}}
+																>
+																	Respond to SOS
+																</CustomSolidButton>
+															</View>
+														</>
+													) : (
+														<View style={[style.row, { gap: 10 }]}>
+															<CustomText
+																size={14}
+																align="center"
+																width="100%"
+															>
+																You must have a car to respond to SOS
+															</CustomText>
+														</View>
+													)
 												) : (
 													ride.sos.responded_by === user?.uid ? (
 														ride.sos.started_at ? (

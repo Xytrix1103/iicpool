@@ -1,5 +1,5 @@
 import FirebaseApp from '../components/FirebaseApp'
-import { Message, MessageType, Profile, Ride } from '../database/schema'
+import { Car, Message, MessageType, Profile, Ride } from '../database/schema'
 import { arrayRemove, arrayUnion, collection, doc, getDoc, runTransaction } from 'firebase/firestore'
 import { User } from 'firebase/auth'
 import { Alert, ToastAndroid } from 'react-native'
@@ -356,7 +356,7 @@ const handleTriggerSOS = ({ ride }: { ride: Ride, user: User | null }) => {
 	)
 }
 
-const handleRespondSOS = ({ ride, user }: { ride: Ride, user: User | null }) => {
+const handleRespondSOS = ({ ride, user, car }: { ride: Ride, user: User | null, car: Car }) => {
 	Alert.alert(
 		'Respond SOS',
 		'Are you sure you want to respond to the SOS?',
@@ -378,6 +378,7 @@ const handleRespondSOS = ({ ride, user }: { ride: Ride, user: User | null }) => 
 						transaction.update(rideRef, {
 							'sos.responded_at': Timestamp.now(),
 							'sos.responded_by': user?.uid,
+							'sos.car': car.id,
 						})
 						
 						//check if there is a messages sub-collection
