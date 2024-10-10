@@ -27,7 +27,6 @@ import {HttpsError, onCall, onRequest} from 'firebase-functions/v2/https'
 import {setGlobalOptions} from "firebase-functions/v2";
 import {initializeApp} from 'firebase-admin/app'
 import {getAuth} from 'firebase-admin/auth'
-import {beforeUserCreated, beforeUserSignedIn, HttpsError as IdentityError,} from "firebase-functions/v2/identity";
 
 //set region to asia-southeast2
 
@@ -100,60 +99,4 @@ export const checkEmailGoogleSignIn = onCall(async (request) => {
 	}
 	
 	return user
-})
-
-export const blockSignIn = beforeUserSignedIn(async (event) => {
-	const {additionalUserInfo, data} = event
-	const email = data?.email
-	
-	if (!email || email === '') {
-		throw new IdentityError('invalid-argument', 'Email is required')
-	}
-	
-	if (!email.endsWith('newinti.edu.my')) {
-		throw new IdentityError('invalid-argument', 'Please use your INTI email to login')
-	}
-	
-	const user = await auth.getUserByEmail(email)
-	
-	console.log('user', user)
-	console.log('additionalUserInfo', additionalUserInfo)
-	
-	if (additionalUserInfo?.providerId === 'google.com') {
-		if (user.providerData.some(provider => provider.providerId === 'password') && !user.providerData.some(provider => provider.providerId === 'google.com')) {
-			throw new IdentityError('already-exists', 'Email is already linked to a password account')
-		}
-	} else if (additionalUserInfo?.providerId === 'password') {
-		if (user.providerData.some(provider => provider.providerId === 'google.com') && !user.providerData.some(provider => provider.providerId === 'password')) {
-			throw new IdentityError('already-exists', 'Email is already linked to a Google account')
-		}
-	}
-})
-
-export const blockCreate = beforeUserCreated(async (event) => {
-	const {additionalUserInfo, data} = event
-	const email = data?.email
-	
-	if (!email || email === '') {
-		throw new IdentityError('invalid-argument', 'Email is required')
-	}
-	
-	if (!email.endsWith('newinti.edu.my')) {
-		throw new IdentityError('invalid-argument', 'Please use your INTI email to login')
-	}
-	
-	const user = await auth.getUserByEmail(email)
-	
-	console.log('user', user)
-	console.log('additionalUserInfo', additionalUserInfo)
-	
-	if (additionalUserInfo?.providerId === 'google.com') {
-		if (user.providerData.some(provider => provider.providerId === 'password') && !user.providerData.some(provider => provider.providerId === 'google.com')) {
-			throw new IdentityError('already-exists', 'Email is already linked to a password account')
-		}
-	} else if (additionalUserInfo?.providerId === 'password') {
-		if (user.providerData.some(provider => provider.providerId === 'google.com') && !user.providerData.some(provider => provider.providerId === 'password')) {
-			throw new IdentityError('already-exists', 'Email is already linked to a Google account')
-		}
-	}
 })
