@@ -10,9 +10,8 @@ import FirebaseApp from '../components/FirebaseApp'
 import style from '../styles/shared'
 import MapView from 'react-native-maps'
 import { useTheme } from 'react-native-paper'
-import { CAMPUS_NAME, fetchCampusLocation, getDirections } from '../api/location'
+import { CAMPUS_NAME, DirectionsResponse, fetchCampusLocation, getDirections } from '../api/location'
 import { GooglePlaceDetail } from 'react-native-google-places-autocomplete'
-import { CustomDirectionsResponse } from './AddRideComponents/types'
 import PassengerView from './ViewRideComponents/PassengerView'
 import { getPassengers } from '../api/rides'
 import { AuthContext } from '../components/contexts/AuthContext'
@@ -33,9 +32,32 @@ const ViewRide = () => {
 	const [car, setCar] = useState<Car | null>(null)
 	const [driver, setDriver] = useState<Profile | null>(null)
 	const [campusLocation, setCampusLocation] = useState<GooglePlaceDetail | null>(null)
-	const [directions, setDirections] = useState<CustomDirectionsResponse | null>(null)
+	const [directions, setDirections] = useState<DirectionsResponse | null>(null)
 	const [passengers, setPassengers] = useState<(Profile | null)[]>([])
 	const mapRef = useRef<MapView | null>(null)
+	
+	// if the ride starts, send the user back to the previous screen if they arent part of the ride
+	useEffect(() => {
+		if (ride) {
+			if (ride.started_at) {
+				if (mode === Role.PASSENGER) {
+					if (!ride.passengers.includes(user?.uid || '')) {
+						navigation.goBack()
+					}
+				} else if (mode === Role.DRIVER) {
+					if (ride.driver !== user?.uid) {
+						if (ride.sos?.responded_by !== user?.uid) {
+							navigation.goBack()
+						}
+					}
+				}
+			} else {
+				if (ride.cancelled_at || (ride.passengers.length === ride.available_seats && !ride.passengers.includes(user?.uid || ''))) {
+					navigation.goBack()
+				}
+			}
+		}
+	}, [ride])
 	
 	useEffect(() => {
 		let unsubscribe: () => void

@@ -20,6 +20,8 @@ type RideFormType = {
 	car?: string
 	available_seats?: number
 	to_campus: boolean
+	is_free: boolean
+	fare: number
 }
 
 

@@ -65,31 +65,48 @@ export const RideProvider = ({ children }: { children: ReactNode }) => {
 	//use Location.startLocationUpdatesAsync and Location.stopLocationUpdatesAsync to update the ride's location in real time
 	useEffect(() => {
 		if (currentRide && isInRide) {
-			if (currentRide.driver === user?.uid && mode === 'driver' && currentRide.started_at !== null && currentRide.completed_at === null && currentRide.cancelled_at === null) {
-				// Location.startLocationUpdatesAsync(BACKGROUND_UPDATE_LOCATION_TASK, {
-				// 	accuracy: Location.Accuracy.Highest,
-				// 	timeInterval: 5000,
-				// 	distanceInterval: 5,
-				// }).then(r => console.log(r)).catch(e => console.error(e))
-				(async () => {
-					console.log('Starting location updates')
-					await wrapPermissions({
-						operation: async () => {
-							await Location.startLocationUpdatesAsync(BACKGROUND_UPDATE_LOCATION_TASK, {
-								accuracy: Location.Accuracy.BestForNavigation,
-								timeInterval: 5000,
-								distanceInterval: 5,
-								deferredUpdatesDistance: 5,
-								deferredUpdatesInterval: 5000,
-								mayShowUserSettingsDialog: true,
-							})
-						},
-						type: 'backgroundLocation',
-						message: 'We need background location permissions to update your ride location in real time',
-					})
-				})()
+			if (currentRide.sos) {
+				if (currentRide.sos.responded_by === user?.uid) {
+					(async () => {
+						await wrapPermissions({
+							operation: async () => {
+								console.log('Starting location updates')
+								await Location.startLocationUpdatesAsync(BACKGROUND_UPDATE_LOCATION_TASK, {
+									accuracy: Location.Accuracy.BestForNavigation,
+									timeInterval: 5000,
+									distanceInterval: 5,
+									deferredUpdatesDistance: 5,
+									deferredUpdatesInterval: 5000,
+									mayShowUserSettingsDialog: true,
+								})
+							},
+							type: 'backgroundLocation',
+							message: 'We need background location permissions to update your ride location in real time',
+						})
+					})()
+				}
 			} else {
-				console.log('Stopping location updates')
+				if (currentRide.driver === user?.uid && mode === 'driver' && currentRide.started_at !== null && currentRide.completed_at === null && currentRide.cancelled_at === null) {
+					(async () => {
+						console.log('Starting location updates')
+						await wrapPermissions({
+							operation: async () => {
+								await Location.startLocationUpdatesAsync(BACKGROUND_UPDATE_LOCATION_TASK, {
+									accuracy: Location.Accuracy.BestForNavigation,
+									timeInterval: 5000,
+									distanceInterval: 5,
+									deferredUpdatesDistance: 5,
+									deferredUpdatesInterval: 5000,
+									mayShowUserSettingsDialog: true,
+								})
+							},
+							type: 'backgroundLocation',
+							message: 'We need background location permissions to update your ride location in real time',
+						})
+					})()
+				} else {
+					console.log('Stopping location updates')
+				}
 			}
 		} else {
 			(async () => {

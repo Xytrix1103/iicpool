@@ -308,6 +308,194 @@ const handleCompleteRide = ({ ride, user }: { ride: Ride, user: User | null }) =
 	)
 }
 
+const handleTriggerSOS = ({ ride }: { ride: Ride, user: User | null }) => {
+	Alert.alert(
+		'SOS',
+		'Are you sure you want to send an SOS?',
+		[
+			{
+				text: 'Cancel',
+				style: 'cancel',
+			},
+			{
+				text: 'Send SOS',
+				onPress: async () => {
+					await runTransaction(db, async (transaction) => {
+						if (!ride.id) {
+							throw new Error('Ride ID is missing')
+						}
+						
+						const rideRef = doc(db, 'rides', ride?.id || '')
+						
+						transaction.update(rideRef, {
+							sos: {
+								triggered_at: Timestamp.now(),
+							},
+						})
+						
+						//check if there is a messages sub-collection
+						const messageRef = doc(collection(rideRef, 'messages'))
+						
+						transaction.set(messageRef, {
+							message: 'SOS has been sent as there has been an emergency',
+							sender: null,
+							timestamp: Timestamp.now(),
+							type: MessageType.SOS,
+						} as Message)
+					})
+						.then(() => {
+							ToastAndroid.show('SOS sent successfully', ToastAndroid.SHORT)
+						})
+						.catch((error) => {
+							ToastAndroid.show('Failed to send SOS', ToastAndroid.SHORT)
+							console.error('Failed to send SOS', error)
+						})
+				},
+			},
+		],
+	)
+}
+
+const handleRespondSOS = ({ ride, user }: { ride: Ride, user: User | null }) => {
+	Alert.alert(
+		'Respond SOS',
+		'Are you sure you want to respond to the SOS?',
+		[
+			{
+				text: 'Cancel',
+				style: 'cancel',
+			},
+			{
+				text: 'Respond SOS',
+				onPress: async () => {
+					await runTransaction(db, async (transaction) => {
+						if (!ride.id) {
+							throw new Error('Ride ID is missing')
+						}
+						
+						const rideRef = doc(db, 'rides', ride?.id || '')
+						
+						transaction.update(rideRef, {
+							'sos.responded_at': Timestamp.now(),
+							'sos.responded_by': user?.uid,
+						})
+						
+						//check if there is a messages sub-collection
+						const messageRef = doc(collection(rideRef, 'messages'))
+						
+						transaction.set(messageRef, {
+							message: 'SOS has been responded to',
+							user: user?.uid,
+							sender: null,
+							timestamp: Timestamp.now(),
+							type: MessageType.SOS_RESPONSE,
+						} as Message)
+					})
+						.then(() => {
+							ToastAndroid.show('SOS responded successfully', ToastAndroid.SHORT)
+						})
+						.catch((error) => {
+							ToastAndroid.show('Failed to respond to SOS', ToastAndroid.SHORT)
+							console.error('Failed to respond to SOS', error)
+						})
+				},
+			},
+		],
+	)
+}
+
+const handleStartSOSRide = ({ ride, user }: { ride: Ride, user: User | null }) => {
+	Alert.alert(
+		'Start SOS Ride',
+		'Are you sure you want to start this SOS ride?',
+		[
+			{
+				text: 'Cancel',
+				style: 'cancel',
+			},
+			{
+				text: 'Start SOS Ride',
+				onPress: async () => {
+					await runTransaction(db, async (transaction) => {
+						if (!ride.id) {
+							throw new Error('Ride ID is missing')
+						}
+						
+						const rideRef = doc(db, 'rides', ride?.id || '')
+						
+						transaction.update(rideRef, {
+							'sos.started_at': Timestamp.now(),
+						})
+						
+						//check if there is a messages sub-collection
+						const messageRef = doc(collection(rideRef, 'messages'))
+						
+						transaction.set(messageRef, {
+							message: 'SOS ride has started',
+							sender: null,
+							timestamp: Timestamp.now(),
+							type: MessageType.SOS,
+						} as Message)
+					})
+						.then(() => {
+							ToastAndroid.show('SOS ride started successfully', ToastAndroid.SHORT)
+						})
+						.catch((error) => {
+							ToastAndroid.show('Failed to start SOS ride', ToastAndroid.SHORT)
+							console.error('Failed to start SOS ride', error)
+						})
+				},
+			},
+		],
+	)
+}
+
+const handleCompleteSOSRide = ({ ride, user }: { ride: Ride, user: User | null }) => {
+	Alert.alert(
+		'Complete SOS Ride',
+		'Are you sure you want to complete this SOS ride?',
+		[
+			{
+				text: 'Cancel',
+				style: 'cancel',
+			},
+			{
+				text: 'Complete SOS Ride',
+				onPress: async () => {
+					await runTransaction(db, async (transaction) => {
+						if (!ride.id) {
+							throw new Error('Ride ID is missing')
+						}
+						
+						const rideRef = doc(db, 'rides', ride?.id || '')
+						
+						transaction.update(rideRef, {
+							completed_at: Timestamp.now(),
+						})
+						
+						//check if there is a messages sub-collection
+						const messageRef = doc(collection(rideRef, 'messages'))
+						
+						transaction.set(messageRef, {
+							message: 'SOS ride has been completed',
+							sender: null,
+							timestamp: Timestamp.now(),
+							type: MessageType.SOS,
+						} as Message)
+					})
+						.then(() => {
+							ToastAndroid.show('SOS ride completed successfully', ToastAndroid.SHORT)
+						})
+						.catch((error) => {
+							ToastAndroid.show('Failed to complete SOS ride', ToastAndroid.SHORT)
+							console.error('Failed to complete SOS ride', error)
+						})
+				},
+			},
+		],
+	)
+}
+
 export {
 	getPassengers,
 	handleBookRide,
@@ -315,6 +503,10 @@ export {
 	handleCancelRide,
 	handleStartRide,
 	handleCompleteRide,
+	handleTriggerSOS,
+	handleRespondSOS,
+	handleStartSOSRide,
+	handleCompleteSOSRide,
 	BASE_FARE,
 	RATE_PER_KM,
 	RATE_PER_MINUTE,

@@ -35,18 +35,19 @@ const getDirections = async ({ origin, destination, departure_time }: {
 	}
 }
 
-const getDirectionsByCoordinates = async ({ origin, destination, departure_time }: {
+const getDirectionsByCoordinates = async ({ origin, destination, departure_time, waypoints }: {
 	origin: LatLng,
 	destination: LatLng,
 	departure_time?: Date,
+	waypoints?: LatLng[],
 }): Promise<DirectionsResponse | null> => {
 	console.log('getDirectionsByCoordinates:', origin, destination)
 	const baseUrl = 'https://maps.googleapis.com/maps/api/directions/json'
 	
 	// Convert departure_time to seconds since epoch if provided
 	const departureTimeInSeconds = departure_time ? Math.floor(departure_time.getTime() / 1000) : undefined
-	const params = `origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&mode=driving${departureTimeInSeconds ? `&departure_time=${departureTimeInSeconds}` : ''}`
-	
+	const params = `origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&mode=driving${departureTimeInSeconds ? `&departure_time=${departureTimeInSeconds}` : ''}${waypoints ? `&waypoints=${waypoints.map((w) => `${w.latitude},${w.longitude}`).join('|')}` : ''}`
+	console.log(`${baseUrl}?${params}&key=${GMAPS_API_KEY}`)
 	const result = await axios.get<DirectionsResponse>(`${baseUrl}?${params}&key=${GMAPS_API_KEY}`, {
 		headers: {
 			'Content-Type': 'application/json',

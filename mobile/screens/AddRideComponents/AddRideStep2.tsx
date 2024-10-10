@@ -6,7 +6,7 @@ import { MD3Colors } from 'react-native-paper/lib/typescript/types'
 import { Pressable, View } from 'react-native'
 import CustomInput from '../../components/themed/CustomInput'
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
-import { RadioButton } from 'react-native-paper'
+import { Checkbox, RadioButton } from 'react-native-paper'
 import { Car } from '../../database/schema'
 import style from '../../styles/shared'
 
@@ -27,7 +27,7 @@ const AddRideStep2 = (
 	console.log('watchCar', watchCar)
 	
 	return (
-		<CustomLayout scrollable={false} contentPadding={0}>
+		<CustomLayout scrollable={true} contentPadding={0}>
 			<View style={[style.column, { gap: 20 }]}>
 				<View style={[style.column, { gap: 10 }]}>
 					<View style={style.row}>
@@ -213,6 +213,36 @@ const AddRideStep2 = (
 							/>
 						)}
 					/>
+				</View>
+				<View style={[style.column, { gap: 10 }]}>
+					<View style={[style.row, { gap: 10 }]}>
+						<CustomText size={16} color={colors.secondary}>
+							{`Step 5: Fare`}
+						</CustomText>
+					</View>
+					<View style={[style.column, { gap: 0 }]}>
+						<CustomInput
+							label="Fare (RM)"
+							editable={false}
+							keyboardType="number-pad"
+							onChangeText={() => null}
+							value={form.watch('fare')?.toString()}
+						/>
+						<View style={[style.row, { gap: 10 }]}>
+							<Controller
+								control={form.control}
+								name="is_free"
+								render={({ field: { onChange, value } }) => (
+									<Checkbox.Item
+										status={value ? 'checked' : 'unchecked'}
+										onPress={() => onChange(!value)}
+										label="Free Ride"
+										position="leading"
+									/>
+								)}
+							/>
+						</View>
+					</View>
 				</View>
 			</View>
 		</CustomLayout>

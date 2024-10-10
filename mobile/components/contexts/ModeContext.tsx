@@ -25,7 +25,7 @@ const ModeProvider = ({ children }: { children: any }) => {
 	const [mode, setMode] = useState<Role>(Role.PASSENGER)
 	const [isInRide, setIsInRide] = useState<string | null>(null)
 	const { user } = useContext(AuthContext)
-	const ridesQuery = query(collection(db, 'rides'), and(or(where('driver', '==', user?.uid || ''), where('passengers', 'array-contains', user?.uid || '')), where('completed_at', '==', null), where('cancelled_at', '==', null)))
+	const ridesQuery = query(collection(db, 'rides'), and(or(where('driver', '==', user?.uid || ''), where('passengers', 'array-contains', user?.uid || ''), where('sos.responded_by', '==', user?.uid || '')), where('completed_at', '==', null), where('cancelled_at', '==', null)))
 	
 	useEffect(() => {
 		//write to expo secure store
@@ -54,11 +54,16 @@ const ModeProvider = ({ children }: { children: any }) => {
 		const unsubscribe = onSnapshot(ridesQuery, (snapshot => {
 			if (snapshot.docs.length > 0) {
 				setIsInRide(snapshot.docs[0].id)
+				console.log('Is in ride', snapshot.docs[0].id)
 				
 				if (snapshot.docs[0].data().driver === user?.uid) {
 					setMode(Role.DRIVER)
 				} else {
-					setMode(Role.PASSENGER)
+					if (snapshot.docs[0].data().passengers.includes(user?.uid)) {
+						setMode(Role.PASSENGER)
+					} else {
+						setMode(Role.DRIVER)
+					}
 				}
 			} else {
 				setIsInRide(null)

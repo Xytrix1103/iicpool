@@ -4,7 +4,7 @@ import style from '../styles/shared'
 import React, { useContext, useEffect, useState } from 'react'
 import { Ride } from '../database/schema'
 import { useNavigation } from '@react-navigation/native'
-import { collection, onSnapshot, query, where } from 'firebase/firestore'
+import { collection, onSnapshot, or, query, where } from 'firebase/firestore'
 import FirebaseApp from '../components/FirebaseApp'
 import { AuthContext } from '../components/contexts/AuthContext'
 import CustomText from '../components/themed/CustomText'
@@ -104,7 +104,7 @@ const MyRides = () => {
 		let unsubscribe: () => void
 		
 		(async () => {
-			unsubscribe = onSnapshot(query(collection(db, 'rides'), where('driver', '==', user?.uid)), (snapshot) => {
+			unsubscribe = onSnapshot(query(collection(db, 'rides'), or(where('driver', '==', user?.uid), where('sos.responded_by', '==', user?.uid))), (snapshot) => {
 				const ridesData: Ride[] = snapshot.docs.map(doc => ({
 					...doc.data(),
 					id: doc.id,

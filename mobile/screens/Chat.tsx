@@ -33,17 +33,19 @@ type ChatRouteParams = RouteProp<{ Chat: { rideId: string } }, 'Chat'>
 type CustomChat = Ride & {
 	passengersData?: Profile[]
 	driverData?: Profile
+	sosResponderData?: Profile
 	carData?: Car
 }
 
 const { db } = FirebaseApp
 
-const MessageComponent = ({ group, photo_url, user, passengerData, driverData }: {
+const MessageComponent = ({ group, photo_url, user, passengerData, driverData, sosResponderData }: {
 	group: MessageGroupBySender,
 	photo_url?: string,
 	user: User | null,
 	passengerData?: Profile[],
 	driverData?: Profile,
+	sosResponderData?: Profile,
 }) => {
 	return (
 		<View style={[style.row, { gap: 10, alignItems: 'flex-start' }]}>
@@ -51,7 +53,8 @@ const MessageComponent = ({ group, photo_url, user, passengerData, driverData }:
 				group.type !== MessageType.MESSAGE ?
 					<View style={[style.row]}>
 						<View style={[style.column]}>
-							<CustomText color="gray" size={12} align="center">
+							<CustomText color={group.type !== MessageType.SOS ? 'gray' : 'red'} size={12}
+							            align="center">
 								{
 									group.type === MessageType.NEW_PASSENGER ?
 										`${passengerData?.find((passenger) => passenger.id === group.user)?.full_name} has joined the ride` :
@@ -61,7 +64,11 @@ const MessageComponent = ({ group, photo_url, user, passengerData, driverData }:
 												`${driverData?.full_name} has cancelled the ride` :
 												group.type === MessageType.RIDE_COMPLETION ?
 													'Ride has been completed' :
-													null
+													group.type === MessageType.SOS ?
+														`${passengerData?.find((passenger) => passenger.id === group.user)?.full_name} has sent an SOS` :
+														group.type === MessageType.SOS_RESPONSE ?
+															`${driverData?.full_name} has responded to the SOS` :
+															''
 								}
 							</CustomText>
 						</View>
@@ -211,11 +218,22 @@ const Chat = () => {
 				return undefined
 			})
 			
+			const sosResponderData = chatData.sos?.responded_by ? await getDoc(doc(db, 'users', chatData.sos.responded_by)).then((result) => {
+				return {
+					...result.data(),
+					id: result.id,
+				} as Profile
+			}).catch((error) => {
+				console.error('Error getting sos responder:', error)
+				return undefined
+			}) : undefined
+			
 			setChat({
 				...chatData,
 				passengersData,
 				driverData,
 				carData,
+				sosResponderData,
 			})
 			
 			setLoadingOverlay({

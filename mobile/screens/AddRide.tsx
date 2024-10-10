@@ -69,38 +69,52 @@ const AddRide = () => {
 			},
 			datetime: new Date(Date.now() + 60 * 60 * 1000),
 			available_seats: 1,
+			is_free: false,
+			fare: 0,
 		},
 	})
 	
-	const { handleSubmit, setValue } = form
+	const { handleSubmit, setValue, watch } = form
+	const { campus, not_campus, datetime, is_free } = watch()
+	
+	useEffect(() => {
+		if (!campus || !not_campus || !datetime || step === 1) return
+		
+		if (is_free) {
+			setValue('fare', 0)
+			return
+		}
+		
+		(async () => {
+			const directions = await getDirections({
+				origin: campus.place_id,
+				destination: not_campus.place_id,
+				departure_time: datetime,
+			})
+			
+			console.log('Directions:', directions)
+			
+			if (!directions) {
+				setLoadingOverlay({ show: false, message: '' })
+				Alert.alert('Error', 'Could not get directions')
+				return
+			}
+			
+			const routeDuration = directions.routes[0].legs.reduce((acc, leg) => acc + leg.duration.value, 0) / 60
+			const routeDistance = directions.routes[0].legs.reduce((acc, leg) => acc + leg.distance.value, 0) / 1000
+			
+			let fare = Math.floor(routeDistance) * RATE_PER_KM + Math.floor(routeDuration) * RATE_PER_MINUTE
+			fare = fare < BASE_FARE ? BASE_FARE : fare
+			fare = Math.floor(fare)
+			
+			setValue('fare', fare)
+		})()
+	}, [campus, not_campus, datetime, is_free])
 	
 	const onSubmit = async (data: RideFormType) => {
 		console.log('Submit', data)
 		
 		setLoadingOverlay({ show: true, message: 'Adding ride...' })
-		
-		const directions = await getDirections({
-			origin: data.campus.place_id,
-			destination: data.not_campus.place_id,
-			departure_time: data.datetime,
-		})
-		
-		console.log('Directions:', directions)
-		
-		if (!directions) {
-			setLoadingOverlay({ show: false, message: '' })
-			Alert.alert('Error', 'Could not get directions')
-			return
-		}
-		
-		const routeDuration = directions.routes[0].legs.reduce((acc, leg) => acc + leg.duration.value, 0) / 60
-		const routeDistance = directions.routes[0].legs.reduce((acc, leg) => acc + leg.distance.value, 0) / 1000
-		
-		let fare = Math.floor(routeDistance) * RATE_PER_KM + Math.floor(routeDuration) * RATE_PER_MINUTE
-		fare = fare < BASE_FARE ? BASE_FARE : fare
-		fare = Math.floor(fare)
-		
-		console.log('Fare:', fare)
 		
 		const rideData = {
 			driver: user?.uid,
@@ -115,7 +129,8 @@ const AddRide = () => {
 			deleted_at: null,
 			car: data.car,
 			passengers: [],
-			fare: fare,
+			sos: null,
+			fare: data.fare,
 		} as Ride
 		
 		await runTransaction(db, async (transaction) => {

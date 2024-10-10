@@ -34,10 +34,11 @@ type Car = {
 enum MessageType {
 	NEW_PASSENGER = 'new_passenger',
 	RIDE_COMPLETION = 'ride_completion',
+	SOS_RESPONSE = 'sos_response',
 	RIDE_CANCELLATION = 'ride_cancellation',
 	PASSENGER_CANCELLATION = 'passenger_cancellation',
+	SOS = 'sos',
 	MESSAGE = 'message',
-	
 }
 
 type Message = {
@@ -62,6 +63,12 @@ type Ride = {
 	completed_at: Timestamp | null
 	cancelled_at: Timestamp | null
 	started_at: Timestamp | null
+	sos: {
+		triggered_at: Timestamp | null
+		responded_at: Timestamp | null
+		responded_by: string | null
+		started_at: Timestamp | null
+	} | null
 	fare: number
 	location: {
 		place_id: string

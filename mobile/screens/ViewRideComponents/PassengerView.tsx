@@ -2,7 +2,6 @@ import React, { useContext, useEffect, useState } from 'react'
 import { View } from 'react-native'
 import style from '../../styles/shared'
 import { Car, Profile, Ride } from '../../database/schema'
-import { CustomDirectionsResponse } from '../AddRideComponents/types'
 import { GooglePlaceDetail } from 'react-native-google-places-autocomplete'
 import { MD3Colors } from 'react-native-paper/lib/typescript/types'
 import MapViewComponent from './MapViewComponent'
@@ -14,13 +13,14 @@ import { AuthContext } from '../../components/contexts/AuthContext'
 import { ModeContext } from '../../components/contexts/ModeContext'
 import { doc, onSnapshot } from 'firebase/firestore'
 import FirebaseApp from '../../components/FirebaseApp'
+import { DirectionsResponse } from '../../api/location'
 
 type PassengerViewProps = {
 	ride: Ride,
 	car: Car | null,
 	colors: MD3Colors,
 	driver: Profile | null,
-	directions: CustomDirectionsResponse | null,
+	directions: DirectionsResponse | null,
 	campusLocation: GooglePlaceDetail | null,
 	mapRef: React.MutableRefObject<MapView | null>,
 	passengers: (Profile | null)[],
