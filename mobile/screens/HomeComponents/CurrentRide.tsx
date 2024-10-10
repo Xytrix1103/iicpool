@@ -5,8 +5,14 @@ import { useTheme } from 'react-native-paper'
 import style from '../../styles/shared'
 import { Ride, Role } from '../../database/schema'
 import CustomText from '../../components/themed/CustomText'
+import { User } from 'firebase/auth'
 
-const CurrentRide = ({ currentRide, mode, navigation }: { currentRide: Ride, mode: Role, navigation: any }) => {
+const CurrentRide = ({ currentRide, navigation, user }: {
+	currentRide: Ride,
+	mode: Role,
+	navigation: any,
+	user: User | null
+}) => {
 	const { colors } = useTheme()
 	
 	return (
@@ -33,15 +39,17 @@ const CurrentRide = ({ currentRide, mode, navigation }: { currentRide: Ride, mod
 						width="auto"
 						color={colors.primary}
 					>
-						Current Ride ({mode === 'driver' ? 'Driver' : 'Passenger'})
+						Current Ride
+						({currentRide.driver === user?.uid ? 'Driver' : currentRide.passengers.includes(user?.uid || '') ? 'Passenger' : 'SOS Driver'})
 					</CustomText>
 					<View style={[style.row, { gap: 5, width: 'auto' }]}>
-						<CustomText size={12} bold
-						            color={currentRide.completed_at ? 'green' : currentRide.started_at ? 'blue' : 'black'}>
+						<CustomText size={12} bold align="center"
+						            color={(currentRide.cancelled_at || currentRide.sos) ? 'red' : currentRide.completed_at ? 'green' : currentRide.started_at ? 'blue' : 'black'}>
 							{
-								currentRide.completed_at ? 'Completed' :
-									currentRide.started_at ? 'Ongoing' :
-										'Pending'
+								currentRide.cancelled_at ? 'CANCELLED' :
+									currentRide.completed_at ? 'COMPLETED' :
+										currentRide.started_at ? currentRide.sos ? currentRide.sos.responded_by ? `SOS RESPONDED` : 'SOS TRIGGERED' : 'ONGOING' :
+											'PENDING'
 							}
 						</CustomText>
 					</View>
@@ -50,7 +58,7 @@ const CurrentRide = ({ currentRide, mode, navigation }: { currentRide: Ride, mod
 					<View style={[style.row, { gap: 5, width: 'auto' }]}>
 						<Icon name="calendar" size={20} />
 						<CustomText size={12} bold>
-							{currentRide.datetime.toDate().toLocaleString('en-GB', {
+							{(currentRide.sos?.triggered_at || currentRide.datetime).toDate().toLocaleString('en-GB', {
 								day: 'numeric',
 								month: 'numeric',
 								year: 'numeric',
@@ -60,7 +68,7 @@ const CurrentRide = ({ currentRide, mode, navigation }: { currentRide: Ride, mod
 					<View style={[style.row, { gap: 5, width: 'auto' }]}>
 						<Icon name="clock" size={20} />
 						<CustomText size={12} bold>
-							{currentRide.datetime.toDate().toLocaleString('en-GB', {
+							{(currentRide.sos?.triggered_at || currentRide.datetime).toDate().toLocaleString('en-GB', {
 								hour: '2-digit',
 								minute: '2-digit',
 								hour12: true,
@@ -84,7 +92,7 @@ const CurrentRide = ({ currentRide, mode, navigation }: { currentRide: Ride, mod
 							</View>
 							<View style={[style.column, { gap: 5, flex: 1 }]}>
 								<CustomText size={14} numberOfLines={2}>
-									{currentRide.to_campus ? 'From' : 'To'} {currentRide.location.name} {currentRide.to_campus ? 'to campus' : 'from campus'}
+									{currentRide.to_campus ? 'From' : 'To'} {currentRide.sos ? 'SOS location' : currentRide.location.name} {currentRide.to_campus ? 'to campus' : 'from campus'}
 								</CustomText>
 							</View>
 						</View>

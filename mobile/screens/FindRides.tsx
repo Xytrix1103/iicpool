@@ -54,7 +54,6 @@ const FindRides = () => {
 	})
 	const [locationInputFocused, setLocationInputFocused] = useState(false)
 	const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null)
-	const ridesQuery = query(collection(db, 'rides'), where('datetime', '>=', Timestamp.now()), where('driver', '!=', user?.uid), where('completed_at', '==', null), where('cancelled_at', '==', null))
 	
 	const { setValue, watch } = form
 	
@@ -142,6 +141,8 @@ const FindRides = () => {
 		}
 	}, [currentLocation])
 	
+	const ridesQuery = query(collection(db, 'rides'), where('driver', '!=', user?.uid), where('completed_at', '==', null), where('cancelled_at', '==', null), where('started_at', '==', null), where('datetime', '>=', Timestamp.fromDate(date)))
+	
 	useEffect(() => {
 		const unsubscribe = onSnapshot(ridesQuery, (snapshot) => {
 			const ridesData: CustomRide[] = snapshot.docs.map(doc => ({
@@ -164,7 +165,7 @@ const FindRides = () => {
 		return () => {
 			unsubscribe()
 		}
-	}, [location, date])
+	}, [location, date, to_campus])
 	
 	const renderItem = ({ ride }: { ride: CustomRide }) => {
 		return (

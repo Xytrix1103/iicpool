@@ -1,10 +1,10 @@
-import { Alert, View } from 'react-native'
+import { View } from 'react-native'
 import style from '../../styles/shared'
 import CustomBackgroundButton from '../../components/themed/CustomBackgroundButton'
 import CustomText from '../../components/themed/CustomText'
 import React, { useContext, useEffect, useState } from 'react'
 import { AuthContext } from '../../components/contexts/AuthContext'
-import { collection, getDocs, onSnapshot, orderBy, query, where } from 'firebase/firestore'
+import { and, collection, getDocs, onSnapshot, or, orderBy, query, where } from 'firebase/firestore'
 import { Ride, Role, Signal } from '../../database/schema'
 import CustomCard from '../../components/themed/CustomCard'
 import FirebaseApp from '../../components/FirebaseApp'
@@ -40,7 +40,10 @@ const DriverHome = ({ navigation, currentRide, mode }: {
 	
 	const ridesQuery = query(
 		collection(db, 'rides'),
-		where('driver', '==', user?.uid),
+		or(
+			and(where('driver', '==', user?.uid), where('sos', '==', null)),
+			where('sos.responded_by', '==', user?.uid),
+		),
 	)
 	
 	useEffect(() => {
@@ -48,7 +51,7 @@ const DriverHome = ({ navigation, currentRide, mode }: {
 		
 		setLoadingOverlay({
 			show: true,
-			message: 'Loading Rides Summary',
+			message: 'Loading...',
 		})
 		
 		const unsubscribe = onSnapshot(ridesQuery, async (snapshot) => {
@@ -62,7 +65,7 @@ const DriverHome = ({ navigation, currentRide, mode }: {
 			const completed = rides.filter((ride) => ride.completed_at).length
 			const cancelled = rides.filter((ride) => ride.cancelled_at).length
 			const passengers = rides.reduce((acc, ride) => acc + ride.passengers.length, 0)
-			const earned = rides.reduce((acc, ride) => acc + ride.fare || 0, 0)
+			const earned = rides.reduce((acc, ride) => acc + (ride.completed_at ? ride.fare * ride.passengers.length : 0), 0)
 			
 			let hours = 0
 			
@@ -101,7 +104,9 @@ const DriverHome = ({ navigation, currentRide, mode }: {
 			})
 		})
 		
-		return () => unsubscribe()
+		return () => {
+			unsubscribe()
+		}
 	}, [user])
 	
 	return (
@@ -126,7 +131,7 @@ const DriverHome = ({ navigation, currentRide, mode }: {
 				</CustomCard>
 				{
 					currentRide &&
-					<CurrentRide currentRide={currentRide} mode={mode} navigation={navigation} />
+					<CurrentRide currentRide={currentRide} mode={mode} navigation={navigation} user={user} />
 				}
 				<View style={[style.row, { gap: 20 }]}>
 					<CustomBackgroundButton
@@ -144,26 +149,12 @@ const DriverHome = ({ navigation, currentRide, mode }: {
 						<CustomText size={14}>My Rides</CustomText>
 					</CustomBackgroundButton>
 					<CustomBackgroundButton
-						icon="plus"
+						icon="phone"
+						iconColor="red"
 						size={30}
 						onPress={() => {
-							if (currentRide) {
-								Alert.alert(
-									'Ride in Progress',
-									'You cannot add a new ride while you have a ride in progress',
-									[
-										{
-											text: 'OK',
-											onPress: () => {
-											},
-										},
-									],
-								)
-								return
-							}
-							
 							// @ts-ignore
-							navigation.navigate('AddRide')
+							navigation.navigate('EmergencyRides')
 						}}
 						style={{ flex: 1 }}
 						elevation={10}
@@ -171,7 +162,7 @@ const DriverHome = ({ navigation, currentRide, mode }: {
 						padding={20}
 						borderRadius={30}
 					>
-						<CustomText size={14}>Add Ride</CustomText>
+						<CustomText size={14}>Emergency Rides</CustomText>
 					</CustomBackgroundButton>
 				</View>
 			</View>

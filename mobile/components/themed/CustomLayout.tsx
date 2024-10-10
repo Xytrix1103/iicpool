@@ -41,7 +41,7 @@ const CustomLayout: FC<LayoutProps> = (
 	return (
 		<View style={[style.root, { backgroundColor: colors.background, padding: containerPadding }]}>
 			{header && (
-				<View style={[style.headerContainer, { paddingHorizontal: 20, paddingVertical: 10 }]}>
+				<View style={[style.headerContainer, { padding: 20 }]}>
 					{header}
 				</View>
 			)}
