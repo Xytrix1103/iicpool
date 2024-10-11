@@ -262,6 +262,7 @@ const Chat = () => {
 	// on load, mark all messages as read
 	useEffect(() => {
 		(async () => {
+			console.log('Marking messages as read')
 			await runTransaction(db, async (transaction) => {
 				const messageRef = collection(doc(db, 'rides', rideId), 'messages')
 				
@@ -280,7 +281,7 @@ const Chat = () => {
 					console.error('Error marking messages as read:', error)
 				})
 		})()
-	}, [rideId])
+	}, [messages, rideId, user])
 	
 	useEffect(() => {
 		const groups: MessageGroupBySender[] = []

@@ -1,9 +1,8 @@
 import FirebaseApp from '../components/FirebaseApp'
 import { Car, Message, MessageType, Profile, Ride } from '../database/schema'
-import { arrayRemove, arrayUnion, collection, doc, getDoc, runTransaction } from 'firebase/firestore'
+import { arrayRemove, arrayUnion, collection, doc, getDoc, runTransaction, Timestamp } from 'firebase/firestore'
 import { User } from 'firebase/auth'
 import { Alert, ToastAndroid } from 'react-native'
-import { Timestamp } from '@firebase/firestore'
 
 const { db } = FirebaseApp
 

@@ -4,19 +4,7 @@ import CustomHeader from '../components/themed/CustomHeader'
 import style from '../styles/shared'
 import { useContext, useEffect, useState } from 'react'
 import { Car, Message, MessageType, Profile, Ride } from '../database/schema'
-import {
-	and,
-	collection,
-	doc,
-	getDoc,
-	getDocs,
-	limit,
-	onSnapshot,
-	or,
-	orderBy,
-	query,
-	where,
-} from 'firebase/firestore'
+import { and, collection, doc, getDoc, onSnapshot, or, orderBy, query, where } from 'firebase/firestore'
 import FirebaseApp from '../components/FirebaseApp'
 import { AuthContext } from '../components/contexts/AuthContext'
 import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayContext'
@@ -29,35 +17,35 @@ import { useNavigation } from '@react-navigation/native'
 type CustomLocalRide = Ride & {
 	passengersData?: Profile[]
 	driverData?: Profile
-	latestMessage?: Message
 	carData?: Car
-	unreadCount?: number
 }
 
 const { db } = FirebaseApp
 
-const ChatComponent = ({ ride, user, navigation }: {
+const ChatComponent = ({ ride, user, navigation, latestMessage, unreadCount = 0 }: {
 	ride: CustomLocalRide,
 	user: User | null,
 	colors: MD3Colors,
-	navigation: any
+	navigation: any,
+	latestMessage?: Message,
+	unreadCount?: number
 }) => {
 	let messageDisplay
-	switch (ride.latestMessage?.type) {
+	switch (latestMessage?.type) {
 		case MessageType.MESSAGE:
-			messageDisplay = `${ride.latestMessage.sender === user?.uid ? 'You' : [...(ride.passengersData || []), ride.driverData]?.find((passenger) => passenger?.id === ride.latestMessage?.sender)?.full_name.split(' ')[0]}: ${ride.latestMessage?.message}`
+			messageDisplay = `${latestMessage?.sender === user?.uid ? 'You' : [...(ride.passengersData || []), ride.driverData]?.find((passenger) => passenger?.id === latestMessage?.sender)?.full_name.split(' ')[0]}: ${latestMessage?.message}`
 			break
 		case MessageType.NEW_PASSENGER:
-			messageDisplay = `${[...(ride.passengersData || []), ride.driverData]?.find((passenger) => passenger?.id === ride.latestMessage?.user)?.full_name.split(' ')[0]} has joined the ride`
+			messageDisplay = `${[...(ride.passengersData || []), ride.driverData]?.find((passenger) => passenger?.id === latestMessage?.user)?.full_name.split(' ')[0]} has joined the ride`
 			break
 		case MessageType.PASSENGER_CANCELLATION:
-			messageDisplay = `${[...(ride.passengersData || []), ride.driverData]?.find((passenger) => passenger?.id === ride.latestMessage?.user)?.full_name.split(' ')[0]} has left the ride`
+			messageDisplay = `${[...(ride.passengersData || []), ride.driverData]?.find((passenger) => passenger?.id === latestMessage?.user)?.full_name.split(' ')[0]} has left the ride`
 			break
 		case MessageType.RIDE_CANCELLATION:
 			messageDisplay = `${ride.driverData?.full_name} has cancelled the ride`
 			break
 		case MessageType.RIDE_COMPLETION:
-			messageDisplay = ride.latestMessage?.message
+			messageDisplay = latestMessage?.message
 			break
 		default:
 			messageDisplay = 'No messages yet'
@@ -77,9 +65,9 @@ const ChatComponent = ({ ride, user, navigation }: {
 				<Badge
 					size={20}
 					style={{ position: 'absolute', top: -5, right: -5 }}
-					visible={ride.unreadCount! > 0}
+					visible={unreadCount > 0}
 				>
-					{ride.unreadCount}
+					{unreadCount}
 				</Badge>
 			</View>
 			<View style={[style.column, { flex: 1, gap: 10, height: '100%', width: '100%' }]}>
@@ -111,7 +99,7 @@ const ChatComponent = ({ ride, user, navigation }: {
 						{
 							//check if it starts with a name/You and colon, if yes, split into 2 columns so the sender
 							//name can be formatted
-							ride.latestMessage?.type === MessageType.MESSAGE ?
+							latestMessage?.type === MessageType.MESSAGE ?
 								<View style={[style.row, { alignItems: 'flex-start' }]}>
 									<View style={[style.column, { width: 'auto' }]}>
 										<CustomText size={12} bold>
@@ -131,16 +119,16 @@ const ChatComponent = ({ ride, user, navigation }: {
 					</View>
 					<View style={[style.column, { width: 'auto', height: '100%' }]}>
 						{
-							ride.latestMessage &&
+							latestMessage &&
 							<CustomText size={10} color="grey">
 								{
-									new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 60000 ? 'Just now' :
-										new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 3600000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 60000)}m ago` :
-											new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 86400000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 3600000)}h ago` :
-												new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 604800000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 86400000)}d ago` :
-													new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 2628000000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 604800000)}w ago` :
-														new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime() < 31540000000 ? `${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 2628000000)}mon ago` :
-															`${Math.floor((new Date().getTime() - ride.latestMessage?.timestamp.toDate().getTime()) / 31540000000)}y ago`
+									new Date().getTime() - latestMessage?.timestamp.toDate().getTime() < 60000 ? 'Just now' :
+										new Date().getTime() - latestMessage?.timestamp.toDate().getTime() < 3600000 ? `${Math.floor((new Date().getTime() - latestMessage?.timestamp.toDate().getTime()) / 60000)}m ago` :
+											new Date().getTime() - latestMessage?.timestamp.toDate().getTime() < 86400000 ? `${Math.floor((new Date().getTime() - latestMessage?.timestamp.toDate().getTime()) / 3600000)}h ago` :
+												new Date().getTime() - latestMessage?.timestamp.toDate().getTime() < 604800000 ? `${Math.floor((new Date().getTime() - latestMessage?.timestamp.toDate().getTime()) / 86400000)}d ago` :
+													new Date().getTime() - latestMessage?.timestamp.toDate().getTime() < 2628000000 ? `${Math.floor((new Date().getTime() - latestMessage?.timestamp.toDate().getTime()) / 604800000)}w ago` :
+														new Date().getTime() - latestMessage?.timestamp.toDate().getTime() < 31540000000 ? `${Math.floor((new Date().getTime() - latestMessage?.timestamp.toDate().getTime()) / 2628000000)}mon ago` :
+															`${Math.floor((new Date().getTime() - latestMessage?.timestamp.toDate().getTime()) / 31540000000)}y ago`
 								}
 							</CustomText>
 						}
@@ -157,6 +145,8 @@ const Messages = () => {
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
 	const { colors } = useTheme()
 	const navigation = useNavigation()
+	const [rideLatestMessages, setRideLatestMessages] = useState<{ [key: string]: Message }>({})
+	const [rideUnreadCounts, setRideUnreadCounts] = useState<{ [key: string]: number }>({})
 	
 	const ridesQuery = query(collection(db, 'rides'), and(where('passengers', '!=', []), or(where('passengers', 'array-contains', user?.uid), where('driver', '==', user?.uid))))
 	
@@ -198,24 +188,6 @@ const Messages = () => {
 				
 				console.log(passengersData, ride?.id)
 				
-				const latestMessage = await getDocs(query(collection(doc(db, 'rides', ride?.id || ''), 'messages'), orderBy('timestamp', 'desc'), limit(1))).then((querySnapshot) => {
-					console.log(querySnapshot.docs)
-					if (querySnapshot.docs.length) {
-						const doc = querySnapshot.docs[0]
-						return {
-							...doc.data(),
-							id: doc.id,
-						} as Message
-					} else {
-						return undefined
-					}
-				}).catch((error) => {
-					console.error('Error getting latest message:', error)
-					return undefined
-				})
-				
-				console.log(latestMessage)
-				
 				const carData = await getDoc(doc(db, 'cars', ride.car)).then((result) => {
 					return {
 						...result.data(),
@@ -228,24 +200,11 @@ const Messages = () => {
 				
 				console.log(carData)
 				
-				const unreadCount = await getDocs(query(collection(doc(db, 'rides', ride?.id || ''), 'messages')))
-					.then((snapshot) => {
-						return snapshot.docs.filter((doc) => !doc.data().read_by.includes(user?.uid)).length
-					})
-					.catch((error) => {
-						console.error('Error getting unread count:', error)
-						return 0
-					})
-				
-				console.log('Unread count:', unreadCount)
-				
 				return {
 					...ride,
 					passengersData,
-					latestMessage,
 					driverData,
 					carData,
-					unreadCount,
 				} as CustomLocalRide
 			}))
 				.then((rides) => {
@@ -263,8 +222,48 @@ const Messages = () => {
 				})
 		})
 		
-		return () => unsubscribe()
+		return () => {
+			unsubscribe()
+		}
 	}, [user])
+	
+	useEffect(() => {
+		let unsubscribeMessages: { [key: string]: () => void } = {}
+		
+		rides.forEach((ride) => {
+			if (!user) {
+				return
+			}
+			
+			if (ride.id) {
+				const messagesQuery = query(collection(db, 'rides', ride.id, 'messages'), orderBy('timestamp', 'desc'))
+				
+				unsubscribeMessages[ride.id] = onSnapshot(messagesQuery, (snapshot) => {
+					const latestMessage = snapshot.docs[0].data() as Message
+					
+					setRideLatestMessages((prevState) => {
+						return {
+							...prevState,
+							[ride.id as string]: latestMessage,
+						}
+					})
+					
+					setRideUnreadCounts((prevState) => {
+						return {
+							...prevState,
+							[ride.id as string]: snapshot.docs.filter((doc) => !doc.data().read_by.includes(user.uid)).length,
+						}
+					})
+				})
+			}
+		})
+		
+		return () => {
+			Object.keys(unsubscribeMessages).forEach((key) => {
+				unsubscribeMessages[key]()
+			})
+		}
+	}, [rides, user])
 	
 	return (
 		<CustomLayout
@@ -279,7 +278,8 @@ const Messages = () => {
 							{
 								rides.map((ride) => (
 									<ChatComponent ride={ride} key={ride.id} user={user} colors={colors}
-									               navigation={navigation} />
+									               navigation={navigation} unreadCount={rideUnreadCounts[ride.id || '']}
+									               latestMessage={rideLatestMessages[ride.id || '']} />
 								))
 							}
 							{
