@@ -12,7 +12,10 @@
 	"description": "IICPool Node.js + Express.js Server",
 	"type": "module",
 	"dependencies": {
-		"express": "^4.21.1"
+		"cors": "^2.8.5",
+		"dotenv": "^16.4.5",
+		"express": "^4.21.1",
+		"firebase-admin": "^12.6.0"
 	},
 	"devDependencies": {
 		"nodemon": "^3.1.7"
