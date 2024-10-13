@@ -1,34 +1,71 @@
-import {useState} from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { createBrowserRouter, RouteObject, RouterProvider } from 'react-router-dom'
+import Login from './pages/Login.tsx'
+import { AuthProvider } from './components/providers/AuthProvider.tsx'
+import { AuthContext } from './components/contexts/AuthContext.tsx'
+import { useContext, useMemo } from 'react'
+import CustomLayout from './components/layout/CustomLayout.tsx'
+import Dashboard from './pages/Dashboard.tsx'
+import Users from './pages/Users.tsx'
+import { refreshUsers } from './api/users.ts'
+import Admins from './pages/Admins.tsx'
+import { refreshAdmins } from './api/admins.ts'
 
-function App() {
-	const [count, setCount] = useState(0)
+const App = () => {
+	console.log('App')
 	
 	return (
-		<>
-			<div>
-				<a href="https://vitejs.dev" target="_blank">
-					<img src={viteLogo} className="logo" alt="Vite logo"/>
-				</a>
-				<a href="https://react.dev" target="_blank">
-					<img src={reactLogo} className="logo react" alt="React logo"/>
-				</a>
-			</div>
-			<h1>Vite + React</h1>
-			<div className="card">
-				<button onClick={() => setCount((count) => count + 1)}>
-					count is {count}
-				</button>
-				<p>
-					Edit <code>src/App.tsx</code> and save to test HMR
-				</p>
-			</div>
-			<p className="read-the-docs">
-				Click on the Vite and React logos to learn more
-			</p>
-		</>
+		<div className="flex w-full h-full">
+			<AuthProvider>
+				<Routes />
+			</AuthProvider>
+		</div>
+	)
+}
+
+const Routes = () => {
+	const { profile, loading } = useContext(AuthContext)
+	
+	const unauthenticatedRoutes = useMemo(() => {
+		return [
+			{
+				path: '/',
+				element: <Login />,
+			},
+		] as RouteObject[]
+	}, [])
+	
+	const authenticatedRoutes = useMemo(() => {
+		return [
+			{
+				path: '/',
+				element: <CustomLayout />,
+				children: [
+					{
+						path: '/',
+						element: <Dashboard />,
+					},
+					{
+						path: '/users',
+						element: <Users />,
+						loader: refreshUsers,
+					},
+					{
+						path: '/admins',
+						element: <Admins />,
+						loader: refreshAdmins,
+					},
+				] as RouteObject[],
+			},
+		] as RouteObject[]
+	}, [])
+	
+	const router = useMemo(() => {
+		return createBrowserRouter(profile ? authenticatedRoutes : unauthenticatedRoutes)
+	}, [authenticatedRoutes, profile, unauthenticatedRoutes])
+	
+	return (
+		loading ? <h1>Loading...</h1> :
+			<RouterProvider router={router} />
 	)
 }
 

@@ -1,11 +1,18 @@
 import express from 'express'
+import {usersRouter} from "./routes/users.js";
+import cors from 'cors'
+import {adminsRouter} from "./routes/admins.js";
 
 const app = express()
 let port = 3000
+app.use(cors())
 
 app.get('/', (req, res) => {
 	res.send('Hello World!')
 })
+
+app.use('/users', usersRouter)
+app.use('/admins', adminsRouter)
 
 const startServer = (port) => {
 	const server = app.listen(port, () => {
