@@ -2,9 +2,7 @@ import { Timestamp } from '@firebase/firestore'
 
 type ProfileNotificationSettings = {
 	new_messages: boolean;
-	new_passengers: boolean;
-	booking_confirmation: boolean;
-	ride_cancellation: boolean;
+	ride_updates: boolean;
 }
 
 type Profile = {
@@ -32,13 +30,13 @@ type Car = {
 }
 
 enum MessageType {
-	NEW_PASSENGER = 'new_passenger',
-	RIDE_COMPLETION = 'ride_completion',
-	SOS_RESPONSE = 'sos_response',
-	RIDE_CANCELLATION = 'ride_cancellation',
-	PASSENGER_CANCELLATION = 'passenger_cancellation',
-	SOS = 'sos',
 	MESSAGE = 'message',
+	NEW_PASSENGER = 'new_passenger',
+	PASSENGER_CANCELLATION = 'passenger_cancellation',
+	RIDE_CANCELLATION = 'ride_cancellation',
+	RIDE_COMPLETION = 'ride_completion',
+	SOS = 'sos',
+	SOS_RESPONSE = 'sos_response',
 }
 
 type Message = {
