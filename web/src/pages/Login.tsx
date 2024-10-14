@@ -1,6 +1,6 @@
 import { Controller, useForm } from 'react-hook-form'
 import logo from '../assets/logo.png'
-import { login, logout } from '../api/auth.ts'
+import { login } from '../api/auth.ts'
 import { useState } from 'react'
 
 type LoginProps = {
@@ -30,14 +30,6 @@ const Login = () => {
 				<div className="flex flex-col w-full space-y-2 content-center justify-center">
 					<img src={logo} alt="Logo" className="w-3/5 h-auto self-center" />
 					<h1 className="text-2xl text-primary font-extrabold text-center">IICPool (Admin)</h1>
-					<button
-						className="p-3 bg-primary text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-200 w-full"
-						onClick={() => {
-							logout().then(() => console.log('Logged out'))
-						}}
-					>
-						Logout
-					</button>
 				</div>
 				<div className="flex flex-col w-full space-y-4 content-center justify-center">
 					<h1 className="text-3xl text-center">Login</h1>
