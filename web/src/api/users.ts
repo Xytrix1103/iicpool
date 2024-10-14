@@ -11,7 +11,7 @@ const refreshUsers = async () => {
 }
 
 type UserTableRow = {
-	uid: string
+	id: string
 	full_name: string
 	email: string
 	roles: Role[]

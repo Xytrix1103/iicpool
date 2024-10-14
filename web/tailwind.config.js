@@ -1,5 +1,8 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+
+import TailwindAnimate from 'tailwindcss-animate'
+
+module.exports = {
 	content: [
 		'./index.html',
 		'./src/**/*.{js,ts,jsx,tsx}',
@@ -10,9 +13,12 @@ export default {
 				'sans': ['Montserrat', 'sans-serif'],
 			},
 			colors: {
-				'primary': '#8B0000',
+				primary: {
+					DEFAULT: '#8B0000',
+				},
 			},
 		},
 	},
-	plugins: [],
+	plugins: [TailwindAnimate],
+	darkMode: ['class'],
 }

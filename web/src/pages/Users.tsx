@@ -18,34 +18,54 @@ import { Button } from '../components/themed/ui-kit/button.tsx'
 import {
 	ArmchairIcon,
 	CarFrontIcon,
+	CheckIcon,
 	ChevronFirstIcon,
 	ChevronLastIcon,
 	ChevronLeftIcon,
 	ChevronRightIcon,
 	MailIcon,
+	PencilIcon,
 } from 'lucide-react'
 import SectionHeader from '../components/themed/components/SectionHeader.tsx'
 import { FcGoogle } from 'react-icons/fc'
 import { CaretDownIcon, CaretSortIcon, CaretUpIcon } from '@radix-ui/react-icons'
 import { UserTableRow } from '../api/users.ts'
 import { useLoaderData } from 'react-router-dom'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/themed/ui-kit/dialog.tsx'
+import { useForm } from 'react-hook-form'
+import { Label } from '../components/themed/ui-kit/label.tsx'
+import { Input } from '../components/themed/ui-kit/input.tsx'
+
+type UserFormType = {
+	full_name: string
+	mobile_number: string
+	email: string
+}
 
 const Users = () => {
 	const users: UserTableRow[] = useLoaderData() as UserTableRow[]
 	const [sorting, setSorting] = useState<SortingState>([])
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-		'uid': false,
+		'id': false,
 	})
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
 	})
+	const [selectedUserDialog, setSelectedUserDialog] = useState<string | null>(null)
+	const form = useForm<UserFormType>({
+		defaultValues: {
+			full_name: users.find(user => user.id === selectedUserDialog)?.full_name || '',
+			mobile_number: users.find(user => user.id === selectedUserDialog)?.mobile_number || '',
+			email: users.find(user => user.id === selectedUserDialog)?.email || '',
+		},
+	})
 	
 	const tableColumns: ColumnDef<UserTableRow>[] = [
 		{
-			header: 'UID',
-			accessorKey: 'uid',
+			header: 'ID',
+			accessorKey: 'id',
 		},
 		{
 			header: ({ column }) => (
@@ -143,6 +163,19 @@ const Users = () => {
 			accessorKey: 'mobile_number',
 			cell: ({ row }) => <div className="py-1">{row.getValue('mobile_number')}</div>,
 		},
+		{
+			header: 'Actions',
+			cell: ({ row }) => {
+				return (
+					<Button
+						variant="ghost"
+						onClick={() => setSelectedUserDialog(row.getValue('id'))}
+					>
+						<PencilIcon size={16} />
+					</Button>
+				)
+			},
+		},
 	]
 	
 	const tableInstance = useReactTable({
@@ -166,12 +199,99 @@ const Users = () => {
 	})
 	
 	useEffect(() => {
-		console.log('something changed', pagination)
-	}, [pagination])
+		if (selectedUserDialog) {
+			form.setValue('full_name', users.find(user => user.id === selectedUserDialog)?.full_name || '')
+			form.setValue('mobile_number', users.find(user => user.id === selectedUserDialog)?.mobile_number || '')
+			form.setValue('email', users.find(user => user.id === selectedUserDialog)?.email || '')
+		} else {
+			form.reset()
+		}
+	}, [form, selectedUserDialog, users])
 	
 	return (
 		<section className="w-full h-full flex flex-col gap-10">
-			<SectionHeader text="Users Management" />
+			<SectionHeader
+				text="Users Management"
+				extra={
+					<Dialog
+						open={!!selectedUserDialog}
+						onOpenChange={(isOpen) => {
+							if (!isOpen) setSelectedUserDialog(null)
+						}}
+					>
+						<DialogContent
+							className="border border-input !rounded-3xl !min-w-[70vw] !max-w-screen max-h-screen overflow-y-auto gap-8"
+							aria-describedby={undefined}
+						>
+							<DialogHeader>
+								<DialogTitle>
+									Edit User
+								</DialogTitle>
+							</DialogHeader>
+							<div className="flex flex-col gap-3">
+								<div className="grid w-full max-w-sm items-center gap-1.5">
+									<Label htmlFor={`email`} className="px-1">Email</Label>
+									<Input
+										type="text"
+										id={`email`}
+										className="rounded-2xl"
+										placeholder=""
+										value={form.watch('email')}
+										disabled={true}
+										onChange={(e) => form.setValue('email', e.target.value)}
+									/>
+								</div>
+								<div className="flex gap-3">
+									<div className="grid w-full max-w-sm items-center gap-1.5">
+										<Label htmlFor={`full_name`} className="px-1">Full Name</Label>
+										<Input
+											type="text"
+											id={`full_name`}
+											className="rounded-2xl"
+											placeholder=""
+											value={form.watch('full_name')}
+											onChange={(e) => form.setValue('full_name', e.target.value)}
+										/>
+									</div>
+									<div className="grid w-full max-w-sm items-center gap-1.5">
+										<Label htmlFor={`mobile_number`} className="px-1">Mobile Number</Label>
+										<Input
+											type="text"
+											id={`mobile_number`}
+											className="rounded-2xl"
+											placeholder=""
+											value={form.watch('mobile_number')}
+											onChange={(e) => form.setValue('mobile_number', e.target.value)}
+										/>
+									</div>
+								</div>
+							</div>
+							<div className="flex justify-end gap-3">
+								<Button
+									variant="ghost"
+									onClick={() => setSelectedUserDialog(null)}
+									className="px-3.5 py-1 text-primary"
+								>
+									Cancel
+								</Button>
+								<Button
+									variant="outline"
+									onClick={() => {
+										console.log(form.getValues())
+										setSelectedUserDialog(null)
+									}}
+									className="px-3.5 py-1"
+								>
+									<div className="flex gap-1.5 items-center">
+										<CheckIcon size={16} />
+										<span>Save</span>
+									</div>
+								</Button>
+							</div>
+						</DialogContent>
+					</Dialog>
+				}
+			/>
 			<div className="w-full flex flex-col">
 				<div className="rounded-2xl border border-input">
 					<Table className="w-full">
@@ -209,7 +329,8 @@ const Users = () => {
 								))
 							) : (
 								<TableRow>
-									<TableCell colSpan={tableColumns.length} className="p-2 text-center">
+									<TableCell colSpan={tableColumns.length}
+									           className="p-2 text-center">
 										No data
 									</TableCell>
 								</TableRow>

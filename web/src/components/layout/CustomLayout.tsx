@@ -18,12 +18,12 @@ const CustomLayout = () => {
 			path: '/',
 		},
 		{
-			icon: <UsersIcon size={24} color={location.pathname === '/users' ? 'white' : 'black'} />,
+			icon: <UsersIcon size={24} color={location.pathname.includes('/users') ? 'white' : 'black'} />,
 			label: 'Users',
 			path: '/users',
 		},
 		{
-			icon: <ShieldCheckIcon size={24} color={location.pathname === '/admins' ? 'white' : 'black'} />,
+			icon: <ShieldCheckIcon size={24} color={location.pathname.includes('/admins') ? 'white' : 'black'} />,
 			label: 'Admins',
 			path: '/admins',
 		},

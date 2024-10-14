@@ -8,12 +8,12 @@ usersRouter.get('/', async (req, res) => {
 	const usersArray = []
 
 	await Promise.all(users.docs.map(async (doc) => {
-		const uid = doc.id
+		const id = doc.id
 
-		const authUser = await auth.getUser(uid)
+		const authUser = await auth.getUser(id)
 
 		usersArray.push({
-			uid: uid,
+			id: id,
 			email: authUser.email,
 			provider_data: authUser.providerData.map((provider) => provider.providerId),
 			...doc.data()
