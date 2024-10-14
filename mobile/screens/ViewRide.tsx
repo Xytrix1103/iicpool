@@ -54,12 +54,22 @@ const ViewRide = () => {
 					}
 				}
 			} else {
-				if (ride.cancelled_at || (ride.passengers.length === ride.available_seats && !ride.passengers.includes(user?.uid || ''))) {
-					navigation.goBack()
+				if (mode === Role.PASSENGER) {
+					if (!ride.passengers.includes(user?.uid || '')) {
+						if (ride.cancelled_at || ride.passengers.length === ride.available_seats) {
+							navigation.goBack()
+						}
+					}
+				} else if (mode === Role.DRIVER) {
+					if (ride.driver !== user?.uid) {
+						if (!(ride.sos?.responded_by && ride.sos?.responded_by !== user?.uid)) {
+							navigation.goBack()
+						}
+					}
 				}
 			}
 		}
-	}, [ride])
+	}, [ride, mode, user])
 	
 	useEffect(() => {
 		let unsubscribe: () => void

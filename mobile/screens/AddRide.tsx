@@ -109,7 +109,7 @@ const AddRide = () => {
 			
 			setValue('fare', fare)
 		})()
-	}, [campus, not_campus, datetime, is_free])
+	}, [campus, not_campus, datetime, is_free, step])
 	
 	const onSubmit = async (data: RideFormType) => {
 		console.log('Submit', data)

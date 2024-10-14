@@ -421,22 +421,25 @@ const Chat = () => {
 						</View>
 					</CustomLayout>
 				</View>
-				<View style={[style.row, { paddingVertical: 10, paddingHorizontal: 20 }]}>
-					<Controller
-						control={form.control}
-						name="message"
-						render={({ field: { onChange, value } }) => (
-							<CustomInput
-								placeholder="Type a message..."
-								onChangeText={onChange}
-								value={value}
-								rightIcon={
-									<CustomIconButton icon="send" onPress={form.handleSubmit(handleSendMessage)} />
-								}
-							/>
-						)}
-					/>
-				</View>
+				{
+					!(chat?.completed_at || chat?.cancelled_at) &&
+					<View style={[style.row, { paddingVertical: 10, paddingHorizontal: 20 }]}>
+						<Controller
+							control={form.control}
+							name="message"
+							render={({ field: { onChange, value } }) => (
+								<CustomInput
+									placeholder="Type a message..."
+									onChangeText={onChange}
+									value={value}
+									rightIcon={
+										<CustomIconButton icon="send" onPress={form.handleSubmit(handleSendMessage)} />
+									}
+								/>
+							)}
+						/>
+					</View>
+				}
 			</View>
 		</CustomLayout>
 	)

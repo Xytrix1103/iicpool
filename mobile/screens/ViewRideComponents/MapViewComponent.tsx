@@ -687,8 +687,17 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 											<>
 												<Marker
 													coordinate={{
-														latitude: ride.to_campus ? campusLocation?.geometry.location.lat || 0 : ride.location?.geometry.location.lat || 0,
-														longitude: ride.to_campus ? campusLocation?.geometry.location.lng || 0 : ride.location?.geometry.location.lng || 0,
+														latitude: campusLocation?.geometry.location.lat || 0,
+														longitude: campusLocation?.geometry.location.lng || 0,
+													}}
+													tracksViewChanges={false}
+												>
+													<Icon name="school" size={30} color={colors.primary} />
+												</Marker>
+												<Marker
+													coordinate={{
+														latitude: ride.location?.geometry.location.lat || 0,
+														longitude: ride.location?.geometry.location.lng || 0,
 													}}
 													tracksViewChanges={false}
 												>

@@ -23,9 +23,7 @@ const NotificationSettingsProvider: React.FC<
 	const [notificationSettings, setNotificationSettings] =
 		useState<ProfileNotificationSettings>({
 			new_messages: false,
-			new_passengers: false,
-			booking_confirmation: false,
-			ride_cancellation: false,
+			ride_updates: false,
 		})
 	
 	useEffect(() => {
@@ -46,9 +44,7 @@ const NotificationSettingsProvider: React.FC<
 						
 						setNotificationSettings({
 							new_messages: false,
-							new_passengers: false,
-							booking_confirmation: false,
-							ride_cancellation: false,
+							ride_updates: false,
 						})
 					}
 				}
