@@ -30,13 +30,13 @@ type Car = {
 }
 
 enum MessageType {
-	MESSAGE = 'message',
 	NEW_PASSENGER = 'new_passenger',
-	PASSENGER_CANCELLATION = 'passenger_cancellation',
-	RIDE_CANCELLATION = 'ride_cancellation',
 	RIDE_COMPLETION = 'ride_completion',
-	SOS = 'sos',
 	SOS_RESPONSE = 'sos_response',
+	RIDE_CANCELLATION = 'ride_cancellation',
+	PASSENGER_CANCELLATION = 'passenger_cancellation',
+	SOS = 'sos',
+	MESSAGE = 'message',
 }
 
 type Message = {

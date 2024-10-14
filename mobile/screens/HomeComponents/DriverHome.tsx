@@ -13,8 +13,10 @@ import { LoadingOverlayContext } from '../../components/contexts/LoadingOverlayC
 
 type DriverRidesSummary = {
 	total: number | null;
-	completed: number | null;
 	cancelled: number | null;
+	completed_own: number | null;
+	completed_by_sos_responder: number | null;
+	sos_responded: number | null;
 	passengers: number | null;
 	earned: number | null;
 	hours: number | null;
@@ -29,8 +31,10 @@ const DriverHome = ({ navigation, currentRide, mode }: {
 }) => {
 	const [ridesSummary, setRidesSummary] = useState<DriverRidesSummary>({
 		total: null,
-		completed: null,
 		cancelled: null,
+		completed_own: null,
+		completed_by_sos_responder: null,
+		sos_responded: null,
 		passengers: null,
 		earned: null,
 		hours: null,
@@ -62,10 +66,12 @@ const DriverHome = ({ navigation, currentRide, mode }: {
 			}
 			
 			const total = rides.length
-			const completed = rides.filter((ride) => ride.completed_at).length
 			const cancelled = rides.filter((ride) => ride.cancelled_at).length
-			const passengers = rides.reduce((acc, ride) => acc + ride.passengers.length, 0)
-			const earned = rides.reduce((acc, ride) => acc + (ride.completed_at ? ride.fare * ride.passengers.length : 0), 0)
+			const completed_own = rides.filter((ride) => ride.completed_at && ride.sos === null).length
+			const completed_by_sos_responder = rides.filter((ride) => ride.completed_at && ride.sos).length
+			const sos_responded = rides.filter((ride) => ride.completed_at && ride.sos?.responded_by === user?.uid).length
+			const passengers = rides.reduce((acc, ride) => acc + (ride.completed_at && (ride.driver === user?.uid && ride.sos?.responded_by === null || ride.sos?.responded_by === user?.uid) ? ride.passengers.length : 0), 0)
+			const earned = rides.reduce((acc, ride) => acc + (ride.completed_at && (ride.driver === user?.uid && ride.sos?.responded_by === null || ride.sos?.responded_by === user?.uid) ? (ride.fare * ride.passengers.length) : 0), 0)
 			
 			let hours = 0
 			
@@ -90,10 +96,12 @@ const DriverHome = ({ navigation, currentRide, mode }: {
 			})).finally(() => {
 				setRidesSummary({
 					total,
-					earned,
-					completed,
 					cancelled,
+					completed_own,
+					completed_by_sos_responder,
+					sos_responded,
 					passengers,
+					earned,
 					hours,
 				})
 				
@@ -118,10 +126,15 @@ const DriverHome = ({ navigation, currentRide, mode }: {
 						<View style={[style.row, { gap: 10 }]}>
 							<View style={[style.column, { gap: 10, flex: 1 }]}>
 								<CustomText size={12}>{`Total Rides: ${ridesSummary.total}`}</CustomText>
-								<CustomText size={12}>{`Completed Rides: ${ridesSummary.completed}`}</CustomText>
 								<CustomText size={12}>{`Cancelled Rides: ${ridesSummary.cancelled}`}</CustomText>
+								<CustomText
+									size={12}>{`Completed (Non-SOS): ${ridesSummary.completed_own}`}</CustomText>
+								<CustomText
+									size={12}>{`Completed (by SOS Responder): ${ridesSummary.completed_by_sos_responder}`}</CustomText>
 							</View>
 							<View style={[style.column, { gap: 10, flex: 1 }]}>
+								<CustomText
+									size={12}>{`Responded and Completed to SOS: ${ridesSummary.sos_responded}`}</CustomText>
 								<CustomText size={12}>{`Total Passengers: ${ridesSummary.passengers}`}</CustomText>
 								<CustomText size={12}>{`Total Earned: RM ${ridesSummary.earned}`}</CustomText>
 								<CustomText size={12}>{`Total Hours: ${ridesSummary.hours}`}</CustomText>
