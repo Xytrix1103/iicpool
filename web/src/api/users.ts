@@ -1,4 +1,4 @@
-import { get } from './axios_component.ts'
+import { get, post } from './axios_component.ts'
 import { Role } from '../components/firebase/schema.ts'
 
 const refreshUsers = async () => {
@@ -10,6 +10,35 @@ const refreshUsers = async () => {
 	}
 }
 
+const updateUser = async (id: string, data: UpdateUserData) => {
+	try {
+		return await post(`/users/${id}`, data)
+	} catch (error) {
+		console.error(error)
+		return null
+	}
+}
+
+const addUser = async (data: AddUserData) => {
+	try {
+		return await post('/users', data)
+	} catch (error) {
+		console.error(error)
+		return null
+	}
+}
+
+type UpdateUserData = {
+	full_name: string
+	mobile_number: string
+}
+
+type AddUserData = UpdateUserData & {
+	password: string
+	email: string
+}
+
+
 type UserTableRow = {
 	id: string
 	full_name: string
@@ -19,5 +48,5 @@ type UserTableRow = {
 	mobile_number: string
 }
 
-export { refreshUsers }
-export type { UserTableRow }
+export { refreshUsers, updateUser, addUser }
+export type { UserTableRow, AddUserData, UpdateUserData }

@@ -30,17 +30,25 @@ import {
 import SectionHeader from '../components/themed/components/SectionHeader.tsx'
 import { FcGoogle } from 'react-icons/fc'
 import { CaretDownIcon, CaretSortIcon, CaretUpIcon } from '@radix-ui/react-icons'
-import { UserTableRow } from '../api/users.ts'
+import { addUser, AddUserData, updateUser, UpdateUserData, UserTableRow } from '../api/users.ts'
 import { useLoaderData } from 'react-router-dom'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/themed/ui-kit/dialog.tsx'
 import { Controller, useForm } from 'react-hook-form'
 import { Label } from '../components/themed/ui-kit/label.tsx'
 import { Input } from '../components/themed/ui-kit/input.tsx'
 
-type UserFormType = {
+type FormData = {
 	full_name: string
 	mobile_number: string
 	email: string
+}
+
+type EmailFormData = {
+	email: string
+}
+
+type PasswordFormData = {
+	password: string
 }
 
 const Users = () => {
@@ -55,17 +63,63 @@ const Users = () => {
 		pageSize: 10,
 	})
 	const [selectedUserDialog, setSelectedUserDialog] = useState<string | null>(null)
-	const form = useForm<UserFormType>({
+	const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
+	const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false)
+	const form = useForm<FormData>({
 		defaultValues: {
 			full_name: '',
 			mobile_number: '',
 			email: '',
 		},
 	})
+	const emailForm = useForm<EmailFormData>({
+		defaultValues: {
+			email: '',
+		},
+	})
+
+	const passwordForm = useForm<PasswordFormData>({
+		defaultValues: {
+			password: '',
+		},
+	})
 
 	const { handleSubmit, formState: { errors }, setValue, control, reset } = form
+	const {
+		handleSubmit: handleEmailSubmit,
+		formState: { errors: emailErrors },
+		setValue: setEmailValue,
+		control: emailControl,
+		reset: resetEmail,
+	} = emailForm
+	const {
+		handleSubmit: handlePasswordSubmit,
+		formState: { errors: passwordErrors },
+		control: passwordControl,
+		reset: resetPassword,
+	} = passwordForm
 
-	const onSubmit = (data: UserFormType) => {
+	const onSubmit = (data: AddUserData | UpdateUserData) => {
+		console.log(data)
+
+		if (selectedUserDialog) {
+			if (selectedUserDialog === '') {
+				addUser(data as AddUserData).then(r => {
+					console.log('add user', r)
+				})
+			} else {
+				updateUser(selectedUserDialog, data as UpdateUserData).then(r => {
+					console.log('update user', r)
+				})
+			}
+		}
+	}
+
+	const onSubmitEmail = (data: EmailFormData) => {
+		console.log(data)
+	}
+
+	const onSubmitPassword = (data: PasswordFormData) => {
 		console.log(data)
 	}
 
@@ -174,12 +228,14 @@ const Users = () => {
 			header: 'Actions',
 			cell: ({ row }) => {
 				return (
-					<Button
-						variant="ghost"
-						onClick={() => setSelectedUserDialog(row.getValue('id'))}
-					>
-						<PencilIcon size={16} />
-					</Button>
+					<div className="flex justify-center">
+						<Button
+							variant="ghost"
+							onClick={() => setSelectedUserDialog(row.getValue('id'))}
+						>
+							<PencilIcon size={16} />
+						</Button>
+					</div>
 				)
 			},
 		},
@@ -210,174 +266,310 @@ const Users = () => {
 			setValue('full_name', users.find(user => user.id === selectedUserDialog)?.full_name || '')
 			setValue('mobile_number', users.find(user => user.id === selectedUserDialog)?.mobile_number || '')
 			setValue('email', users.find(user => user.id === selectedUserDialog)?.email || '')
+			setEmailValue('email', users.find(user => user.id === selectedUserDialog)?.email || '')
 		} else {
 			reset()
+			resetEmail()
+			resetPassword()
 		}
-	}, [reset, selectedUserDialog, setValue, users])
+	}, [reset, resetEmail, resetPassword, selectedUserDialog, setEmailValue, setValue, users])
 
 	return (
-		<section className="w-full h-full flex flex-col gap-10">
+		<section className="w-full h-full flex flex-col gap-[1rem]">
 			<SectionHeader
 				text="Users Management"
 				extra={
-					<Dialog
-						open={selectedUserDialog !== null}
-						onOpenChange={(isOpen) => {
-							if (!isOpen) setSelectedUserDialog(null)
-						}}
-					>
-						<DialogTrigger>
-							<Button
-								variant="outline"
-								className="px-3.5 py-1"
-							>
-								<div className="flex gap-1.5 items-center">
-									<PlusIcon size={16} />
-									<span>Add User</span>
-								</div>
-							</Button>
-						</DialogTrigger>
-						<DialogContent
-							className="border border-input !rounded-3xl !min-w-[70vw] !max-w-screen max-h-screen overflow-y-auto gap-8"
-							aria-describedby={undefined}
+					<div className="flex items-center gap-3">
+						<Dialog
+							open={selectedUserDialog !== null}
+							onOpenChange={(isOpen) => {
+								if (!isOpen) setSelectedUserDialog(null)
+							}}
 						>
-							<DialogHeader>
-								<DialogTitle>
-									Edit User
-								</DialogTitle>
-							</DialogHeader>
-							<div className="flex flex-col gap-10">
-								<div className="flex flex-row gap-3">
-									<div className="grid w-full max-w-sm items-center gap-1.5">
-										<Controller
-											name="email"
-											control={control}
-											render={({ field }) => (
-												<>
-													<Label htmlFor="email" className="px-1">Email</Label>
-													<Input
-														{...field}
-														type="text"
-														id="email"
-														className="rounded-2xl"
-														placeholder=""
-														disabled={true}
-													/>
-													{errors.email && (
-														<p className="text-red-500 text-sm font-medium">
-															{errors.email.message}
-														</p>
-													)}
-												</>
-											)}
-										/>
+							<DialogTrigger asChild>
+								<Button variant="outline" className="px-3.5 py-1" onClick={() => {
+									setSelectedUserDialog('')
+								}}>
+									<div className="flex gap-1.5 items-center">
+										<PlusIcon size={16} />
+										<span>Add User</span>
 									</div>
-									<div
-										className="h-full w-auto flex flex-row max-w-sm items-end gap-1.5">
-										<Button
-											variant="outline"
-											onClick={() => {
-												console.log('change email')
-											}}
-											className="px-3.5 py-1"
-										>
-											Change Email
-										</Button>
-										<Button
-											variant="outline"
-											onClick={() => {
-												console.log('change password')
-											}}
-											className="px-3.5 py-1"
-										>
-											Change Password
-										</Button>
-									</div>
-								</div>
-								<div className="flex gap-3">
-									<div className="grid w-full max-w-sm items-center gap-1.5">
-										<Controller
-											name="full_name"
-											control={control}
-											render={({ field }) => (
-												<>
-													<Label htmlFor="full_name" className="px-1">Full Name</Label>
-													<Input
-														{...field}
-														type="text"
-														id="full_name"
-														className="rounded-2xl"
-														placeholder=""
-													/>
-													{
-														errors.full_name && (
-															<p className="text-red-500 text-sm font-medium">
-																{errors.full_name.message}
-															</p>
-														)
-													}
-												</>
-											)}
-										/>
-									</div>
-									<div className="grid w-full max-w-sm items-center gap-1.5">
-										<Controller
-											name="mobile_number"
-											control={control}
-											rules={{
-												required: 'Mobile Number is required',
-												pattern: {
-													// phone number pattern but in string format
-													value: /^01[0-9]{8,9}$/,
-													message: 'Invalid Mobile Number',
-												},
-											}}
-											render={({ field }) => (
-												<>
-													<Label htmlFor="mobile_number" className="px-1">
-														Mobile Number
-													</Label>
-													<Input
-														{...field}
-														type="text"
-														id="mobile_number"
-														className="rounded-2xl"
-														placeholder=""
-													/>
-													{
-														errors.mobile_number && (
-															<p className="text-red-500 text-sm font-medium">
-																{errors.mobile_number.message}
-															</p>
-														)
-													}
-												</>
-											)}
-										/>
-									</div>
-								</div>
-								<div className="flex justify-end gap-3">
-									<Button
-										variant="ghost"
-										onClick={() => setSelectedUserDialog(null)}
-										className="px-3.5 py-1 text-primary"
-									>
-										Cancel
-									</Button>
-									<Button
-										variant="outline"
-										onClick={handleSubmit(onSubmit)}
-										className="px-3.5 py-1"
-									>
-										<div className="flex gap-1.5 items-center">
-											<CheckIcon size={16} />
-											<span>Save</span>
+								</Button>
+							</DialogTrigger>
+							<DialogContent
+								className="border border-input !rounded-3xl !min-w-[70vw] !max-w-screen max-h-screen overflow-y-auto gap-8"
+								aria-describedby={undefined}
+							>
+								<DialogHeader>
+									<DialogTitle>
+										Edit User
+									</DialogTitle>
+								</DialogHeader>
+								<div className="flex flex-col gap-10">
+									<div className="flex flex-row gap-3">
+										<div className="grid w-full max-w-sm items-center gap-1.5">
+											<Controller
+												name="email"
+												control={control}
+												render={({ field }) => (
+													<>
+														<Label htmlFor="email" className="px-1">Email</Label>
+														<Input
+															{...field}
+															type="text"
+															id="email"
+															className="rounded-2xl"
+															placeholder=""
+															disabled={true}
+														/>
+													</>
+												)}
+											/>
 										</div>
-									</Button>
+										<div className="h-full w-auto flex flex-row max-w-sm items-end gap-1.5">
+											<Dialog
+												open={isEmailDialogOpen}
+												onOpenChange={(isOpen) => setIsEmailDialogOpen(isOpen)}
+											>
+												<DialogTrigger asChild>
+													<Button
+														variant="outline"
+														onClick={() => setIsEmailDialogOpen(true)}
+														className="px-3.5 py-1"
+													>
+														Change Email
+													</Button>
+												</DialogTrigger>
+												<DialogContent
+													className="border border-input !rounded-3xl !min-w-[70vw] !max-w-screen max-h-screen overflow-y-auto gap-8"
+													aria-describedby={undefined}
+												>
+													<DialogHeader>
+														<DialogTitle>
+															Change Email
+														</DialogTitle>
+													</DialogHeader>
+													<div className="flex flex-col gap-10">
+														<div className="grid w-full max-w-sm items-center gap-1.5">
+															<Controller
+																name="email"
+																control={emailControl}
+																rules={{
+																	required: 'Email is required',
+																	pattern: {
+																		value: /newinti.edu.my$/,
+																		message: 'INTI email is required',
+																	},
+																}}
+																render={({ field }) => (
+																	<>
+																		<Label htmlFor="email"
+																			   className="px-1">Email</Label>
+																		<Input
+																			{...field}
+																			type="text"
+																			id="email"
+																			className="rounded-2xl"
+																			placeholder=""
+																		/>
+																		{emailErrors.email && (
+																			<p className="text-red-500 text-sm font-medium">
+																				{emailErrors.email?.message}
+																			</p>
+																		)}
+																	</>
+																)}
+															/>
+														</div>
+														<div className="flex justify-end gap-3">
+															<Button
+																variant="ghost"
+																onClick={() => setIsEmailDialogOpen(false)}
+																className="px-3.5 py-1 text-primary"
+															>
+																Cancel
+															</Button>
+															<Button
+																variant="outline"
+																onClick={handleEmailSubmit(onSubmitEmail)}
+																className="px-3.5 py-1"
+															>
+																<div className="flex gap-1.5 items-center">
+																	<CheckIcon size={16} />
+																	<span>Save</span>
+																</div>
+															</Button>
+														</div>
+													</div>
+												</DialogContent>
+											</Dialog>
+											<Dialog
+												open={isPasswordDialogOpen}
+												onOpenChange={(isOpen) => setIsPasswordDialogOpen(isOpen)}
+											>
+												<DialogTrigger asChild>
+													<Button
+														variant="outline"
+														onClick={() => setIsPasswordDialogOpen(true)}
+														className="px-3.5 py-1"
+													>
+														Change Password
+													</Button>
+												</DialogTrigger>
+												<DialogContent
+													className="border border-input !rounded-3xl !min-w-[70vw] !max-w-screen max-h-screen overflow-y-auto gap-8"
+													aria-describedby={undefined}
+												>
+													<DialogHeader>
+														<DialogTitle>
+															Change Password
+														</DialogTitle>
+													</DialogHeader>
+													<div className="flex flex-col gap-10">
+														<div className="grid w-full max-w-sm items-center gap-1.5">
+															<Controller
+																name="password"
+																control={passwordControl}
+																rules={{
+																	required: 'Password is required',
+																	minLength: {
+																		value: 8,
+																		message: 'Password must be at least 8 characters',
+																	},
+																	pattern: {
+																		value: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/,
+																		message: 'Password must contain both letters and numbers, and be at least 8 characters',
+																	},
+																}}
+																render={({ field }) => (
+																	<>
+																		<Label htmlFor="password"
+																			   className="px-1">Password</Label>
+																		<Input
+																			{...field}
+																			type="password"
+																			id="password"
+																			className="rounded-2xl"
+																			placeholder=""
+																		/>
+																		{passwordErrors.password && (
+																			<p className="text-red-500 text-sm font-medium">
+																				{passwordErrors.password?.message}
+																			</p>
+																		)}
+																	</>
+																)}
+															/>
+														</div>
+														<div className="flex justify-end gap-3">
+															<Button
+																variant="ghost"
+																onClick={() => setIsPasswordDialogOpen(false)}
+																className="px-3.5 py-1 text-primary"
+															>
+																Cancel
+															</Button>
+															<Button
+																variant="outline"
+																onClick={handlePasswordSubmit(onSubmitPassword)}
+																className="px-3.5 py-1"
+															>
+																<div className="flex gap-1.5 items-center">
+																	<CheckIcon size={16} />
+																	<span>Save</span>
+																</div>
+															</Button>
+														</div>
+													</div>
+												</DialogContent>
+											</Dialog>
+										</div>
+									</div>
+									<div className="flex gap-3">
+										<div className="grid w-full max-w-sm items-center gap-1.5">
+											<Controller
+												name="full_name"
+												control={control}
+												render={({ field }) => (
+													<>
+														<Label htmlFor="full_name" className="px-1">Full Name</Label>
+														<Input
+															{...field}
+															type="text"
+															id="full_name"
+															className="rounded-2xl"
+															placeholder=""
+														/>
+														{
+															errors.full_name && (
+																<p className="text-red-500 text-sm font-medium">
+																	{errors.full_name.message}
+																</p>
+															)
+														}
+													</>
+												)}
+											/>
+										</div>
+										<div className="grid w-full max-w-sm items-center gap-1.5">
+											<Controller
+												name="mobile_number"
+												control={control}
+												rules={{
+													required: 'Mobile Number is required',
+													pattern: {
+														// phone number pattern but in string format
+														value: /^01[0-9]{8,9}$/,
+														message: 'Invalid Mobile Number',
+													},
+												}}
+												render={({ field }) => (
+													<>
+														<Label htmlFor="mobile_number" className="px-1">
+															Mobile Number
+														</Label>
+														<Input
+															{...field}
+															type="text"
+															id="mobile_number"
+															className="rounded-2xl"
+															placeholder=""
+														/>
+														{
+															errors.mobile_number && (
+																<p className="text-red-500 text-sm font-medium">
+																	{errors.mobile_number.message}
+																</p>
+															)
+														}
+													</>
+												)}
+											/>
+										</div>
+									</div>
+									<div className="flex justify-end gap-3">
+										<Button
+											variant="ghost"
+											onClick={() => setSelectedUserDialog(null)}
+											className="px-3.5 py-1 text-primary"
+										>
+											Cancel
+										</Button>
+										<Button
+											variant="outline"
+											onClick={handleSubmit(onSubmit)}
+											className="px-3.5 py-1"
+										>
+											<div className="flex gap-1.5 items-center">
+												<CheckIcon size={16} />
+												<span>Save</span>
+											</div>
+										</Button>
+									</div>
 								</div>
-							</div>
-						</DialogContent>
-					</Dialog>
+							</DialogContent>
+						</Dialog>
+					</div>
 				}
 			/>
 			<div className="w-full flex flex-col">

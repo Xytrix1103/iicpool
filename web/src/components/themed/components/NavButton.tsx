@@ -15,7 +15,7 @@ export default function NavButton({ href, svg, text, selected = false }: {
 				<TooltipTrigger asChild>
 					<Link to={href}>
 						<Button variant={!selected ? 'outline' : 'selected'}
-						        className={`${!selected ? 'text-black' : 'text-white'} h-14 w-14`}>
+								className={`${!selected ? 'text-black' : 'text-white'} h-14 w-14`}>
 							{svg}
 						</Button>
 					</Link>

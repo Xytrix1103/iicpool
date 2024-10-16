@@ -1,16 +1,19 @@
 import logo from '../../assets/logo.png'
-import { Outlet, useLocation } from 'react-router-dom'
-import { AuthContext } from '../contexts/AuthContext.tsx'
-import { useContext, useState } from 'react'
-import { HomeIcon, ShieldCheckIcon, UsersIcon } from 'lucide-react'
+import { Link, Outlet, useLocation } from 'react-router-dom'
+import { CogIcon, HomeIcon, LogOutIcon, ShieldCheckIcon, UserCircleIcon, UsersIcon } from 'lucide-react'
 import NavButton from '../themed/components/NavButton.tsx'
 import { ScrollArea, ScrollBar } from '../themed/ui-kit/scroll-area.tsx'
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '../themed/ui-kit/dropdown-menu.tsx'
+import { Button } from '../themed/ui-kit/button.tsx'
 
 const CustomLayout = () => {
-	const { profile } = useContext(AuthContext)
 	const location = useLocation()
-	const [showMenu, setShowMenu] = useState<boolean>(false)
-	
+
 	const sideNavItems = [
 		{
 			icon: <HomeIcon size={24} color={location.pathname === '/' ? 'white' : 'black'} />,
@@ -28,44 +31,51 @@ const CustomLayout = () => {
 			path: '/admins',
 		},
 	]
-	
+
 	return (
-		<div className="flex flex-col h-full w-full bg-no-repeat bg-center text-black">
-			<header className="w-full h-auto bg-white flex items-center py-[1rem] px-[2rem] flex-row justify-between">
-				<div className="flex h-full items-center gap-6 flex-row justify-center">
-					<img src={logo} alt="Logo" className="w-16 h-auto self-center" />
+		<div
+			className="flex flex-col h-full w-full bg-no-repeat bg-center text-black py-[1rem] px-[1.5rem] gap-[1rem]">
+			<header className="flex justify-between">
+				<div className="px-1 py-3 flex items-center gap-4">
+					<Link to={'/'}>
+						<img src={logo} alt="Logo" className="w-16 h-auto self-center" />
+					</Link>
 					<div className="font-semibold text-xl">IICPOOL - ADMIN</div>
 				</div>
-				<div className="relative">
-					<div
-						className="w-12 h-12 rounded-full cursor-pointer bg-center bg-cover"
-						style={{
-							backgroundImage: `url(${profile?.photo_url})`,
-						}}
-						onClick={() => setShowMenu(!showMenu)}
-					></div>
-					{
-						showMenu && (
-							<div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg">
-								<div className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex-row`}>
-									<i className="fas fa-user-circle mr-2"></i>
-									<span>Profile</span>
-								</div>
-								<div className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex-row`}>
-									<i className="fas fa-cog mr-2"></i>
-									<span>Settings</span>
-								</div>
-								<div className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex-row`}>
-									<i className="fas fa-sign-out-alt mr-2"></i>
-									<span>Logout</span>
-								</div>
-							</div>
-						)
-					}
+				<div className="px-1 py-3 flex items-center gap-2">
+					<div>
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" className="px-3.5 py-1">
+									<UserCircleIcon size={20} color="currentColor" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent side="bottom" align="end">
+								<DropdownMenuItem>
+									<div className="flex items-center gap-2">
+										<UserCircleIcon size={20} />
+										<div className="text-sm font-semibold">Profile</div>
+									</div>
+								</DropdownMenuItem>
+								<DropdownMenuItem>
+									<div className="flex items-center gap-2">
+										<CogIcon size={20} />
+										<div className="text-sm font-semibold">Settings</div>
+									</div>
+								</DropdownMenuItem>
+								<DropdownMenuItem>
+									<div className="flex items-center gap-2">
+										<LogOutIcon size={20} />
+										<div className="text-sm font-semibold">Logout</div>
+									</div>
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
 				</div>
 			</header>
-			<div className="flex flex-1 overflow-hidden">
-				<nav className="flex flex-col gap-2 py-[1rem] px-[2rem]">
+			<div className="flex flex-1 gap-[1.5rem] overflow-hidden">
+				<nav className="flex flex-col gap-2 py-[3.75rem]">
 					{
 						sideNavItems.map((item, index) => (
 							<NavButton
@@ -78,12 +88,13 @@ const CustomLayout = () => {
 						))
 					}
 				</nav>
-				<ScrollArea className="flex-1 p-10">
+				<ScrollArea className="flex-1">
 					<Outlet />
 					<ScrollBar orientation="horizontal" />
 				</ScrollArea>
 			</div>
 		</div>
+
 	)
 }
 
