@@ -62,6 +62,7 @@ usersRouter.post('/', async (req, res) => {
 usersRouter.post('/:id', async (req, res) => {
 	const {id} = req.params
 	const {full_name, mobile_number} = req.body
+	console.log(full_name, mobile_number)
 
 	try {
 		await db.runTransaction(async (transaction) => {

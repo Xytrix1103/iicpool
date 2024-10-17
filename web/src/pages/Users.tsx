@@ -77,13 +77,13 @@ const Users = () => {
 			email: '',
 		},
 	})
-
+	
 	const passwordForm = useForm<PasswordFormData>({
 		defaultValues: {
 			password: '',
 		},
 	})
-
+	
 	const { handleSubmit, formState: { errors }, setValue, control, reset } = form
 	const {
 		handleSubmit: handleEmailSubmit,
@@ -98,31 +98,41 @@ const Users = () => {
 		control: passwordControl,
 		reset: resetPassword,
 	} = passwordForm
-
+	
 	const onSubmit = (data: AddUserData | UpdateUserData) => {
 		console.log(data)
-
+		
 		if (selectedUserDialog) {
 			if (selectedUserDialog === '') {
-				addUser(data as AddUserData).then(r => {
-					console.log('add user', r)
-				})
+				addUser(data as AddUserData)
+					.then(r => {
+						console.log('add user', r)
+						setSelectedUserDialog(null)
+					})
+					.catch(e => {
+						console.error(e)
+					})
 			} else {
-				updateUser(selectedUserDialog, data as UpdateUserData).then(r => {
-					console.log('update user', r)
-				})
+				updateUser(selectedUserDialog, data as UpdateUserData)
+					.then(r => {
+						console.log('update user', r)
+						setSelectedUserDialog(null)
+					})
+					.catch(e => {
+						console.error(e)
+					})
 			}
 		}
 	}
-
+	
 	const onSubmitEmail = (data: EmailFormData) => {
 		console.log(data)
 	}
-
+	
 	const onSubmitPassword = (data: PasswordFormData) => {
 		console.log(data)
 	}
-
+	
 	const tableColumns: ColumnDef<UserTableRow>[] = [
 		{
 			header: 'ID',
@@ -240,7 +250,7 @@ const Users = () => {
 			},
 		},
 	]
-
+	
 	const tableInstance = useReactTable({
 		columns: tableColumns,
 		data: users,
@@ -260,7 +270,7 @@ const Users = () => {
 			pagination,
 		},
 	})
-
+	
 	useEffect(() => {
 		if (selectedUserDialog) {
 			setValue('full_name', users.find(user => user.id === selectedUserDialog)?.full_name || '')
@@ -273,7 +283,7 @@ const Users = () => {
 			resetPassword()
 		}
 	}, [reset, resetEmail, resetPassword, selectedUserDialog, setEmailValue, setValue, users])
-
+	
 	return (
 		<section className="w-full h-full flex flex-col gap-[1rem]">
 			<SectionHeader
@@ -364,7 +374,7 @@ const Users = () => {
 																render={({ field }) => (
 																	<>
 																		<Label htmlFor="email"
-																			   className="px-1">Email</Label>
+																		       className="px-1">Email</Label>
 																		<Input
 																			{...field}
 																			type="text"
@@ -444,7 +454,7 @@ const Users = () => {
 																render={({ field }) => (
 																	<>
 																		<Label htmlFor="password"
-																			   className="px-1">Password</Label>
+																		       className="px-1">Password</Label>
 																		<Input
 																			{...field}
 																			type="password"
@@ -606,7 +616,7 @@ const Users = () => {
 							) : (
 								<TableRow>
 									<TableCell colSpan={tableColumns.length}
-											   className="p-2 text-center">
+									           className="p-2 text-center">
 										No data
 									</TableCell>
 								</TableRow>
