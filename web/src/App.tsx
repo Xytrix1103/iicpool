@@ -12,7 +12,7 @@ import { refreshAdmins } from './api/admins.ts'
 
 const App = () => {
 	console.log('App')
-	
+
 	return (
 		<div className="flex w-full h-full">
 			<AuthProvider>
@@ -24,7 +24,7 @@ const App = () => {
 
 const Routes = () => {
 	const { profile, loading } = useContext(AuthContext)
-	
+
 	const unauthenticatedRoutes = useMemo(() => {
 		return [
 			{
@@ -33,7 +33,7 @@ const Routes = () => {
 			},
 		] as RouteObject[]
 	}, [])
-	
+
 	const authenticatedRoutes = useMemo(() => {
 		return [
 			{
@@ -58,11 +58,11 @@ const Routes = () => {
 			},
 		] as RouteObject[]
 	}, [])
-	
+
 	const router = useMemo(() => {
 		return createBrowserRouter(profile ? authenticatedRoutes : unauthenticatedRoutes)
 	}, [authenticatedRoutes, profile, unauthenticatedRoutes])
-	
+
 	return (
 		loading ? <h1>Loading...</h1> :
 			<RouterProvider router={router} />

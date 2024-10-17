@@ -8,12 +8,12 @@ adminsRouter.get('/', async (req, res) => {
 	const adminsArray = []
 
 	await Promise.all(admins.docs.map(async (doc) => {
-		const uid = doc.id
+		const id = doc.id
 
-		const authUser = await auth.getUser(uid)
+		const authUser = await auth.getUser(id)
 
 		adminsArray.push({
-			uid: uid,
+			id: id,
 			email: authUser.email,
 			...doc.data()
 		})
@@ -21,3 +21,4 @@ adminsRouter.get('/', async (req, res) => {
 
 	return res.json(adminsArray)
 })
+
