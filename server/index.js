@@ -2,6 +2,7 @@ import express from 'express'
 import {usersRouter} from "./routes/users.js";
 import cors from 'cors'
 import {adminsRouter} from "./routes/admins.js";
+import {ridesRouter} from "./routes/rides.js";
 
 const app = express()
 let port = 3000
@@ -15,6 +16,7 @@ app.get('/', (req, res) => {
 
 app.use('/users', usersRouter)
 app.use('/admins', adminsRouter)
+app.use('/rides', ridesRouter)
 
 const startServer = (port) => {
 	const server = app.listen(port, () => {
