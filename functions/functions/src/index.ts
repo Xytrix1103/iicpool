@@ -32,6 +32,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler'
 import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore'
 import { Message, MessageType, Profile, Ride } from './database'
 import { sendPushNotifications } from './notifications'
+import { logger } from 'firebase-functions'
 
 //set region to asia-southeast2
 
@@ -178,7 +179,7 @@ export const triggerCancelledRideNotifications = onDocumentUpdated('rides/{rideI
 		id: rideId,
 	}
 	
-	if (beforeRide.cancelled_at || afterRide.cancelled_at) {
+	if (beforeRide.cancelled_at || !afterRide.cancelled_at) {
 		return
 	}
 	
@@ -193,6 +194,7 @@ export const triggerCancelledRideNotifications = onDocumentUpdated('rides/{rideI
 	
 	// send notification to driver
 	if (driverData.expoPushToken && driverData.notification_settings.ride_updates) {
+		logger.info('Sending push notification to driver')
 		// send notification
 		await sendPushNotifications(
 			[driverData.expoPushToken],
@@ -201,6 +203,12 @@ export const triggerCancelledRideNotifications = onDocumentUpdated('rides/{rideI
 				message: 'Your ride has been cancelled',
 			},
 		)
+			.then((tickets) => {
+				logger.info('Tickets:', tickets)
+			})
+			.catch((error) => {
+				logger.error('Error sending push notification:', error)
+			})
 	}
 	
 	// send notification to passengers

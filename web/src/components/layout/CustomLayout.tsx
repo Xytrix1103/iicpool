@@ -1,6 +1,15 @@
 import logo from '../../assets/logo.png'
-import { Link, Outlet, useLocation } from 'react-router-dom'
-import { CogIcon, HomeIcon, LogOutIcon, ShieldCheckIcon, UserCircleIcon, UsersIcon } from 'lucide-react'
+import { Link, Outlet, useLocation, useNavigation } from 'react-router-dom'
+import {
+	CarIcon,
+	CogIcon,
+	HomeIcon,
+	LogOutIcon,
+	MapIcon,
+	ShieldCheckIcon,
+	UserCircleIcon,
+	UsersIcon,
+} from 'lucide-react'
 import NavButton from '../themed/components/NavButton.tsx'
 import { ScrollArea, ScrollBar } from '../themed/ui-kit/scroll-area.tsx'
 import {
@@ -14,12 +23,20 @@ import { Toaster } from '../themed/ui-kit/toaster.tsx'
 
 const CustomLayout = () => {
 	const location = useLocation()
-
+	const { state } = useNavigation()
+	
+	console.log(location.state)
+	
 	const sideNavItems = [
 		{
 			icon: <HomeIcon size={24} color={location.pathname === '/' ? 'white' : 'black'} />,
 			label: 'Home',
 			path: '/',
+		},
+		{
+			icon: <MapIcon size={24} color={location.pathname.includes('/map') ? 'white' : 'black'} />,
+			label: 'Real-Time Map',
+			path: '/map',
 		},
 		{
 			icon: <UsersIcon size={24} color={location.pathname.includes('/users') ? 'white' : 'black'} />,
@@ -31,8 +48,13 @@ const CustomLayout = () => {
 			label: 'Admins',
 			path: '/admins',
 		},
+		{
+			icon: <CarIcon size={24} color={location.pathname.includes('/rides') ? 'white' : 'black'} />,
+			label: 'Rides',
+			path: '/rides',
+		},
 	]
-
+	
 	return (
 		<>
 			<div
@@ -85,13 +107,23 @@ const CustomLayout = () => {
 									href={item.path}
 									svg={item.icon}
 									text={item.label}
-									selected={location.pathname === item.path}
+									selected={item.path === '/' ? location.pathname === item.path : location.pathname.includes(item.path)}
 								/>
 							))
 						}
 					</nav>
-					<ScrollArea className="flex-1">
-						<Outlet />
+					<ScrollArea className="flex-1 px-[1.5rem] py-[1rem]">
+						{
+							state === 'loading' ? (
+								<div className="flex flex-col items-center justify-center h-full gap-[1rem]">
+									<div
+										className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary" />
+									<div className="text-primary text-md ml-4">Loading...</div>
+								</div>
+							) : (
+								<Outlet />
+							)
+						}
 						<ScrollBar orientation="horizontal" />
 					</ScrollArea>
 				</div>

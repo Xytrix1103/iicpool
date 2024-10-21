@@ -1,4 +1,3 @@
-import { Role } from '../components/firebase/schema.ts'
 import {
 	ColumnDef,
 	ColumnFiltersState,
@@ -16,8 +15,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Button } from '../components/themed/ui-kit/button.tsx'
 
 import {
-	ArmchairIcon,
-	CarFrontIcon,
 	CheckIcon,
 	ChevronFirstIcon,
 	ChevronLastIcon,
@@ -80,13 +77,13 @@ const Admins = () => {
 			email: '',
 		},
 	})
-
+	
 	const passwordForm = useForm<PasswordFormData>({
 		defaultValues: {
 			password: '',
 		},
 	})
-
+	
 	const { handleSubmit, formState: { errors }, setValue, control, reset } = form
 	const {
 		handleSubmit: handleEmailSubmit,
@@ -101,10 +98,10 @@ const Admins = () => {
 		control: passwordControl,
 		reset: resetPassword,
 	} = passwordForm
-
+	
 	const onSubmit = (data: AddAdminData | UpdateAdminData) => {
 		console.log(data)
-
+		
 		if (selectedAdminDialog) {
 			if (selectedAdminDialog === '') {
 				addAdmin(data as AddAdminData)
@@ -137,15 +134,15 @@ const Admins = () => {
 			}
 		}
 	}
-
+	
 	const onSubmitEmail = (data: EmailFormData) => {
 		console.log(data)
 	}
-
+	
 	const onSubmitPassword = (data: PasswordFormData) => {
 		console.log(data)
 	}
-
+	
 	const tableColumns: ColumnDef<AdminTableRow>[] = [
 		{
 			header: 'ID',
@@ -213,23 +210,6 @@ const Admins = () => {
 			cell: ({ row }) => <div className="py-1">{row.getValue('mobile_number')}</div>,
 		},
 		{
-			header: 'Roles',
-			accessorKey: 'roles',
-			cell: ({ row }) => {
-				return <div className="py-1 space-y-2">
-					{(row.getValue('roles') as Role[]).map(role => (
-						<div key={role} className="flex flex-row items-center space-x-3 w-auto">
-							{
-								role === Role.DRIVER ? <CarFrontIcon size={24} /> :
-									<ArmchairIcon size={24} />
-							}
-							<span>{role === Role.DRIVER ? 'Driver' : 'Passenger'}</span>
-						</div>
-					))}
-				</div>
-			},
-		},
-		{
 			header: 'Actions',
 			cell: ({ row }) => {
 				return (
@@ -245,7 +225,7 @@ const Admins = () => {
 			},
 		},
 	]
-
+	
 	const tableInstance = useReactTable({
 		columns: tableColumns,
 		data: admins || [],
@@ -265,7 +245,7 @@ const Admins = () => {
 			pagination,
 		},
 	})
-
+	
 	useEffect(() => {
 		if (selectedAdminDialog) {
 			setValue('full_name', admins?.find(admin => admin.id === selectedAdminDialog)?.full_name || '')
@@ -278,9 +258,9 @@ const Admins = () => {
 			resetPassword()
 		}
 	}, [reset, resetEmail, resetPassword, selectedAdminDialog, setEmailValue, setValue, admins])
-
+	
 	return (
-		<section className="w-full h-full flex flex-col gap-[1rem]">
+		<section className="w-full h-full flex flex-col gap-[2rem]">
 			<SectionHeader
 				text="Admins Management"
 				extra={
@@ -351,7 +331,7 @@ const Admins = () => {
 														render={({ field }) => (
 															<>
 																<Label htmlFor="password"
-																	   className="px-1">Password</Label>
+																       className="px-1">Password</Label>
 																<Input
 																	{...field}
 																	type="password"
@@ -370,7 +350,7 @@ const Admins = () => {
 														)}
 													/>
 												</div> :
-
+												
 												<div className="h-full w-auto flex flex-row max-w-sm items-end gap-1.5">
 													<Dialog
 														open={isEmailDialogOpen}
@@ -410,7 +390,7 @@ const Admins = () => {
 																		render={({ field }) => (
 																			<>
 																				<Label htmlFor="email"
-																					   className="px-1">Email</Label>
+																				       className="px-1">Email</Label>
 																				<Input
 																					{...field}
 																					type="text"
@@ -491,7 +471,7 @@ const Admins = () => {
 																		render={({ field }) => (
 																			<>
 																				<Label htmlFor="password"
-																					   className="px-1">Password</Label>
+																				       className="px-1">Password</Label>
 																				<Input
 																					{...field}
 																					type="password"
@@ -654,7 +634,7 @@ const Admins = () => {
 							) : (
 								<TableRow>
 									<TableCell colSpan={tableColumns.length}
-											   className="p-2 text-center">
+									           className="p-2 text-center">
 										No data
 									</TableCell>
 								</TableRow>

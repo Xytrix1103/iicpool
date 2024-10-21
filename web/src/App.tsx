@@ -9,22 +9,29 @@ import Users from './pages/Users.tsx'
 import { refreshUsers } from './api/users.ts'
 import Admins from './pages/Admins.tsx'
 import { refreshAdmins } from './api/admins.ts'
+import Rides from './pages/Rides.tsx'
+import { fetchCampusLocation, refreshRide, refreshRides } from './api/rides.ts'
+import Ride from './pages/Ride.tsx'
+import { APIProvider } from '@vis.gl/react-google-maps'
+import RealtimeMap from './pages/RealtimeMap.tsx'
 
 const App = () => {
 	console.log('App')
-
+	
 	return (
 		<div className="flex w-full h-full">
-			<AuthProvider>
-				<Routes />
-			</AuthProvider>
+			<APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}>
+				<AuthProvider>
+					<Routes />
+				</AuthProvider>
+			</APIProvider>
 		</div>
 	)
 }
 
 const Routes = () => {
 	const { profile, loading } = useContext(AuthContext)
-
+	
 	const unauthenticatedRoutes = useMemo(() => {
 		return [
 			{
@@ -33,7 +40,7 @@ const Routes = () => {
 			},
 		] as RouteObject[]
 	}, [])
-
+	
 	const authenticatedRoutes = useMemo(() => {
 		return [
 			{
@@ -45,6 +52,23 @@ const Routes = () => {
 						element: <Dashboard />,
 					},
 					{
+						path: '/map',
+						element: <RealtimeMap />,
+						loader: async () => {
+							return {
+								campusLocation: await fetchCampusLocation({
+									address: 'INTI International College Penang',
+								}).then((location) => {
+									console.log(location)
+									return location
+								}).catch((error) => {
+									console.error(error)
+									return null
+								}),
+							}
+						},
+					},
+					{
 						path: '/users',
 						element: <Users />,
 						loader: refreshUsers,
@@ -54,15 +78,41 @@ const Routes = () => {
 						element: <Admins />,
 						loader: refreshAdmins,
 					},
+					{
+						path: '/rides',
+						element: <Rides />,
+						loader: refreshRides,
+					},
+					{
+						path: '/rides/:id',
+						element: <Ride />,
+						loader: async ({ params }) => {
+							return {
+								ride: await refreshRide(params.id || '', (ride) => {
+									console.log(ride)
+									return ride
+								}),
+								campusLocation: await fetchCampusLocation({
+									address: 'INTI International College Penang',
+								}).then((location) => {
+									console.log(location)
+									return location
+								}).catch((error) => {
+									console.error(error)
+									return null
+								}),
+							}
+						},
+					},
 				] as RouteObject[],
 			},
 		] as RouteObject[]
 	}, [])
-
+	
 	const router = useMemo(() => {
 		return createBrowserRouter(profile ? authenticatedRoutes : unauthenticatedRoutes)
 	}, [authenticatedRoutes, profile, unauthenticatedRoutes])
-
+	
 	return (
 		loading ? <h1>Loading...</h1> :
 			<RouterProvider router={router} />

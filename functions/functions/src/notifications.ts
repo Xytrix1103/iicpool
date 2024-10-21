@@ -54,6 +54,10 @@ async function sendPushNotifications(tokens: string[], message: { title: string;
 			logger.error('Error fetching push notification receipts', { error })
 		}
 	}
+	
+	logger.info('Push notifications sent')
+	
+	return tickets
 }
 
 export { sendPushNotifications }

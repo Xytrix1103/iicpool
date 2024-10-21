@@ -20,7 +20,7 @@ const updateAdmin = async (id: string, data: UpdateAdminData) => {
 
 const addAdmin = async (data: AddAdminData) => {
 	try {
-		return await post('/users', data)
+		return await post('/admins', data)
 	} catch (error) {
 		console.error(error)
 		return null

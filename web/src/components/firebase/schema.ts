@@ -83,6 +83,18 @@ type Ride = {
 	deleted_at: Timestamp | null
 }
 
+type RideLocation = {
+	place_id: string
+	formatted_address: string
+	name: string
+	geometry: {
+		location: {
+			lat: number
+			lng: number
+		},
+	},
+}
+
 type Signal = {
 	id?: string
 	user: string
@@ -97,5 +109,5 @@ enum Role {
 }
 
 export { Role, MessageType }
-export type { Profile, Car, Ride, ProfileNotificationSettings, Message, Signal }
+export type { Profile, Car, Ride, ProfileNotificationSettings, Message, Signal, RideLocation }
 

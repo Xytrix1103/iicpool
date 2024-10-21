@@ -3,6 +3,9 @@ import {usersRouter} from "./routes/users.js";
 import cors from 'cors'
 import {adminsRouter} from "./routes/admins.js";
 import {ridesRouter} from "./routes/rides.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express()
 let port = 3000
