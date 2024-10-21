@@ -51,7 +51,7 @@ const RealtimeMap = () => {
 	const routesLibrary = useMapsLibrary('routes')
 	const [directionsService, setDirectionsService] = useState<google.maps.DirectionsService>()
 	const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer>()
-	
+
 	useEffect(() => {
 		const unsubscribe = onSnapshot(query(collection(db, 'rides')), async (snapshot) => {
 			const rides = snapshot.docs.map((doc) => {
@@ -60,19 +60,19 @@ const RealtimeMap = () => {
 					id: doc.id,
 				} as CustomRide
 			})
-			
+
 			const finalRides = await Promise.all(rides.map(async (ride) => {
 				const passengersData = await Promise.all(ride.passengers.map(async (passenger) => {
 					const passengerDoc = await getDoc(doc(db, 'users', passenger))
 					return { ...passengerDoc.data(), id: passenger } as Profile
 				}))
-				
+
 				const driverDoc = await getDoc(doc(db, 'users', ride.driver))
 				const driverData = { ...driverDoc.data(), id: ride.driver } as Profile
-				
+
 				const driverCarDoc = await getDoc(doc(db, 'cars', ride.car))
 				const driverCarData = { ...driverCarDoc.data(), id: ride.car } as Car
-				
+
 				const sosResponderData = ride.sos?.responded_by ?
 					await getDoc(doc(db, 'users', ride.sos?.responded_by)).then((doc) => ({
 						...doc.data(),
@@ -83,7 +83,7 @@ const RealtimeMap = () => {
 						...doc.data(),
 						id: ride.sos?.car,
 					} as Car)) : null
-				
+
 				return {
 					...ride,
 					passengersData,
@@ -93,25 +93,25 @@ const RealtimeMap = () => {
 					sosResponderCarData,
 				} as CustomRide
 			}))
-			
+
 			setRides(finalRides)
 		})
-		
+
 		return () => unsubscribe()
 	}, [])
-	
+
 	useEffect(() => {
 		if (!rides) return
 		const unsubscribes: (() => void)[] = []
-		
+
 		rides.forEach((ride) => {
 			const unsubscribe = onSnapshot(query(collection(db, 'rides', ride.id || '', 'latestSignals')), (snapshot) => {
 				const latestSignals = snapshot.docs.map((doc) => doc.data() as Signal)
-				
+
 				//get latest signal for driver and sosResponder, if any
 				const driver = latestSignals.find((signal) => signal.user === ride.driver)
 				const sosResponder = latestSignals.find((signal) => signal.user === ride.sos?.responded_by)
-				
+
 				setLatestSignals((prevSignals) => ({
 					...prevSignals,
 					[ride.id || '']: {
@@ -120,23 +120,23 @@ const RealtimeMap = () => {
 					},
 				}))
 			})
-			
+
 			unsubscribes.push(unsubscribe)
 		})
-		
+
 		return () => unsubscribes.forEach((unsubscribe) => unsubscribe())
 	}, [rides])
-	
+
 	useEffect(() => {
 		if (!routesLibrary || !map) return
 		setDirectionsService(new routesLibrary.DirectionsService())
 		setDirectionsRenderer(new routesLibrary.DirectionsRenderer({ map }))
 	}, [routesLibrary, map, selectedRide])
-	
+
 	//show route on map if selectedRide is changed
 	useEffect(() => {
 		if (!directionsService || !directionsRenderer || !rides || !campusLocation || !latestSignals) return
-		
+
 		if (!selectedRide) {
 			directionsRenderer?.setMap(null)
 			map?.setCenter({
@@ -146,21 +146,21 @@ const RealtimeMap = () => {
 			map?.setZoom(12)
 			return
 		}
-		
+
 		const ride = rides.find((ride) => ride.id === selectedRide)
-		
+
 		if (!ride) {
 			return
 		}
-		
+
 		let waypoints: google.maps.DirectionsWaypoint[] | undefined = []
-		
+
 		const payload = {
 			origin: ride.to_campus ? ride.location.geometry.location : campusLocation.geometry.location,
 			destination: ride.to_campus ? campusLocation.geometry.location : ride.location.geometry.location,
 			travelMode: google.maps.TravelMode.DRIVING,
 		} as google.maps.DirectionsRequest
-		
+
 		if (ride.completed_at || ride.cancelled_at || !ride.started_at) {
 			payload.waypoints = undefined
 		} else {
@@ -183,14 +183,14 @@ const RealtimeMap = () => {
 					} as google.maps.DirectionsWaypoint)
 				}
 			}
-			
+
 			waypoints = waypoints.length > 0 ? waypoints : undefined
 		}
-		
+
 		if (waypoints) {
 			payload.waypoints = waypoints
 		}
-		
+
 		directionsService.route(payload, (response, status) => {
 			if (status === 'OK') {
 				directionsRenderer.setDirections(response)
@@ -203,9 +203,9 @@ const RealtimeMap = () => {
 			console.error('Error fetching directions:', e)
 		})
 	}, [selectedRide, directionsService, directionsRenderer, rides, campusLocation, latestSignals, map])
-	
+
 	return (
-		<section className="w-full h-full flex flex-col gap-[2rem]">
+		<section className="w-full h-full flex flex-col gap-[1rem]">
 			<SectionHeader
 				text="Real-Time Map (Ongoing Rides)"
 			/>
@@ -261,7 +261,7 @@ const RealtimeMap = () => {
 								) : rides?.map((ride) => {
 									const driverSignal = latestSignals?.[ride.id || '']?.driver
 									const sosResponderSignal = latestSignals?.[ride.id || '']?.sosResponder
-									
+
 									return (
 										<>
 											{

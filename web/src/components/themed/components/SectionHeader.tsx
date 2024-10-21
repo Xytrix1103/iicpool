@@ -16,7 +16,7 @@ export default function SectionHeader(
 		<div className="flex pb-1 items-center">
 			<Metadata seoTitle={text} />
 			<div
-				className={`flex-1 font-semibold text-4xl ${
+				className={`flex-1 font-semibold text-3xl ${
 					dark ? 'text-white' : 'text-gray-900'
 				}`}
 			>

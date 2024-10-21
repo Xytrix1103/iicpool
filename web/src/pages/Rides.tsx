@@ -32,7 +32,7 @@ const Rides = () => {
 		pageIndex: 0,
 		pageSize: 10,
 	})
-	
+
 	const tableColumns: ColumnDef<RideTableRow>[] = [
 		{
 			header: 'Created By',
@@ -94,7 +94,7 @@ const Rides = () => {
 			cell: ({ row }) => {
 				const passengersLength = row.getValue<Profile[]>('passengersData').length
 				const availableSeats = row.getValue<number>('available_seats')
-				
+
 				return (
 					<div className="py-1">
 						{availableSeats - passengersLength}/{availableSeats}
@@ -107,7 +107,7 @@ const Rides = () => {
 			accessorKey: 'driverCarData',
 			cell: ({ row }) => {
 				const number_plate = row.getValue<Car>('driverCarData').plate
-				
+
 				return (
 					<div className="py-1">
 						{number_plate}
@@ -119,7 +119,7 @@ const Rides = () => {
 			header: 'Status',
 			cell: ({ row }) => {
 				const ride = row.original
-				
+
 				if (ride.completed_at) {
 					if (ride.sos) {
 						return <div className="py-1 text-red-500">
@@ -171,7 +171,7 @@ const Rides = () => {
 			},
 		},
 	]
-	
+
 	const tableInstance = useReactTable({
 		columns: tableColumns,
 		data: rides.filter((ride) => {
@@ -193,9 +193,9 @@ const Rides = () => {
 			pagination,
 		},
 	})
-	
+
 	return (
-		<section className="w-full h-full flex flex-col gap-[2rem]">
+		<section className="w-full h-full flex flex-col gap-[1rem]">
 			<SectionHeader
 				text="Rides Management"
 				extra={
@@ -251,7 +251,7 @@ const Rides = () => {
 							) : (
 								<TableRow>
 									<TableCell colSpan={tableColumns.length}
-									           className="p-2 text-center">
+											   className="p-2 text-center">
 										No data
 									</TableCell>
 								</TableRow>

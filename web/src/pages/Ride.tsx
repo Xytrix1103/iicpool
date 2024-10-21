@@ -9,7 +9,7 @@ import { Avatar, AvatarImage } from '../components/themed/ui-kit/avatar.tsx'
 import { useEffect, useState } from 'react'
 import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore'
 import { db } from '../components/firebase/FirebaseApp.tsx'
-import { AdvancedMarker, Map, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
+import { Map, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
 import { Button } from '../components/themed/ui-kit/button.tsx'
 import { callToast } from '../api/toast-utils.ts'
 
@@ -88,36 +88,30 @@ const Ride = () => {
 	const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer>()
 	const [route, setRoute] = useState<google.maps.DirectionsRoute | null>(null)
 	const leg = route?.legs[0]
-	
+
 	const [directionsProps, setDirectionsProps] = useState<{
 		origin: google.maps.LatLng,
 		destination: google.maps.LatLng,
-		waypoints: google.maps.DirectionsWaypoint[] | null,
 	} | null>({
 		origin: new google.maps.LatLng(0, 0),
 		destination: new google.maps.LatLng(0, 0),
-		waypoints: null,
 	})
-	
+
 	useEffect(() => {
 		if (!routesLibrary || !map) return
 		setDirectionsService(new routesLibrary.DirectionsService())
-		setDirectionsRenderer(new routesLibrary.DirectionsRenderer({ map }))
+		setDirectionsRenderer(new routesLibrary.DirectionsRenderer({ map, suppressMarkers: true }))
 	}, [routesLibrary, map])
-	
+
 	useEffect(() => {
 		if (!directionsService || !directionsRenderer) return
-		
+
 		const payload = {
 			origin: directionsProps?.origin,
 			destination: directionsProps?.destination,
 			travelMode: google.maps.TravelMode.DRIVING,
 		} as google.maps.DirectionsRequest
-		
-		if (directionsProps?.waypoints) {
-			payload.waypoints = directionsProps.waypoints
-		}
-		
+
 		directionsService.route(payload, (response, status) => {
 			if (status === 'OK') {
 				setRoute(response?.routes[0] || null)
@@ -131,15 +125,15 @@ const Ride = () => {
 			console.error('Error fetching directions:', e)
 		})
 	}, [directionsService, directionsRenderer, directionsProps])
-	
+
 	useEffect(() => {
 		let unsubscribeDriver: (() => void) | null = null
 		let unsubscribeSOSResponder: (() => void) | null = null
-		
+
 		if (ride.completed_at || ride.cancelled_at || !ride.started_at) {
 			return
 		}
-		
+
 		if (ride.driver && (ride.sos ? (ride.sos?.responded_by ? ride.sos?.started_at : true) : true)) {
 			unsubscribeDriver = onSnapshot(query(collection(db, 'rides', ride.id || '', 'signals'), where('user', '==', ride.driver), orderBy('timestamp', 'desc')), (snapshot) => {
 				const signals = snapshot.docs.map((doc) => doc.data() as Signal)
@@ -147,7 +141,7 @@ const Ride = () => {
 				setLastDriverSignal(lastSignal)
 			})
 		}
-		
+
 		if (ride.sos?.responded_by) {
 			unsubscribeSOSResponder = onSnapshot(query(collection(db, 'rides', ride.id || '', 'signals'), where('user', '==', ride.sos.responded_by), orderBy('timestamp', 'desc')), (snapshot) => {
 				const signals = snapshot.docs.map((doc) => doc.data() as Signal)
@@ -155,64 +149,91 @@ const Ride = () => {
 				setLastSOSResponderSignal(lastSignal)
 			})
 		}
-		
+
 		return () => {
 			unsubscribeDriver?.()
 			unsubscribeSOSResponder?.()
 		}
 	}, [ride])
-	
+
 	useEffect(() => {
 		(async () => {
 			if (!ride || !campusLocation) return
-			
+
 			if (ride.completed_at || ride.cancelled_at || !ride.started_at) {
 				console.log('ride completed or cancelled')
 				const origin = ride.to_campus ? ride.location.geometry.location : ride.location.geometry.location
 				const destination = ride.to_campus ? campusLocation.geometry.location : ride.location.geometry.location
-				
+
 				setDirectionsProps({
 					origin: new google.maps.LatLng({ lat: origin.lat, lng: origin.lng }),
 					destination: new google.maps.LatLng({ lat: destination.lat, lng: destination.lng }),
-					waypoints: null,
 				})
+
+				return
 			} else {
 				console.log('ride started')
-				const origin = ride.to_campus ? ride.location.geometry.location : ride.location.geometry.location
-				const destination = ride.to_campus ? campusLocation.geometry.location : ride.location.geometry.location
-				const waypoints = []
-				
-				if (lastSOSResponderSignal) {
-					console.log('lastSOSResponderSignal', lastSOSResponderSignal)
-					if (ride.sos?.started_at) {
-						waypoints.push({
-							location: new google.maps.LatLng({
-								lat: lastSOSResponderSignal.latitude,
-								lng: lastSOSResponderSignal.longitude,
-							}),
-						} as google.maps.DirectionsWaypoint)
-					}
+				let origin
+				let destination
+
+				if (ride.to_campus) {
+					origin = new google.maps.LatLng({
+						lat: ride.location.geometry.location.lat,
+						lng: ride.location.geometry.location.lng,
+					})
+					destination = new google.maps.LatLng({
+						lat: campusLocation.geometry.location.lat,
+						lng: campusLocation.geometry.location.lng,
+					})
 				} else {
-					if (lastDriverSignal) {
-						console.log('lastDriverSignal', lastDriverSignal)
-						waypoints.push({
-							location: new google.maps.LatLng({
-								lat: lastDriverSignal.latitude,
-								lng: lastDriverSignal.longitude,
-							}),
-						} as google.maps.DirectionsWaypoint)
+					origin = new google.maps.LatLng({
+						lat: campusLocation.geometry.location.lat,
+						lng: campusLocation.geometry.location.lng,
+					})
+					destination = new google.maps.LatLng({
+						lat: ride.location.geometry.location.lat,
+						lng: ride.location.geometry.location.lng,
+					})
+				}
+
+				if (lastSOSResponderSignal && ride.sos?.started_at) {
+					console.log('lastSOSResponderSignal', lastSOSResponderSignal)
+
+					if (ride.to_campus) {
+						origin = new google.maps.LatLng({
+							lat: lastSOSResponderSignal.latitude,
+							lng: lastSOSResponderSignal.longitude,
+						})
+					} else {
+						destination = new google.maps.LatLng({
+							lat: lastSOSResponderSignal.latitude,
+							lng: lastSOSResponderSignal.longitude,
+						})
+					}
+				} else if (lastDriverSignal) {
+					console.log('lastDriverSignal', lastDriverSignal)
+
+					if (ride.to_campus) {
+						origin = new google.maps.LatLng({
+							lat: lastDriverSignal.latitude,
+							lng: lastDriverSignal.longitude,
+						})
+					} else {
+						destination = new google.maps.LatLng({
+							lat: lastDriverSignal.latitude,
+							lng: lastDriverSignal.longitude,
+						})
 					}
 				}
-				
+
 				setDirectionsProps({
-					origin: new google.maps.LatLng({ lat: origin.lat, lng: origin.lng }),
-					destination: new google.maps.LatLng({ lat: destination.lat, lng: destination.lng }),
-					waypoints: waypoints.length > 0 ? waypoints : null,
+					origin: origin,
+					destination: destination,
 				})
 			}
 		})()
 	}, [ride, campusLocation, lastDriverSignal, lastSOSResponderSignal])
-	
+
 	return (
 		<section className="w-full h-full flex flex-col gap-[2rem]">
 			<SectionHeader
@@ -233,44 +254,7 @@ const Ride = () => {
 										fullscreenControl={false}
 										disableDefaultUI={true}
 										className="h-full w-full"
-									>
-										{
-											lastDriverSignal && (
-												<AdvancedMarker
-													position={{
-														lat: lastDriverSignal.latitude,
-														lng: lastDriverSignal.longitude,
-													}}
-												>
-													<Avatar>
-														<AvatarImage
-															src={ride.driverData.photo_url}
-															alt="Driver"
-															className="h-10 w-10 rounded-full"
-														/>
-													</Avatar>
-												</AdvancedMarker>
-											)
-										}
-										{
-											lastSOSResponderSignal && (
-												<AdvancedMarker
-													position={{
-														lat: lastSOSResponderSignal.latitude,
-														lng: lastSOSResponderSignal.longitude,
-													}}
-												>
-													<Avatar>
-														<AvatarImage
-															src={ride.sosResponderData?.photo_url}
-															alt="SOS Responder"
-															className="h-10 w-10 rounded-full"
-														/>
-													</Avatar>
-												</AdvancedMarker>
-											)
-										}
-									</Map>
+									/>
 									<div className="flex flex-row h-auto px-1 gap-[1rem]">
 										<div className="text-sm">Duration: <span
 											className="font-semibold">{leg?.duration?.text}</span></div>
@@ -326,7 +310,7 @@ const Ride = () => {
 									<div className="flex flex-col flex-1 h-full gap-[0.5rem]">
 										<div
 											className="text-md font-semibold">{ride.to_campus ? 'Pick-Up Location' : 'Drop-Off Location'}</div>
-										<div className="text-sm">{ride.location.formatted_address}</div>
+										<div className="text-sm">{ride.location.name}</div>
 									</div>
 									<div
 										className="flex flex-col h-full gap-[0.5rem] justify-items-center justify-center">
@@ -374,83 +358,83 @@ const Ride = () => {
 										)
 									}
 								</div>
-								<div className="flex flex-col h-auto px-1 gap-[1rem]">
-									<div className="text-md font-semibold">Ride Logs</div>
-									<div className="flex flex-col gap-[1rem]">
-										<div
-											className="flex flex-row gap-[1rem] items-center h-auto justify-items-center">
-											<div className="text-sm">Created At:</div>
-											<div
-												className="text-sm">{new Date(ride.created_at as unknown as string).toLocaleString()}</div>
-										</div>
-										{
-											ride.started_at && (
-												<div
-													className="flex flex-row gap-[1rem] items-center h-auto justify-items-center">
-													<div className="text-sm">Started At:</div>
-													<div
-														className="text-sm">{new Date(ride.started_at as unknown as string).toLocaleString()}</div>
-												</div>
-											)
-										}
-										{
-											ride.cancelled_at && (
-												<div
-													className="flex flex-row gap-[1rem] items-center h-auto justify-items-center">
-													<div className="text-sm">Cancelled At:</div>
-													<div
-														className="text-sm">{new Date(ride.cancelled_at as unknown as string).toLocaleString()}</div>
-												</div>
-											)
-										}
-										{
-											ride.sos && (
-												<>
-													{
-														ride.sos.triggered_at && (
-															<div
-																className="flex flex-row gap-[1rem] items-center h-auto justify-items-center">
-																<div className="text-sm">SOS Triggered At:</div>
-																<div
-																	className="text-sm">{new Date(ride.sos.triggered_at as unknown as string).toLocaleString()}</div>
-															</div>
-														)
-													}
-													{
-														ride.sos.responded_at && (
-															<div
-																className="flex flex-row gap-[1rem] items-center h-auto justify-items-center">
-																<div className="text-sm">SOS Responded At:</div>
-																<div
-																	className="text-sm">{new Date(ride.sos.responded_at as unknown as string).toLocaleString()}</div>
-															</div>
-														)
-													}
-													{
-														ride.sos.started_at && (
-															<div
-																className="flex flex-row gap-[1rem] items-center h-auto justify-items-center">
-																<div className="text-sm">SOS Started At:</div>
-																<div
-																	className="text-sm">{new Date(ride.sos.started_at as unknown as string).toLocaleString()}</div>
-															</div>
-														)
-													}
-												</>
-											)
-										}
-										{
-											ride.completed_at && (
-												<div
-													className="flex flex-row gap-[1rem] items-center h-auto justify-items-center">
-													<div className="text-sm">Completed At:</div>
-													<div
-														className="text-sm">{new Date(ride.completed_at as unknown as string).toLocaleString()}</div>
-												</div>
-											)
-										}
-									</div>
-								</div>
+								{/*<div className="flex flex-col h-auto px-1 gap-[1rem]">*/}
+								{/*	<div className="text-md font-semibold">Ride Logs</div>*/}
+								{/*	<div className="flex flex-col gap-[1rem]">*/}
+								{/*		<div*/}
+								{/*			className="flex flex-row gap-[1rem] items-center h-auto justify-items-center">*/}
+								{/*			<div className="text-sm">Created At:</div>*/}
+								{/*			<div*/}
+								{/*				className="text-sm">{new Date(ride.created_at as unknown as string).toLocaleString()}</div>*/}
+								{/*		</div>*/}
+								{/*		{*/}
+								{/*			ride.started_at && (*/}
+								{/*				<div*/}
+								{/*					className="flex flex-row gap-[1rem] items-center h-auto justify-items-center">*/}
+								{/*					<div className="text-sm">Started At:</div>*/}
+								{/*					<div*/}
+								{/*						className="text-sm">{new Date(ride.started_at as unknown as string).toLocaleString()}</div>*/}
+								{/*				</div>*/}
+								{/*			)*/}
+								{/*		}*/}
+								{/*		{*/}
+								{/*			ride.cancelled_at && (*/}
+								{/*				<div*/}
+								{/*					className="flex flex-row gap-[1rem] items-center h-auto justify-items-center">*/}
+								{/*					<div className="text-sm">Cancelled At:</div>*/}
+								{/*					<div*/}
+								{/*						className="text-sm">{new Date(ride.cancelled_at as unknown as string).toLocaleString()}</div>*/}
+								{/*				</div>*/}
+								{/*			)*/}
+								{/*		}*/}
+								{/*		{*/}
+								{/*			ride.sos && (*/}
+								{/*				<>*/}
+								{/*					{*/}
+								{/*						ride.sos.triggered_at && (*/}
+								{/*							<div*/}
+								{/*								className="flex flex-row gap-[1rem] items-center h-auto justify-items-center">*/}
+								{/*								<div className="text-sm">SOS Triggered At:</div>*/}
+								{/*								<div*/}
+								{/*									className="text-sm">{new Date(ride.sos.triggered_at as unknown as string).toLocaleString()}</div>*/}
+								{/*							</div>*/}
+								{/*						)*/}
+								{/*					}*/}
+								{/*					{*/}
+								{/*						ride.sos.responded_at && (*/}
+								{/*							<div*/}
+								{/*								className="flex flex-row gap-[1rem] items-center h-auto justify-items-center">*/}
+								{/*								<div className="text-sm">SOS Responded At:</div>*/}
+								{/*								<div*/}
+								{/*									className="text-sm">{new Date(ride.sos.responded_at as unknown as string).toLocaleString()}</div>*/}
+								{/*							</div>*/}
+								{/*						)*/}
+								{/*					}*/}
+								{/*					{*/}
+								{/*						ride.sos.started_at && (*/}
+								{/*							<div*/}
+								{/*								className="flex flex-row gap-[1rem] items-center h-auto justify-items-center">*/}
+								{/*								<div className="text-sm">SOS Started At:</div>*/}
+								{/*								<div*/}
+								{/*									className="text-sm">{new Date(ride.sos.started_at as unknown as string).toLocaleString()}</div>*/}
+								{/*							</div>*/}
+								{/*						)*/}
+								{/*					}*/}
+								{/*				</>*/}
+								{/*			)*/}
+								{/*		}*/}
+								{/*		{*/}
+								{/*			ride.completed_at && (*/}
+								{/*				<div*/}
+								{/*					className="flex flex-row gap-[1rem] items-center h-auto justify-items-center">*/}
+								{/*					<div className="text-sm">Completed At:</div>*/}
+								{/*					<div*/}
+								{/*						className="text-sm">{new Date(ride.completed_at as unknown as string).toLocaleString()}</div>*/}
+								{/*				</div>*/}
+								{/*			)*/}
+								{/*		}*/}
+								{/*	</div>*/}
+								{/*</div>*/}
 							</CardContent>
 						</Card>
 					</div>
