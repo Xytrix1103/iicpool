@@ -25,7 +25,7 @@ const setApiCallerConfig = (config: ApiCallerConfig) => {
 	apiCallerInstance.defaults.baseURL = config.baseURL
 }
 
-const apiCallerInstance = apiCaller({ baseURL: 'http://localhost:3000' }) // Initial instance with default base URL
+const apiCallerInstance = apiCaller({ baseURL: import.meta.env.VITE_SERVER_URL }) // Initial instance with default base URL
 
 const get = async <T>(
 	url: string,
