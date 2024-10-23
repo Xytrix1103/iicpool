@@ -1,17 +1,27 @@
 import { useLoaderData } from 'react-router-dom'
 import { Car, Profile, RideLocation, Signal } from '../components/firebase/schema.ts'
 import SectionHeader from '../components/themed/components/SectionHeader.tsx'
-import { ArmchairIcon, ArrowRightCircleIcon, BanknoteIcon, CalendarIcon, ClockIcon, CopyIcon } from 'lucide-react'
+import {
+	ArmchairIcon,
+	ArrowRightCircleIcon,
+	BanknoteIcon,
+	CalendarIcon,
+	ClockIcon,
+	CopyIcon,
+	HomeIcon,
+	SchoolIcon,
+} from 'lucide-react'
 import { useToast } from '../components/themed/ui-kit/use-toast.ts'
 import { Timestamp } from '@firebase/firestore'
 import { Card, CardContent } from '../components/themed/ui-kit/card.tsx'
 import { Avatar, AvatarImage } from '../components/themed/ui-kit/avatar.tsx'
-import { useEffect, useState } from 'react'
-import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { collection, onSnapshot, orderBy, query, Unsubscribe } from 'firebase/firestore'
 import { db } from '../components/firebase/FirebaseApp.tsx'
 import { Map, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
 import { Button } from '../components/themed/ui-kit/button.tsx'
 import { callToast } from '../api/toast-utils.ts'
+import ReactDOMServer from 'react-dom/server'
 
 type CustomRide = RideType & {
 	passengersData: Profile[]
@@ -79,43 +89,177 @@ const getStatus = (ride: CustomRide) => {
 
 const Ride = () => {
 	const { ride, campusLocation } = useLoaderData() as { ride: CustomRide, campusLocation: RideLocation }
-	const [lastDriverSignal, setLastDriverSignal] = useState<Signal | null>(null)
-	const [lastSOSResponderSignal, setLastSOSResponderSignal] = useState<Signal | null>(null)
+	const [latestSignals, setLatestSignals] = useState<{ driver?: Signal, sosResponder?: Signal }>()
 	const { toast } = useToast()
+	const [, setMarkers] = useState<google.maps.marker.AdvancedMarkerElement[]>([])
 	const map = useMap()
-	const routesLibrary = useMapsLibrary('routes')
 	const markerLibrary = useMapsLibrary('marker')
-	const [directionsService, setDirectionsService] = useState<google.maps.DirectionsService>()
-	const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer>()
-	const [route, setRoute] = useState<google.maps.DirectionsRoute | null>(null)
-	const leg = route?.legs[0]
-	
-	const [directionsProps, setDirectionsProps] = useState<{
-		origin: google.maps.LatLng,
-		destination: google.maps.LatLng,
-	} | null>({
-		origin: new google.maps.LatLng(0, 0),
-		destination: new google.maps.LatLng(0, 0),
-	})
-	
+	const directionsService = useRef(new google.maps.DirectionsService()).current
+	const directionsRenderer = useRef(new google.maps.DirectionsRenderer({ map, suppressMarkers: true })).current
+	const infoWindow = useRef(new google.maps.InfoWindow({
+		headerDisabled: true,
+	})).current
+
+	const createMarker = useCallback((signal: Signal, photoUrl: string, markerLibrary: google.maps.MarkerLibrary, driver: boolean) => {
+		return new Promise<google.maps.marker.AdvancedMarkerElement>((resolve) => {
+			const isAwaitingSOSResponse = driver && ride?.sos?.triggered_at && !ride.sos?.responded_by
+
+			const pinHTMLElement = () => {
+				const content = document.createElement('div')
+				content.innerHTML = `
+        			<div class="flex flex-row gap-1 ${isAwaitingSOSResponse ? 'animate-pulseRed' : ''}">
+						<img src="${photoUrl}" class="w-8 h-8 rounded-full" alt="Profile Picture" />
+					</div>
+				`
+				return content
+			}
+
+			const pinElement = new markerLibrary.PinElement({
+				glyph: pinHTMLElement(),
+			})
+
+			const name = ride?.[driver ? 'driverData' : 'sosResponderData']?.full_name
+			const marker = new markerLibrary.AdvancedMarkerElement({
+				position: {
+					lat: signal.latitude,
+					lng: signal.longitude,
+				},
+				map,
+				content: pinElement.element,
+				title: `${name} (${driver ? 'Driver' : 'SOS Responder'})`,
+				zIndex: 999,
+				gmpClickable: true,
+			})
+
+			marker.addListener('click', () => {
+				const content = document.createElement('div')
+				content.innerHTML = `
+					<div class="flex flex-row gap-1">
+						<img src="${photoUrl}" class="w-8 h-8 rounded-full" alt="Profile Picture" />
+						<div class="flex flex-col gap-1">
+							<div class="font-semibold text-sm">${name}</div>
+							<div class="font-normal text-xs">${driver ? 'Driver' : 'SOS Responder'}</div>
+						</div>
+					</div>
+				`
+				infoWindow.close()
+				infoWindow.setContent(content)
+				infoWindow.open(map, marker)
+			})
+
+			console.log('Adding marker:', marker)
+			resolve(marker)
+		})
+	}, [infoWindow, map, ride])
+
+	const createPinMarker = useCallback((location: {
+		lat: number,
+		lng: number
+	}, campus: boolean, markerLibrary: google.maps.MarkerLibrary) => {
+		return new Promise<google.maps.marker.AdvancedMarkerElement>((resolve) => {
+			const pinHTMLElement = () => {
+				const content = document.createElement('div')
+				content.innerHTML = campus ? `
+					<div class="flex flex-row gap-1">
+						${ReactDOMServer.renderToString(<SchoolIcon size={16} className="text-primary-darkred" />)}
+					</div>
+				` : `
+					<div class="flex flex-row gap-1">
+					  	${ReactDOMServer.renderToString(<HomeIcon size={16} className="text-primary-darkred" />)}
+					</div>
+				`
+				return content
+			}
+
+			const pinElement = new markerLibrary.PinElement({
+				glyph: pinHTMLElement(),
+				background: 'white',
+				borderColor: 'darkred',
+			})
+
+			const marker = new markerLibrary.AdvancedMarkerElement({
+				position: {
+					lat: location.lat,
+					lng: location.lng,
+				},
+				map,
+				content: pinElement.element,
+			})
+
+			console.log('Adding marker:', marker)
+			resolve(marker)
+		})
+	}, [map])
+
 	useEffect(() => {
-		if (!routesLibrary || !map) return
-		setDirectionsService(new routesLibrary.DirectionsService())
-		setDirectionsRenderer(new routesLibrary.DirectionsRenderer({ map, suppressMarkers: true }))
-	}, [routesLibrary, map])
-	
+		let unsubscribe: Unsubscribe
+
+		if (ride.completed_at || ride.cancelled_at || !ride.started_at) {
+			return
+		} else {
+			unsubscribe = onSnapshot(query(collection(db, 'rides', ride.id || '', 'signals'), orderBy('timestamp', 'desc')), (snapshot) => {
+				const latestSignals = snapshot.docs.map((doc) => doc.data() as Signal)
+
+				//get latest signal for driver and sosResponder, if any
+				const driver = latestSignals.find((signal) => signal.user === ride.driver)
+				const sosResponder = latestSignals.find((signal) => signal.user === ride.sos?.responded_by)
+
+				console.log('Latest signals:', driver, sosResponder)
+				setLatestSignals({
+					driver,
+					sosResponder,
+				})
+			})
+		}
+
+		return () => {
+			unsubscribe?.()
+		}
+	}, [ride])
+
 	useEffect(() => {
-		if (!directionsService || !directionsRenderer) return
-		
+		if (!directionsService || !directionsRenderer || !ride || !campusLocation) return
+
+		let waypoints: google.maps.DirectionsWaypoint[] | undefined = []
+
 		const payload = {
-			origin: directionsProps?.origin,
-			destination: directionsProps?.destination,
+			origin: ride.to_campus ? ride.location.geometry.location : campusLocation.geometry.location,
+			destination: ride.to_campus ? campusLocation.geometry.location : ride.location.geometry.location,
 			travelMode: google.maps.TravelMode.DRIVING,
 		} as google.maps.DirectionsRequest
-		
+
+		if (ride.completed_at || ride.cancelled_at || !ride.started_at) {
+			payload.waypoints = undefined
+		} else {
+			if (latestSignals?.sosResponder) {
+				if (ride.sos?.started_at) {
+					waypoints.push({
+						location: new google.maps.LatLng({
+							lat: latestSignals.sosResponder?.latitude || 0,
+							lng: latestSignals.sosResponder?.longitude || 0,
+						}),
+					} as google.maps.DirectionsWaypoint)
+				}
+			} else {
+				if (latestSignals?.driver) {
+					waypoints.push({
+						location: new google.maps.LatLng({
+							lat: latestSignals.driver?.latitude || 0,
+							lng: latestSignals.driver?.longitude || 0,
+						}),
+					} as google.maps.DirectionsWaypoint)
+				}
+			}
+
+			waypoints = waypoints.length > 0 ? waypoints : undefined
+		}
+
+		if (waypoints) {
+			payload.waypoints = waypoints
+		}
+
 		directionsService.route(payload, (response, status) => {
 			if (status === 'OK') {
-				setRoute(response?.routes[0] || null)
 				directionsRenderer.setDirections(response)
 			} else {
 				console.error('Directions request failed due to ' + status)
@@ -124,107 +268,58 @@ const Ride = () => {
 			console.log('Directions:', r)
 		}).catch(e => {
 			console.error('Error fetching directions:', e)
+		}).finally(() => {
+			console.log('Directions request completed')
+
+			directionsRenderer.setMap(map)
 		})
-	}, [directionsService, directionsRenderer, directionsProps])
-	
+	}, [directionsService, directionsRenderer, ride, campusLocation, latestSignals, map])
+
 	useEffect(() => {
-		let unsubscribeDriver: (() => void) | null = null
-		let unsubscribeSOSResponder: (() => void) | null = null
-		
-		if (ride.completed_at || ride.cancelled_at || !ride.started_at) {
-			return
+		if (!ride || !map || !markerLibrary) return
+
+		// Remove all markers
+		setMarkers((markers) => {
+			markers.forEach((marker) => (marker.map = null))
+			return []
+		})
+
+		console.log('Removing all markers')
+
+		const driverSignal = latestSignals?.driver
+		const sosResponderSignal = latestSignals?.sosResponder
+
+		console.log('Signals:', driverSignal, sosResponderSignal)
+
+		const markerPromises = []
+
+		if (driverSignal) {
+			console.log('Adding driver marker:', driverSignal)
+			markerPromises.push(createMarker(driverSignal, ride.driverData.photo_url, markerLibrary, true))
 		}
-		
-		if (ride.driver && (ride.sos ? (ride.sos?.responded_by ? ride.sos?.started_at : true) : true)) {
-			unsubscribeDriver = onSnapshot(query(collection(db, 'rides', ride.id || '', 'signals'), where('user', '==', ride.driver), orderBy('timestamp', 'desc')), (snapshot) => {
-				const signals = snapshot.docs.map((doc) => doc.data() as Signal)
-				const lastSignal = signals[0]
-				setLastDriverSignal(lastSignal)
-			})
+
+		if (sosResponderSignal) {
+			console.log('Adding sosResponder marker:', sosResponderSignal)
+			markerPromises.push(createMarker(sosResponderSignal, ride.sosResponderData?.photo_url as string, markerLibrary, false))
 		}
-		
-		if (ride.sos?.responded_by) {
-			unsubscribeSOSResponder = onSnapshot(query(collection(db, 'rides', ride.id || '', 'signals'), where('user', '==', ride.sos.responded_by), orderBy('timestamp', 'desc')), (snapshot) => {
-				const signals = snapshot.docs.map((doc) => doc.data() as Signal)
-				const lastSignal = signals[0]
-				setLastSOSResponderSignal(lastSignal)
-			})
-		}
-		
-		return () => {
-			unsubscribeDriver?.()
-			unsubscribeSOSResponder?.()
-		}
-	}, [ride])
-	
-	useEffect(() => {
-		(async () => {
-			if (!ride || !campusLocation) return
-			
-			if (ride.completed_at || ride.cancelled_at || !ride.started_at) {
-				console.log('ride completed or cancelled')
-				const origin = ride.to_campus ? ride.location.geometry.location : ride.location.geometry.location
-				const destination = ride.to_campus ? campusLocation.geometry.location : ride.location.geometry.location
-				
-				setDirectionsProps({
-					origin: new google.maps.LatLng({ lat: origin.lat, lng: origin.lng }),
-					destination: new google.maps.LatLng({ lat: destination.lat, lng: destination.lng }),
-				})
-				
-				return
-			} else {
-				console.log('ride started')
-				let origin
-				let destination
-				
-				if (ride.to_campus) {
-					origin = new google.maps.LatLng({
-						lat: ride.location.geometry.location.lat,
-						lng: ride.location.geometry.location.lng,
-					})
-					destination = new google.maps.LatLng({
-						lat: campusLocation.geometry.location.lat,
-						lng: campusLocation.geometry.location.lng,
-					})
-				} else {
-					origin = new google.maps.LatLng({
-						lat: campusLocation.geometry.location.lat,
-						lng: campusLocation.geometry.location.lng,
-					})
-					destination = new google.maps.LatLng({
-						lat: ride.location.geometry.location.lat,
-						lng: ride.location.geometry.location.lng,
-					})
-				}
-				
-				if (lastSOSResponderSignal && ride.sos?.started_at) {
-					origin = new google.maps.LatLng({
-						lat: lastSOSResponderSignal.latitude,
-						lng: lastSOSResponderSignal.longitude,
-					})
-				} else if (lastDriverSignal) {
-					origin = new google.maps.LatLng({
-						lat: lastDriverSignal.latitude,
-						lng: lastDriverSignal.longitude,
-					})
-				}
-				
-				setDirectionsProps({
-					origin: origin,
-					destination: destination,
-				})
-			}
-		})()
-	}, [ride, campusLocation, lastDriverSignal, lastSOSResponderSignal])
-	
-	useEffect(() => {
-		console.log(lastSOSResponderSignal, lastDriverSignal)
-	}, [lastSOSResponderSignal, lastDriverSignal])
-	
-	useEffect(() => {
-		console.log('Directions props updated:', directionsProps)
-	}, [directionsProps, directionsRenderer])
-	
+
+		markerPromises.push(Promise.resolve(createPinMarker({
+			lat: ride.to_campus ? ride.location.geometry.location.lat : campusLocation.geometry.location.lat,
+			lng: ride.to_campus ? ride.location.geometry.location.lng : campusLocation.geometry.location.lng,
+		} as { lat: number, lng: number }, false, markerLibrary)))
+		markerPromises.push(Promise.resolve(createPinMarker({
+			lat: ride.to_campus ? campusLocation.geometry.location.lat : ride.location.geometry.location.lat,
+			lng: ride.to_campus ? campusLocation.geometry.location.lng : ride.location.geometry.location.lng,
+		} as { lat: number, lng: number }, true, markerLibrary)))
+
+		Promise.all(markerPromises).then((tempMarkers) => {
+			console.log('Markers:', tempMarkers)
+			setMarkers(tempMarkers)
+		}).catch((error) => {
+			console.error('Error adding markers:', error)
+		})
+	}, [ride, latestSignals, map, markerLibrary, createMarker, createPinMarker, campusLocation])
+
 	return (
 		<section className="w-full h-full flex flex-col gap-[2rem]">
 			<SectionHeader
@@ -234,32 +329,24 @@ const Ride = () => {
 			<div className="w-full h-full flex flex-col gap-[2rem]">
 				<div className="w-full h-full grid grid-cols-5 gap-[1rem]">
 					<div className="col-span-2 flex flex-col h-full w-full gap-[1rem]">
-						{directionsProps && (
-							<Card
-								className="h-full w-full overflow-hidden bg-white border-black/50 border-2"
-							>
-								<CardContent className="flex flex-col p-[2rem] gap-[1rem] h-full">
-									<Map
-										mapId={'8116172d4fa3e050'}
-										gestureHandling={'greedy'}
-										fullscreenControl={false}
-										disableDefaultUI={true}
-										className="h-full w-full"
-										defaultCenter={{
-											lat: directionsProps.origin.lat(),
-											lng: directionsProps.origin.lng(),
-										}}
-										defaultZoom={14}
-									/>
-									<div className="flex flex-row h-auto px-1 gap-[1rem]">
-										<div className="text-sm">Duration: <span
-											className="font-semibold">{leg?.duration?.text}</span></div>
-										<div className="text-sm">Distance: <span
-											className="font-semibold">{leg?.distance?.text}</span></div>
-									</div>
-								</CardContent>
-							</Card>
-						)}
+						<Card
+							className="h-full w-full overflow-hidden bg-white border-black/50 border-2"
+						>
+							<CardContent className="flex flex-col p-[2rem] gap-[1rem] h-full">
+								<Map
+									mapId="8116172d4fa3e050"
+									gestureHandling="greedy"
+									fullscreenControl={false}
+									disableDefaultUI={true}
+									className="h-full w-full"
+									defaultCenter={{
+										lat: 5.374591,
+										lng: 100.253313,
+									}}
+									defaultZoom={12}
+								/>
+							</CardContent>
+						</Card>
 					</div>
 					<div className="col-span-2">
 						<Card

@@ -337,11 +337,11 @@ const RealtimeMap = () => {
 			markerPromises.push(Promise.resolve(createPinMarker({
 				lat: ride.to_campus ? ride.location.geometry.location.lat : campusLocation.geometry.location.lat,
 				lng: ride.to_campus ? ride.location.geometry.location.lng : campusLocation.geometry.location.lng,
-			} as { lat: number, lng: number }, true, markerLibrary)))
+			} as { lat: number, lng: number }, false, markerLibrary)))
 			markerPromises.push(Promise.resolve(createPinMarker({
 				lat: ride.to_campus ? campusLocation.geometry.location.lat : ride.location.geometry.location.lat,
 				lng: ride.to_campus ? campusLocation.geometry.location.lng : ride.location.geometry.location.lng,
-			} as { lat: number, lng: number }, false, markerLibrary)))
+			} as { lat: number, lng: number }, true, markerLibrary)))
 
 			Promise.all(markerPromises).then((tempMarkers) => {
 				console.log('Markers:', tempMarkers)
