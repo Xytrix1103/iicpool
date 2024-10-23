@@ -1,43 +1,34 @@
-import { auth, db } from '../components/firebase/FirebaseApp.tsx'
-import { deleteField, doc, getDoc, updateDoc } from 'firebase/firestore'
+import { auth } from '../components/firebase/FirebaseApp.tsx'
 import { signInWithEmailAndPassword } from 'firebase/auth'
+import { callToast } from './toast-utils.ts'
 
 const logout = async ({ callback }: { callback?: () => void } = {}): Promise<void> => {
 	//delete fcm token
 	const user = auth.currentUser
-	
+
 	if (!user) {
 		return
 	}
-	
-	const userId = user.uid
-	const userRef = doc(db, 'admins', userId)
-	
+
 	await auth
 		.signOut()
 		.then(async () => {
-			//check if user is mobile user or contractor
-			if (await getDoc(userRef).then((doc) => doc.exists())) {
-				await updateDoc(userRef, {
-					expoPushToken: deleteField(),
-				})
-			}
-			
 			if (callback) {
 				callback()
 			}
-			
+
 			console.log('logout -> success')
 		})
 }
 
-const login = (email: string, password: string) => {
+const login = (email: string, password: string, toast: any) => {
 	signInWithEmailAndPassword(auth, email, password)
 		.then(userCredential => {
 			console.log('Login -> userCredential', userCredential)
 		})
 		.catch(error => {
 			console.log('Login -> error', error)
+			callToast(toast, 'Error', error.message)
 		})
 }
 

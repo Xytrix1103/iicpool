@@ -1,7 +1,8 @@
 import { Controller, useForm } from 'react-hook-form'
 import logo from '../assets/logo.png'
 import { login } from '../api/auth.ts'
-import { useState } from 'react'
+import { useToast } from '../components/themed/ui-kit/use-toast.ts'
+import { Toaster } from '../components/themed/ui-kit/toaster.tsx'
 
 type LoginProps = {
 	email: string;
@@ -15,16 +16,16 @@ const Login = () => {
 			password: '',
 		},
 	})
-	const [showPassword, setShowPassword] = useState<boolean>(false)
-	
+	const { toast } = useToast()
+
 	const { control, handleSubmit } = form
-	
+
 	return (
 		<div className="flex w-full h-full items-center justify-center">
 			<form
 				className="flex flex-col space-y-6 w-1/6"
 				onSubmit={handleSubmit((data) => {
-					login(data.email, data.password)
+					login(data.email, data.password, toast)
 				})}
 			>
 				<div className="flex flex-col w-full space-y-2 content-center justify-center">
@@ -55,11 +56,7 @@ const Login = () => {
 									type="password"
 									placeholder="Password"
 									className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-blue-100 w-full mt-6"
-								>
-									<i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-gray-500 absolute right-4 top-4 cursor-pointer`}
-									   onClick={() => setShowPassword(!showPassword)}
-									></i>
-								</input>
+								/>
 							)}
 						/>
 						<button
@@ -71,6 +68,7 @@ const Login = () => {
 					</div>
 				</div>
 			</form>
+			<Toaster />
 		</div>
 	)
 }

@@ -4,6 +4,7 @@ import cors from 'cors'
 import {adminsRouter} from "./routes/admins.js";
 import {ridesRouter} from "./routes/rides.js";
 import dotenv from "dotenv";
+import {carsRouter} from "./routes/cars.js";
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ app.get('/', (req, res) => {
 app.use('/users', usersRouter)
 app.use('/admins', adminsRouter)
 app.use('/rides', ridesRouter)
+app.use('/cars', carsRouter)
 
 const startServer = (port) => {
 	const server = app.listen(port, () => {

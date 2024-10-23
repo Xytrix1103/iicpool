@@ -2,7 +2,6 @@ import { createContext } from 'react'
 import { User } from 'firebase/auth'
 import { Profile } from '../firebase/schema.ts'
 
-
 type AuthContextType = {
 	loading: boolean;
 	setLoading: (loading: boolean) => void;
