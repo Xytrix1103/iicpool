@@ -172,14 +172,6 @@ TaskManager.defineTask(
 			return
 		}
 		
-		if (AppState.currentState.match(/inactive|background/) === null) {
-			console.log(
-				`${Platform.OS} BACKGROUND-NOTIFICATION-TASK: App not in background state, skipping task.`,
-			)
-			
-			return
-		}
-		
 		console.log(
 			`${
 				Platform.OS
