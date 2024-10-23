@@ -20,7 +20,7 @@ export default function NavButton({ href, svg, text, selected = false }: {
 						</Button>
 					</Link>
 				</TooltipTrigger>
-				<TooltipContent side="right">
+				<TooltipContent side="right" sideOffset={10}>
 					<p>{text}</p>
 				</TooltipContent>
 			</Tooltip>

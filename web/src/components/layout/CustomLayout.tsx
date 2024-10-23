@@ -6,6 +6,7 @@ import {
 	HomeIcon,
 	LogOutIcon,
 	MapIcon,
+	ScrollTextIcon,
 	ShieldCheckIcon,
 	UserCircleIcon,
 	UsersIcon,
@@ -24,9 +25,9 @@ import { Toaster } from '../themed/ui-kit/toaster.tsx'
 const CustomLayout = () => {
 	const location = useLocation()
 	const { state } = useNavigation()
-	
+
 	console.log(location.state)
-	
+
 	const sideNavItems = [
 		{
 			icon: <HomeIcon size={24} color={location.pathname === '/' ? 'white' : 'black'} />,
@@ -49,12 +50,17 @@ const CustomLayout = () => {
 			path: '/admins',
 		},
 		{
-			icon: <CarIcon size={24} color={location.pathname.includes('/rides') ? 'white' : 'black'} />,
+			icon: <ScrollTextIcon size={24} color={location.pathname.includes('/rides') ? 'white' : 'black'} />,
 			label: 'Rides',
 			path: '/rides',
 		},
+		{
+			icon: <CarIcon size={24} color={location.pathname.includes('/cars') ? 'white' : 'black'} />,
+			label: 'Cars',
+			path: '/cars',
+		},
 	]
-	
+
 	return (
 		<>
 			<div
