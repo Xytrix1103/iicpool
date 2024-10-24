@@ -30,14 +30,21 @@ const Cars = () => {
 	})
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
-		pageSize: 10,
+		pageSize: 6,
 	})
 	const [selectedCarDialog, setSelectedCarDialog] = useState<string | null>(null)
-
+	
 	const tableColumns: ColumnDef<CarTableRow>[] = [
 		{
 			header: 'ID',
 			accessorKey: 'id',
+		},
+		{
+			header: 'Photo',
+			accessorKey: 'photo_url',
+			cell: ({ row }) => {
+				return <img src={row.getValue('photo_url')} alt="Car" className="w-auto h-16" />
+			},
 		},
 		{
 			header: 'Number Plate',
@@ -75,7 +82,7 @@ const Cars = () => {
 			},
 		},
 	]
-
+	
 	const tableInstance = useReactTable({
 		columns: tableColumns,
 		data: cars || [],
@@ -95,7 +102,7 @@ const Cars = () => {
 			pagination,
 		},
 	})
-
+	
 	return (
 		<section className="w-full h-full flex flex-col gap-[1rem]">
 			<SectionHeader
@@ -151,7 +158,7 @@ const Cars = () => {
 							) : (
 								<TableRow>
 									<TableCell colSpan={tableColumns.length}
-											   className="p-2 text-center">
+									           className="p-2 text-center">
 										No data
 									</TableCell>
 								</TableRow>

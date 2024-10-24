@@ -1,5 +1,5 @@
 import { get, post } from './axios_component.ts'
-import { Role } from '../components/firebase/schema.ts'
+import { Profile } from '../components/firebase/schema.ts'
 
 const refreshUsers = async (callback: (users: UserTableRow[]) => void) => {
 	try {
@@ -38,13 +38,9 @@ type AddUserData = UpdateUserData & {
 	email: string
 }
 
-type UserTableRow = {
-	id: string
-	full_name: string
+type UserTableRow = Profile & {
 	email: string
-	roles: Role[]
 	provider_data: ('google.com' | 'password')[]
-	mobile_number: string
 }
 
 export { refreshUsers, updateUser, addUser }

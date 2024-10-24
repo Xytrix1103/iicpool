@@ -36,6 +36,7 @@ import { Input } from '../components/themed/ui-kit/input.tsx'
 import { useToast } from '../components/themed/ui-kit/use-toast.ts'
 import { useLoaderData } from 'react-router-dom'
 import { callToast } from '../api/toast-utils.ts'
+import { Avatar, AvatarImage } from '../components/themed/ui-kit/avatar.tsx'
 
 type FormData = {
 	full_name: string
@@ -62,7 +63,7 @@ const Users = () => {
 	})
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
-		pageSize: 10,
+		pageSize: 6,
 	})
 	const { toast } = useToast()
 	const [selectedUserDialog, setSelectedUserDialog] = useState<string | null>(null)
@@ -80,13 +81,13 @@ const Users = () => {
 			email: '',
 		},
 	})
-
+	
 	const passwordForm = useForm<PasswordFormData>({
 		defaultValues: {
 			password: '',
 		},
 	})
-
+	
 	const { handleSubmit, formState: { errors }, setValue, control, reset } = form
 	const {
 		handleSubmit: handleEmailSubmit,
@@ -101,10 +102,10 @@ const Users = () => {
 		control: passwordControl,
 		reset: resetPassword,
 	} = passwordForm
-
+	
 	const onSubmit = (data: AddUserData | UpdateUserData) => {
 		console.log(data)
-
+		
 		if (selectedUserDialog) {
 			if (selectedUserDialog === '') {
 				addUser(data as AddUserData)
@@ -137,19 +138,33 @@ const Users = () => {
 			}
 		}
 	}
-
+	
 	const onSubmitEmail = (data: EmailFormData) => {
 		console.log(data)
 	}
-
+	
 	const onSubmitPassword = (data: PasswordFormData) => {
 		console.log(data)
 	}
-
+	
 	const tableColumns: ColumnDef<UserTableRow>[] = [
 		{
 			header: 'ID',
 			accessorKey: 'id',
+		},
+		{
+			header: 'Profile Picture',
+			accessorKey: 'photo_url',
+			cell: ({ row }) => {
+				return (
+					<Avatar>
+						<AvatarImage
+							src={row.getValue('photo_url')}
+							alt={row.getValue('full_name')}
+						/>
+					</Avatar>
+				)
+			},
 		},
 		{
 			header: ({ column }) => (
@@ -245,7 +260,7 @@ const Users = () => {
 			},
 		},
 	]
-
+	
 	const tableInstance = useReactTable({
 		columns: tableColumns,
 		data: users || [],
@@ -265,7 +280,7 @@ const Users = () => {
 			pagination,
 		},
 	})
-
+	
 	useEffect(() => {
 		if (selectedUserDialog) {
 			setValue('full_name', users?.find(user => user.id === selectedUserDialog)?.full_name || '')
@@ -278,7 +293,7 @@ const Users = () => {
 			resetPassword()
 		}
 	}, [reset, resetEmail, resetPassword, selectedUserDialog, setEmailValue, setValue, users])
-
+	
 	return (
 		<section className="w-full h-full flex flex-col gap-[1rem]">
 			<SectionHeader
@@ -351,7 +366,7 @@ const Users = () => {
 														render={({ field }) => (
 															<>
 																<Label htmlFor="password"
-																	   className="px-1">Password</Label>
+																       className="px-1">Password</Label>
 																<Input
 																	{...field}
 																	type="password"
@@ -370,7 +385,7 @@ const Users = () => {
 														)}
 													/>
 												</div> :
-
+												
 												<div className="h-full w-auto flex flex-row max-w-sm items-end gap-1.5">
 													<Dialog
 														open={isEmailDialogOpen}
@@ -403,14 +418,14 @@ const Users = () => {
 																		rules={{
 																			required: 'Email is required',
 																			pattern: {
-																				value: /newinti.edu.my$/,
+																				value: /@newinti.edu.my$/,
 																				message: 'INTI email is required',
 																			},
 																		}}
 																		render={({ field }) => (
 																			<>
 																				<Label htmlFor="email"
-																					   className="px-1">Email</Label>
+																				       className="px-1">Email</Label>
 																				<Input
 																					{...field}
 																					type="text"
@@ -491,7 +506,7 @@ const Users = () => {
 																		render={({ field }) => (
 																			<>
 																				<Label htmlFor="password"
-																					   className="px-1">Password</Label>
+																				       className="px-1">Password</Label>
 																				<Input
 																					{...field}
 																					type="password"
@@ -654,7 +669,7 @@ const Users = () => {
 							) : (
 								<TableRow>
 									<TableCell colSpan={tableColumns.length}
-											   className="p-2 text-center">
+									           className="p-2 text-center">
 										No data
 									</TableCell>
 								</TableRow>
