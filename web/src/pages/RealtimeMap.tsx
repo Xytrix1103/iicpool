@@ -9,6 +9,7 @@ import { ArmchairIcon, BanknoteIcon, CalendarIcon, ClockIcon, HomeIcon, SchoolIc
 import { Button } from '../components/themed/ui-kit/button.tsx'
 import { useLoaderData } from 'react-router-dom'
 import ReactDOMServer from 'react-dom/server'
+import { getStatus } from '../api/rides.tsx'
 
 type CustomRide = Ride & {
 	passengersData: Profile[]
@@ -16,28 +17,6 @@ type CustomRide = Ride & {
 	driverCarData: Car
 	sosResponderData: Profile | null
 	sosResponderCarData: Car | null
-}
-
-const getStatus = (ride: CustomRide) => {
-	if (ride.completed_at) {
-		if (ride.sos) {
-			return <div className="py-1 text-primary-darkred font-semibold text-xs">SOS Completed</div>
-		}
-		return <div className="py-1 text-green-500 font-semibold text-xs">Completed</div>
-	} else if (ride.cancelled_at) {
-		return <div className="py-1 text-orange-500 font-semibold text-xs">Cancelled</div>
-	} else if (ride.started_at) {
-		if (ride.sos?.started_at) {
-			return <div className="py-1 text-primary-darkred font-semibold text-xs">SOS Ongoing</div>
-		} else {
-			if (ride.sos?.responded_by) {
-				return <div className="py-1 text-primary-darkred font-semibold text-xs">SOS Responded</div>
-			}
-			return <div className="py-1 text-yellow-500 font-semibold text-xs">Ongoing</div>
-		}
-	} else {
-		return <div className="py-1 text-gray-500 font-semibold text-xs">Pending</div>
-	}
 }
 
 const RealtimeMap = () => {
@@ -64,8 +43,8 @@ const RealtimeMap = () => {
 			const pinHTMLElement = () => {
 				const content = document.createElement('div')
 				content.innerHTML = `
-        			<div class="flex flex-row gap-1 ${isAwaitingSOSResponse ? 'animate-pulseRed' : ''}">
-						<img src="${photoUrl}" class="w-8 h-8 rounded-full" alt="Profile Picture" />
+        			<div class="flex flex-row gap-1">
+						<img src="${photoUrl}" class="w-8 h-8 rounded-full ${isAwaitingSOSResponse ? 'animate-pulseRed' : ''}" alt="Profile Picture" />
 					</div>
 				`
 				return content
@@ -190,6 +169,10 @@ const RealtimeMap = () => {
 				} as CustomRide
 			}))
 
+			setMarkers((markers) => {
+				markers.forEach((marker) => (marker.map = null))
+				return []
+			})
 			setRides(finalRides)
 		})
 
@@ -210,6 +193,15 @@ const RealtimeMap = () => {
 				const sosResponder = latestSignals.find((signal) => signal.user === ride.sos?.responded_by)
 
 				console.log('Latest signals:', driver, sosResponder)
+
+				// Remove all markers
+				setMarkers((markers) => {
+					markers.forEach((marker) => (marker.map = null))
+					return []
+				})
+
+				console.log('Removing all markers')
+				
 				setLatestSignals((prevSignals) => ({
 					...prevSignals,
 					[ride.id || '']: {
@@ -303,14 +295,6 @@ const RealtimeMap = () => {
 
 	useEffect(() => {
 		if (!rides || !latestSignals || !map || !markerLibrary) return
-
-		// Remove all markers
-		setMarkers((markers) => {
-			markers.forEach((marker) => (marker.map = null))
-			return []
-		})
-
-		console.log('Removing all markers')
 
 		if (selectedRide) {
 			// Add markers for selectedRide

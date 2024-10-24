@@ -22,6 +22,7 @@ import { Map, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
 import { Button } from '../components/themed/ui-kit/button.tsx'
 import { callToast } from '../api/toast-utils.ts'
 import ReactDOMServer from 'react-dom/server'
+import { getStatus } from '../api/rides.tsx'
 
 type CustomRide = RideType & {
 	passengersData: Profile[]
@@ -63,28 +64,6 @@ type RideType = {
 		},
 	}
 	deleted_at: Timestamp | null
-}
-
-const getStatus = (ride: CustomRide) => {
-	if (ride.completed_at) {
-		if (ride.sos) {
-			return <div className="py-1 text-primary-darkred font-semibold">SOS Completed</div>
-		}
-		return <div className="py-1 text-green-500 font-semibold">Completed</div>
-	} else if (ride.cancelled_at) {
-		return <div className="py-1 text-orange-500 font-semibold">Cancelled</div>
-	} else if (ride.started_at) {
-		if (ride.sos?.started_at) {
-			return <div className="py-1 text-primary-darkred font-semibold">SOS Ongoing</div>
-		} else {
-			if (ride.sos?.responded_by) {
-				return <div className="py-1 text-primary-darkred font-semibold">SOS Responded</div>
-			}
-			return <div className="py-1 text-yellow-500 font-semibold">Ongoing</div>
-		}
-	} else {
-		return <div className="py-1 text-gray-500 font-semibold">Pending</div>
-	}
 }
 
 const Ride = () => {

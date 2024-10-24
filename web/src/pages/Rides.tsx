@@ -1,6 +1,6 @@
 import { Link, useLoaderData } from 'react-router-dom'
 import { useState } from 'react'
-import { RideTableRow } from '../api/rides.ts'
+import { RideTableRow } from '../api/rides.tsx'
 import {
 	ColumnDef,
 	ColumnFiltersState,

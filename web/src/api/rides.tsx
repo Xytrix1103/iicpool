@@ -69,6 +69,32 @@ const getDirectionsByCoordinates = async ({ origin, destination, departure_time,
 		})
 }
 
+const getStatus = (ride: RideTableRow) => {
+	if (ride.completed_at) {
+		if (ride.sos) {
+			return <div className="py-1 text-primary-darkred font-semibold text-xs">SOS Completed</div>
+		}
+		return <div className="py-1 text-green-500 font-semibold text-xs">Completed</div>
+	} else if (ride.cancelled_at) {
+		return <div className="py-1 text-orange-500 font-semibold text-xs">Cancelled</div>
+	} else if (ride.started_at) {
+		if (ride.sos) {
+			if (ride.sos?.started_at) {
+				return <div className="py-1 text-primary-darkred font-semibold text-xs">SOS Ongoing</div>
+			} else {
+				if (ride.sos?.responded_by) {
+					return <div className="py-1 text-primary-darkred font-semibold text-xs">SOS Responded</div>
+				}
+				return <div className="py-1 text-primary-darkred font-semibold text-xs">SOS Triggered</div>
+			}
+		} else {
+			return <div className="py-1 text-yellow-500 font-semibold text-xs">Ongoing</div>
+		}
+	} else {
+		return <div className="py-1 text-gray-500 font-semibold text-xs">Pending</div>
+	}
+}
+
 type RideTableRow = Ride & {
 	passengersData: Profile[]
 	driverData: Profile
@@ -143,4 +169,4 @@ interface DirectionsResponse {
 }
 
 export type { RideTableRow, DirectionsResponse }
-export { refreshRides, refreshRide, fetchCampusLocation, getDirectionsByCoordinates }
+export { refreshRides, refreshRide, fetchCampusLocation, getDirectionsByCoordinates, getStatus }
