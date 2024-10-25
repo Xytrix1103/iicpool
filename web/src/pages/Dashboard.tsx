@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { collection, collectionGroup, doc, getDoc, onSnapshot, orderBy, query, where } from 'firebase/firestore'
 import { db } from '../components/firebase/FirebaseApp.tsx'
-import { Message, MessageType, Profile, Ride, Role } from '../components/firebase/schema.ts'
+import { Car, Message, MessageType, Profile, Ride } from '../components/firebase/schema.ts'
 import OverallStat from '../components/themed/components/OverallStat.tsx'
 import { Separator } from '../components/themed/ui-kit/separator.tsx'
 import { QueryDocumentSnapshot } from '@firebase/firestore'
@@ -15,20 +15,13 @@ import {
 import { Button } from '../components/themed/ui-kit/button.tsx'
 import { ChevronDownIcon } from 'lucide-react'
 import { ScrollArea } from '../components/themed/ui-kit/scroll-area.tsx'
+import { Link } from 'react-router-dom'
 
 type CustomMessage = Message & {
 	userData: Profile
 	driverData: Profile
+	carData: Car
 	ride_id: string
-}
-
-
-type UserStatistics = {
-	total_users: number
-}
-
-type AdminStatistics = {
-	total_admins: number
 }
 
 type RideStatistics = {
@@ -42,6 +35,8 @@ type RideStatistics = {
 	today_sos_triggered: number
 	sos_ongoing: number
 	today_sos_ongoing: number
+	today_arrived_cars: number
+	today_departed_cars: number
 }
 
 enum WeekChartFilter {
@@ -77,13 +72,25 @@ type DayTimeChartData = {
 	from: { [key in 1 | 2 | 3 | 4 | 5]: number[] }
 }
 
+const CurrentTimeComponent = () => {
+	const [currentTime, setCurrentTime] = useState(new Date())
+	
+	useEffect(() => {
+		const timer = setInterval(() => {
+			setCurrentTime(new Date())
+		}, 1000)
+		return () => {
+			clearInterval(timer)
+		}
+	}, [])
+	
+	return (
+		<OverallStat flex status_text={`Today: ${currentTime.toLocaleDateString()}`}
+		             number={currentTime.toLocaleTimeString()} />
+	)
+}
+
 const Dashboard = () => {
-	const [userStatistics, setUserStatistics] = useState<UserStatistics>({
-		total_users: 0,
-	})
-	const [adminStatistics, setAdminStatistics] = useState<AdminStatistics>({
-		total_admins: 0,
-	})
 	const [rideStatistics, setRideStatistics] = useState<RideStatistics>({
 		ongoing: 0,
 		today_ongoing: 0,
@@ -95,6 +102,8 @@ const Dashboard = () => {
 		today_sos_triggered: 0,
 		sos_ongoing: 0,
 		today_sos_ongoing: 0,
+		today_arrived_cars: 0,
+		today_departed_cars: 0,
 	})
 	const [weekChartFilter, setWeekChartFilter] = useState<WeekChartFilterProps>({
 		type: WeekChartFilter.LIFETIME,
@@ -126,19 +135,7 @@ const Dashboard = () => {
 	})
 	const [rideLogs, setRideLogs] = useState<CustomMessage[]>([])
 	const [today, setToday] = useState(nowRef.current.toLocaleDateString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }))
-	const [currentTime, setCurrentTime] = useState(nowRef.current.toLocaleTimeString())
-
-
-	useEffect(() => {
-		const timer = setInterval(() => {
-			nowRef.current = new Date()
-			setCurrentTime(nowRef.current.toLocaleTimeString())
-		}, 1000)
-		return () => {
-			clearInterval(timer)
-		}
-	}, [])
-
+	
 	useEffect(() => {
 		const timer = setInterval(() => {
 			const newDateString = nowRef.current.toLocaleDateString('en-US', { timeZone: 'Asia/Kuala_Lumpur' })
@@ -150,54 +147,54 @@ const Dashboard = () => {
 			clearInterval(timer)
 		}
 	}, [today])
-
+	
 	useEffect(() => {
 		const unsubscribeFuncs: (() => void)[] = []
-
+		
 		unsubscribeFuncs.push(onSnapshot(query(collection(db, 'rides')), (snapshot) => {
 			const todayRides = snapshot.docs as QueryDocumentSnapshot<Ride>[]
-
+			
 			const tempValues = weekChartFilter.type === WeekChartFilter.LIFETIME ? undefined : todayRides.map((doc) => {
 				const datetimeDate = new Date(doc.data().datetime.toDate())
 				const year = datetimeDate.getFullYear()
 				const month = datetimeDate.getMonth()
-
+				
 				if (weekChartFilter.type === WeekChartFilter.YEAR) {
 					return { year } as YearlyWeekChartValue
 				} else if (weekChartFilter.type === WeekChartFilter.MONTH) {
 					return { year, month } as MonthlyWeekChartValue
 				}
 			})
-
+			
 			//only get unique values
 			const values = tempValues ? Array.from(new Set(tempValues.map(value => JSON.stringify(value)))).map(value => JSON.parse(value)) : undefined
-
+			
 			const value = values && values.length > 0 ? values[0] : undefined
-
+			
 			setWeekChartFilter((prev) => ({
 				...prev,
 				values,
 				value,
 			}))
-
+			
 			setDayTimeChartFilter((prev) => ({
 				...prev,
 				values,
 				value,
 			}))
-
+			
 			const dayOfWeekCountTo = Array(5).fill(0)
 			const dayOfWeekCountFrom = Array(5).fill(0)
-
+			
 			if (weekChartFilter.type !== WeekChartFilter.LIFETIME && !weekChartFilter.values && !weekChartFilter.value) {
 				return
 			}
-
+			
 			const tempRides = todayRides.filter((doc) => {
 				const datetimeDate = new Date(doc.data().datetime.toDate())
 				const year = datetimeDate.getFullYear()
 				const month = datetimeDate.getMonth()
-
+				
 				if (weekChartFilter.type === WeekChartFilter.LIFETIME) {
 					return doc.data().cancelled_at === null
 				} else if (weekChartFilter.type === WeekChartFilter.YEAR) {
@@ -207,7 +204,7 @@ const Dashboard = () => {
 						month === (weekChartFilter.value as MonthlyWeekChartValue).month && doc.data().cancelled_at === null
 				}
 			})
-
+			
 			// get the day of the week for each ride
 			const dayOfWeek = tempRides.map((doc) => {
 				return {
@@ -215,7 +212,7 @@ const Dashboard = () => {
 					direction: doc.data().to_campus ? 'to' : 'from',
 				}
 			})
-
+			
 			// count the number of rides for each day of the week except Sunday (0) and Saturday (6)
 			dayOfWeek.forEach(({ day, direction }) => {
 				if (day !== 0 && day !== 6) {
@@ -226,7 +223,7 @@ const Dashboard = () => {
 					}
 				}
 			})
-
+			
 			//fill in the days that have no rides with 0
 			for (let i = 1; i <= 5; i++) {
 				if (dayOfWeekCountTo[i] === 0) {
@@ -236,9 +233,9 @@ const Dashboard = () => {
 					dayOfWeekCountFrom[i] = 0
 				}
 			}
-
+			
 			console.log(dayOfWeekCountTo)
-
+			
 			const scheduleTimes: DayTimeChartData = {
 				to: {
 					1: Array(14).fill(0),
@@ -255,12 +252,12 @@ const Dashboard = () => {
 					5: Array(14).fill(0),
 				},
 			}
-
+			
 			const tempRides2 = todayRides.filter((doc) => {
 				const datetimeDate = new Date(doc.data().datetime.toDate())
 				const year = datetimeDate.getFullYear()
 				const month = datetimeDate.getMonth()
-
+				
 				if (dayTimeChartFilter.type === WeekChartFilter.LIFETIME) {
 					return doc.data().cancelled_at === null
 				} else if (dayTimeChartFilter.type === WeekChartFilter.YEAR) {
@@ -270,19 +267,19 @@ const Dashboard = () => {
 						month === (dayTimeChartFilter.value as MonthlyWeekChartValue).month && doc.data().cancelled_at === null
 				}
 			})
-
+			
 			const x_steps = Array(14).fill(0).map((_, i) => i + 6)
-
+			
 			tempRides2.forEach((doc) => {
 				const datetimeDate = new Date(doc.data().datetime.toDate())
 				const time = datetimeDate.getHours()
 				const weekday = datetimeDate.getDay()
-
+				
 				if ([1, 2, 3, 4, 5].includes(weekday)) {
 					if (x_steps.indexOf(time) === -1) {
 						return
 					}
-
+					
 					if (doc.data().to_campus) {
 						scheduleTimes.to[weekday as 1 | 2 | 3 | 4 | 5][x_steps.indexOf(time)]++
 					} else {
@@ -290,14 +287,14 @@ const Dashboard = () => {
 					}
 				}
 			})
-
+			
 			setDayTimeChartData(scheduleTimes)
-
+			
 			setWeekChartData({
 				to: dayOfWeekCountTo,
 				from: dayOfWeekCountFrom,
 			})
-
+			
 			setRideStatistics({
 				ongoing: todayRides.filter((doc) => {
 					const data = doc.data()
@@ -345,93 +342,95 @@ const Dashboard = () => {
 					const datetimeDate = new Date(data.datetime.toDate())
 					return data.sos?.responded_at !== null && data.sos?.started_at === null && data.completed_at === null && datetimeDate.toLocaleDateString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }) === today
 				}).length,
+				today_arrived_cars: todayRides.filter((doc) => {
+					const data = doc.data()
+					return data.completed_at !== null && data.to_campus
+				}).length,
+				today_departed_cars: todayRides.filter((doc) => {
+					const data = doc.data()
+					return data.completed_at !== null && !data.to_campus
+				}).length,
 			})
 		}))
-
+		
 		return () => {
 			unsubscribeFuncs.forEach((unsubscribe) => unsubscribe())
 		}
 	}, [today, weekChartFilter.type, dayTimeChartFilter.type])
-
+	
 	useEffect(() => {
 		const unsubscribeFuncs: (() => void)[] = []
-
+		
 		unsubscribeFuncs.push(onSnapshot(query(collectionGroup(db, 'messages'), where('type', '!=', MessageType.MESSAGE), orderBy('timestamp', 'desc')), async (snapshot) => {
 			const tempRideLogs: CustomMessage[] = await Promise.all(snapshot.docs.map(async (snapshotDoc) => {
 				const data = snapshotDoc.data() as CustomMessage
-
+				
 				const parentRide = (await getDoc(snapshotDoc.ref.parent.parent!)).data() as Ride
-
+				
 				const driverData = await getDoc(doc(db, 'users', parentRide.sos?.responded_by ? parentRide.sos?.responded_by : parentRide.driver)).then((doc) => {
 					return {
 						...doc.data(),
 						id: doc.id,
 					} as Profile
 				})
-
+				
 				const userData = (!data.user && !data.sender) ? undefined : await getDoc(doc(db, 'users', (data.type === MessageType.MESSAGE ? data.sender : data.user) as string)).then((doc) => {
 					return {
 						...doc.data(),
 						id: doc.id,
 					} as Profile
 				})
-
+				
+				const carData = await getDoc(doc(db, 'cars', parentRide.sos?.car ? parentRide.sos?.car : parentRide.car)).then((doc) => {
+					return {
+						...doc.data(),
+						id: doc.id,
+					} as Car
+				})
+				
 				return {
 					...data,
 					userData,
+					carData,
 					ride_id: snapshotDoc.ref.parent.parent?.id || '',
 					driverData,
 				} as CustomMessage
 			}))
-
+			
 			setRideLogs(tempRideLogs.filter((log) => log !== null))
 		}))
-
-		unsubscribeFuncs.push(onSnapshot(collection(db, 'users'), (snapshot) => {
-			setUserStatistics({
-				total_users: snapshot.docs.filter((doc) => doc.data().roles.includes(Role.PASSENGER)).length,
-			})
-		}))
-
-		unsubscribeFuncs.push(onSnapshot(collection(db, 'admins'), (snapshot) => {
-			setAdminStatistics({
-				total_admins: snapshot.docs.length || 0,
-			})
-		}))
-
+		
 		return () => {
 			unsubscribeFuncs.forEach((unsubscribe) => unsubscribe())
 		}
 	}, [])
-
+	
 	return (
 		<section className="w-full h-full flex flex-col gap-[1rem]">
 			<div className="flex flex-col gap-4">
 				<div className="border border-input rounded-3xl backdrop-blur bg-white/[.4] flex">
 					<div className="p-[0.5rem] flex items-center gap-2.5">
-						<OverallStat status_text={today} flex number={nowRef.current.toLocaleTimeString()} />
-						<OverallStat status_text="Users" number={userStatistics.total_users} />
-						<OverallStat status_text="Admins" number={adminStatistics.total_admins} />
+						<CurrentTimeComponent />
 					</div>
 					<div>
 						<Separator orientation="vertical" />
 					</div>
 					<div className="p-[0.5rem] flex items-center gap-2.5">
 						<OverallStat status_text="Cancelled" color="yellow"
-									 number={rideStatistics.cancelled}
-									 subtitle={`(${rideStatistics.today_cancelled} today)`} />
+						             number={rideStatistics.cancelled}
+						             subtitle={`(${rideStatistics.today_cancelled} today)`} />
 						<OverallStat status_text="Ongoing" color="blue"
-									 number={rideStatistics.ongoing}
-									 subtitle={`(${rideStatistics.today_ongoing} today)`} />
+						             number={rideStatistics.ongoing}
+						             subtitle={`(${rideStatistics.today_ongoing} today)`} />
 						<OverallStat status_text="Completed" color="green"
-									 number={rideStatistics.completed}
-									 subtitle={`(${rideStatistics.today_completed} today)`} />
+						             number={rideStatistics.completed}
+						             subtitle={`(${rideStatistics.today_completed} today)`} />
 						<OverallStat status_text="SOS Triggered" color="red"
-									 number={rideStatistics.sos_triggered}
-									 subtitle={`(${rideStatistics.today_sos_triggered} today)`} />
+						             number={rideStatistics.sos_triggered}
+						             subtitle={`(${rideStatistics.today_sos_triggered} today)`} />
 						<OverallStat status_text="SOS Ongoing" color="red"
-									 number={rideStatistics.sos_ongoing}
-									 subtitle={`(${rideStatistics.today_sos_ongoing} today)`} />
+						             number={rideStatistics.sos_ongoing}
+						             subtitle={`(${rideStatistics.today_sos_ongoing} today)`} />
 					</div>
 				</div>
 				<div className="flex gap-[1rem]">
@@ -734,21 +733,38 @@ const Dashboard = () => {
 									className="text-black">{new Date(log.timestamp.toDate()).toLocaleString()}</div>
 								{
 									log.type === MessageType.RIDE_CANCELLATION ? (
-										<div className="text-black">Ride {log.ride_id} has been cancelled</div>
+										<div className="text-black">
+											Ride
+											<Link to={`/rides/${log.ride_id}`}>{log.ride_id}</Link>
+											has been cancelled
+										</div>
 									) : log.type === MessageType.NEW_PASSENGER ? (
-										<div className="text-black">{log.userData.full_name} has joined
-											ride {log.ride_id}</div>
+										<div className="text-black">
+											{log.userData.full_name} has joined ride <Link to={`/rides/${log.ride_id}`}
+											                                               className="text-blue-500 underline hover:text-blue-700">{log.ride_id}</Link>
+										</div>
 									) : log.type === MessageType.RIDE_COMPLETION ? (
-										<div className="text-black">Ride {log.ride_id} has been completed</div>
+										<div className="text-black">
+											Ride <Link to={`/rides/${log.ride_id}`}
+											           className="text-blue-500 underline hover:text-blue-700">{log.ride_id}</Link> has
+											been
+											completed in car with plate number {log.carData.plate}
+										</div>
 									) : log.type === MessageType.SOS ? (
 										<div className="text-black">SOS triggered by {log.driverData?.full_name} in
-											ride {log.ride_id}</div>
+											ride <Link to={`/rides/${log.ride_id}`}
+											           className="text-blue-500 underline hover:text-blue-700">{log.ride_id}</Link>
+										</div>
 									) : log.type === MessageType.SOS_RESPONSE ? (
-										<div className="text-black">SOS in ride {log.ride_id} has been responded to
+										<div className="text-black">SOS in ride <Link to={`/rides/${log.ride_id}`}
+										                                              className="text-blue-500 underline hover:text-blue-700">{log.ride_id}</Link> has
+											been responded to
 											by {log.driverData?.full_name}</div>
 									) : log.type === MessageType.PASSENGER_CANCELLATION ? (
 										<div className="text-black">{log.userData.full_name} has cancelled
-											their ride in ride {log.ride_id}</div>
+											their ride in ride <Link to={`/rides/${log.ride_id}`}
+											                         className="text-blue-500 underline hover:text-blue-700">{log.ride_id}</Link>
+										</div>
 									) : null
 								}
 							</div>
