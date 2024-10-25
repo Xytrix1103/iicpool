@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { collection, collectionGroup, doc, getDoc, onSnapshot, orderBy, query, where } from 'firebase/firestore'
 import { db } from '../components/firebase/FirebaseApp.tsx'
 import { Message, MessageType, Profile, Ride, Role } from '../components/firebase/schema.ts'
@@ -107,6 +107,7 @@ const Dashboard = () => {
 		type: WeekChartFilter.LIFETIME,
 		weekday: 1,
 	})
+	const nowRef = useRef(new Date())
 	const [dayTimeChartData, setDayTimeChartData] = useState<DayTimeChartData>({
 		to: {
 			1: [],
@@ -124,7 +125,31 @@ const Dashboard = () => {
 		},
 	})
 	const [rideLogs, setRideLogs] = useState<CustomMessage[]>([])
-	const today = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Kuala_Lumpur' })
+	const [today, setToday] = useState(nowRef.current.toLocaleDateString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }))
+	const [currentTime, setCurrentTime] = useState(nowRef.current.toLocaleTimeString())
+
+
+	useEffect(() => {
+		const timer = setInterval(() => {
+			nowRef.current = new Date()
+			setCurrentTime(nowRef.current.toLocaleTimeString())
+		}, 1000)
+		return () => {
+			clearInterval(timer)
+		}
+	}, [])
+
+	useEffect(() => {
+		const timer = setInterval(() => {
+			const newDateString = nowRef.current.toLocaleDateString('en-US', { timeZone: 'Asia/Kuala_Lumpur' })
+			if (newDateString !== today) {
+				setToday(newDateString)
+			}
+		}, 1000)
+		return () => {
+			clearInterval(timer)
+		}
+	}, [today])
 
 	useEffect(() => {
 		const unsubscribeFuncs: (() => void)[] = []
@@ -384,7 +409,7 @@ const Dashboard = () => {
 			<div className="flex flex-col gap-4">
 				<div className="border border-input rounded-3xl backdrop-blur bg-white/[.4] flex">
 					<div className="p-[0.5rem] flex items-center gap-2.5">
-						<OverallStat status_text="Date" flex number={new Date().toLocaleDateString()} />
+						<OverallStat status_text={today} flex number={nowRef.current.toLocaleTimeString()} />
 						<OverallStat status_text="Users" number={userStatistics.total_users} />
 						<OverallStat status_text="Admins" number={adminStatistics.total_admins} />
 					</div>
