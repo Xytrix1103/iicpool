@@ -8,6 +8,7 @@ export default function OverallStat(
 		percentage = false,
 		dark = false,
 		flex = false,
+		subtitle,
 	}: {
 		status_text: string;
 		color?: 'green' | 'red' | 'yellow' | 'blue' | undefined;
@@ -15,6 +16,7 @@ export default function OverallStat(
 		percentage?: boolean;
 		dark?: boolean;
 		flex?: boolean;
+		subtitle?: string;
 	},
 ) {
 	const borderTextClasses = {
@@ -52,6 +54,7 @@ export default function OverallStat(
 					{number}
 				</div>
 				<div className="text-xs">{percentage ? '%' : ''}</div>
+				<div className="text-xs">{subtitle}</div>
 			</div>
 		</div>
 	)
