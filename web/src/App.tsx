@@ -16,24 +16,27 @@ import { APIProvider } from '@vis.gl/react-google-maps'
 import RealtimeMap from './pages/RealtimeMap.tsx'
 import Cars from './pages/Cars.tsx'
 import { refreshCars } from './api/cars.ts'
+import { PrimeReactProvider } from 'primereact/api'
 
 const App = () => {
 	console.log('App')
-
+	
 	return (
 		<div className="flex w-full h-full">
-			<APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}>
-				<AuthProvider>
-					<Routes />
-				</AuthProvider>
-			</APIProvider>
+			<PrimeReactProvider>
+				<APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}>
+					<AuthProvider>
+						<Routes />
+					</AuthProvider>
+				</APIProvider>
+			</PrimeReactProvider>
 		</div>
 	)
 }
 
 const Routes = () => {
 	const { user, loading } = useContext(AuthContext)
-
+	
 	const unauthenticatedRoutes = useMemo(() => {
 		return [
 			{
@@ -42,7 +45,7 @@ const Routes = () => {
 			},
 		] as RouteObject[]
 	}, [])
-
+	
 	const authenticatedRoutes = useMemo(() => {
 		return [
 			{
@@ -115,11 +118,11 @@ const Routes = () => {
 			},
 		] as RouteObject[]
 	}, [])
-
+	
 	const router = useMemo(() => {
 		return createBrowserRouter(user ? authenticatedRoutes : unauthenticatedRoutes)
 	}, [authenticatedRoutes, user, unauthenticatedRoutes])
-
+	
 	return (
 		loading ? <h1>Loading...</h1> :
 			<RouterProvider router={router} />
