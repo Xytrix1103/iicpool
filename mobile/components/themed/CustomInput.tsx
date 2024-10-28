@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
 	},
 	input: {
 		flex: 1,
-		fontSize: 15,
+		fontSize: 13,
 		paddingVertical: 7,
 		textAlignVertical: 'center',
 		overflow: Platform.OS === 'android' && Platform.Version >= 21 ? 'hidden'

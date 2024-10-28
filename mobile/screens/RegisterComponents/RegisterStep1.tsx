@@ -57,7 +57,7 @@ const RegisterStep1 = (
 							required: 'Email is required',
 							pattern: {
 								value: /newinti.edu.my$/,
-								message: 'Please use your INTI email to register.',
+								message: 'Please enter your INTI email address',
 							},
 						}}
 					/>

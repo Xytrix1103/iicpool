@@ -5,6 +5,7 @@ import {
 	GoogleAuthProvider,
 	linkWithCredential,
 	sendEmailVerification,
+	sendPasswordResetEmail,
 	signInWithCredential,
 	signInWithEmailAndPassword,
 	unlink,
@@ -133,13 +134,17 @@ const register = async (
 		})
 }
 
-const login = (email: string, password: string) => {
-	signInWithEmailAndPassword(auth, email, password)
+const login = async (email: string, password: string) => {
+	return await signInWithEmailAndPassword(auth, email, password)
 		.then(userCredential => {
 			console.log('Login -> userCredential', userCredential)
+			
+			return userCredential
 		})
 		.catch(error => {
 			console.log('Login -> error', error)
+			
+			throw error
 		})
 }
 
@@ -318,6 +323,20 @@ const deleteAccount = async () => {
 		})
 }
 
+const forgotPassword = async (email: string) => {
+	return await sendPasswordResetEmail(auth, email)
+		.then(() => {
+			console.log('forgotPassword -> success')
+			
+			return true
+		})
+		.catch(error => {
+			console.log('forgotPassword -> error', error)
+			
+			throw error
+		})
+}
+
 export {
 	login,
 	logout,
@@ -329,4 +348,5 @@ export {
 	unlinkGoogle,
 	sendVerificationEmail,
 	backgroundLogout,
+	forgotPassword,
 }

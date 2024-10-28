@@ -51,6 +51,7 @@ import { BACKGROUND_UPDATE_LOCATION_TASK, RideProvider } from './components/cont
 import { Timestamp } from '@firebase/firestore'
 import Activity from './screens/Activity'
 import EmergencyRides from './screens/EmergencyRides'
+import ForgotPassword from './screens/ForgotPassword'
 
 const Stack = createNativeStackNavigator()
 
@@ -538,6 +539,7 @@ const Routes = ({ expoPushToken }: { expoPushToken: string }) => {
 				<>
 					<Stack.Screen name="Login" component={Login} />
 					<Stack.Screen name="Register" component={Register} />
+					<Stack.Screen name="ForgotPassword" component={ForgotPassword} />
 				</>
 			)}
 		</Stack.Navigator>

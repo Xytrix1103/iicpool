@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native'
 import React, { useContext, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { Image, StyleSheet, View } from 'react-native'
+import { Image, StyleSheet, ToastAndroid, View } from 'react-native'
 import { Button, useTheme } from 'react-native-paper'
 import { googleLogin, login } from '../api/auth'
 import CustomTextDivider from '../components/themed/CustomTextDivider'
@@ -12,10 +12,19 @@ import { LoadingOverlayContext } from '../components/contexts/LoadingOverlayCont
 import CustomInput from '../components/themed/CustomInput'
 import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 import { useNotificationSettings } from '../components/contexts/NotificationContext'
+import CustomTextButton from '../components/themed/CustomTextButton'
 
 const onSubmit = async (data: any) => {
 	const { email, password } = data
-	login(email, password)
+	await login(email, password)
+		.then(() => {
+			console.log('Login successful')
+			ToastAndroid.show('Login successful', ToastAndroid.LONG)
+		})
+		.catch((error) => {
+			console.log('Error logging in:', error)
+			ToastAndroid.show('Login failed', ToastAndroid.LONG)
+		})
 }
 
 const Login = () => {
@@ -53,7 +62,7 @@ const Login = () => {
 			hasAppBar={false}
 		>
 			<View style={style.mainContent}>
-				<View style={[style.column, { alignItems: 'center', gap: 50 }]}>
+				<View style={[style.column, { alignItems: 'center', gap: 30 }]}>
 					<View style={style.row}>
 						<Image
 							source={require('../assets/logo_with_text.png')}
@@ -72,6 +81,7 @@ const Login = () => {
 										inputMode="email"
 										keyboardType="email-address"
 										autoCapitalize="none"
+										value={value}
 										errorMessage={errors.email && errors.email.message}
 										onChangeText={onChange}
 										rightIcon={
@@ -86,13 +96,20 @@ const Login = () => {
 									/>
 								)}
 								name="email"
-								rules={{ required: 'Email is required' }}
+								rules={{
+									required: 'Email is required',
+									pattern: {
+										value: /newinti.edu.my$/,
+										message: 'Invalid email domain. Please use your INTI email to log in.',
+									},
+								}}
 							/>
 							<Controller
 								control={control}
-								render={({ field: { onChange } }) => (
+								render={({ field: { onChange, value } }) => (
 									<CustomInput
 										label="Password"
+										value={value}
 										autoCapitalize="none"
 										secureTextEntry
 										errorMessage={errors.password && errors.password.message}
@@ -100,7 +117,17 @@ const Login = () => {
 									/>
 								)}
 								name="password"
-								rules={{ required: 'Password is required' }}
+								rules={{
+									required: 'Password is required',
+									minLength: {
+										value: 8,
+										message: 'Password must be at least 8 characters',
+									},
+									pattern: {
+										value: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/,
+										message: 'Password must contain both letters and numbers, and be at least 8 characters',
+									},
+								}}
 							/>
 						</View>
 						<View style={[style.row, { gap: 10 }]}>
@@ -131,6 +158,18 @@ const Login = () => {
 								Login with Google
 							</Button>
 						</View>
+					</View>
+					<View style={[style.row, { gap: 10, justifyContent: 'center' }]}>
+						<CustomTextButton
+							size={12}
+							onPress={() => {
+								console.log('Forgot Password')
+								// @ts-expect-error navigation route error
+								navigation.navigate('ForgotPassword', { type: 'forgot' })
+							}}
+						>
+							Forgot Password?
+						</CustomTextButton>
 					</View>
 				</View>
 			</View>

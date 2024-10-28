@@ -12,11 +12,13 @@ import CustomCard from '../../components/themed/CustomCard'
 import { LoadingOverlayContext } from '../../components/contexts/LoadingOverlayContext'
 
 type PassengerRidesSummary = {
-	total: number | null;
+	total_booked: number | null;
+	total_completed: number | null;
+	total_cancelled: number | null;
 	spent: number | null;
 }
 
-const { db } = FirebaseApp
+const { db, auth } = FirebaseApp
 
 const PassengerHome = (
 	{
@@ -30,7 +32,9 @@ const PassengerHome = (
 	},
 ) => {
 	const [ridesSummary, setRidesSummary] = useState<PassengerRidesSummary>({
-		total: null,
+		total_booked: null,
+		total_completed: null,
+		total_cancelled: null,
 		spent: null,
 	})
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
@@ -57,10 +61,14 @@ const PassengerHome = (
 			}
 			
 			const total = rides.length
-			const spent = rides.reduce((acc, ride) => acc + ride.fare || 0, 0)
+			const completed = rides.filter(ride => ride.completed_at).length
+			const cancelled = rides.filter(ride => ride.cancelled_at).length
+			const spent = rides.reduce((acc, ride) => acc + (ride.completed_at ? ride.fare : 0), 0)
 			
 			setRidesSummary({
-				total,
+				total_booked: total,
+				total_completed: completed,
+				total_cancelled: cancelled,
 				spent,
 			})
 			
@@ -77,27 +85,36 @@ const PassengerHome = (
 		<View style={style.mainContent}>
 			<View style={[style.column, { gap: 20 }]}>
 				<CustomCard padding={20}>
-					<View style={[style.column, { gap: 20 }]}>
+					<View style={[style.column, { gap: 20, flex: 1 }]}>
 						<CustomText size={14} bold>{`Rides Summary`}</CustomText>
-						<View style={[style.row, { gap: 5 }]}>
-							<CustomText size={12}>Total Rides:</CustomText>
-							<CustomText size={12} bold>{ridesSummary.total}</CustomText>
-						</View>
-						<View style={[style.row, { gap: 5 }]}>
-							<CustomText size={12}>Total Spent:</CustomText>
-							<CustomText size={12} bold>{`RM ${ridesSummary.spent}`}</CustomText>
+						<View style={[style.row, { gap: 10 }]}>
+							<View style={[style.column, { gap: 10, flex: 1 }]}>
+								<CustomText size={12}>Total Booked: {ridesSummary.total_booked}</CustomText>
+								<CustomText size={12}>Total Completed: {ridesSummary.total_completed}</CustomText>
+							</View>
+							<View style={[style.column, { gap: 10, flex: 1 }]}>
+								<CustomText size={12}>Total Cancelled: {ridesSummary.total_cancelled}</CustomText>
+								<CustomText size={12}>Total Spent: {ridesSummary.spent}</CustomText>
+							</View>
 						</View>
 					</View>
 				</CustomCard>
 				{
 					currentRide &&
-					<CurrentRide currentRide={currentRide} mode={mode} navigation={navigation} />
+					<CurrentRide currentRide={currentRide} mode={mode} navigation={navigation} user={user} />
 				}
 				<View style={[style.row]}>
 					<CustomBackgroundButton
 						icon="hail"
+						// disabled={user?.emailVerified === false}
 						size={40}
-						onPress={() => {
+						onPress={async () => {
+							await auth.currentUser?.reload()
+							if (auth.currentUser?.emailVerified === false) {
+								alert('Please verify your email before you can find rides')
+								return
+							}
+							
 							navigation.navigate('FindRides')
 						}}
 						style={{ flex: 1 }}

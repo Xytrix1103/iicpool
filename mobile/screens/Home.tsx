@@ -188,7 +188,7 @@ const Home = () => {
 				/>
 			}
 		>
-			<View style={[style.mainContent]}>
+			<View style={[style.mainContent, { gap: 20 }]}>
 				{
 					!user?.emailVerified &&
 					<UnverifiedEmailAlert navigation={navigation} />

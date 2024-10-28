@@ -98,19 +98,19 @@ const Cars = () => {
 									}]}>
 										<View style={[style.column]}>
 											<View style={[style.row]}>
-												<CustomText bold size={20}>{car.plate}</CustomText>
+												<CustomText bold size={18}>{car.plate}</CustomText>
 											</View>
 											<View style={[style.row, { gap: 10 }]}>
-												<CustomText>
-													{properCase(car.brand)} {car.model}
+												<CustomText size={14}>
+													{car.brand} {car.model}
 												</CustomText>
 											</View>
 										</View>
 										<View style={[style.column]}>
-											<CustomText size={14}>
+											<CustomText size={12}>
 												{`Color: ${properCase(car.color)}`}
 											</CustomText>
-											<CustomText size={14}>
+											<CustomText size={12}>
 												{`Added On: ${car.created_at.toDate().toLocaleDateString()}`}
 											</CustomText>
 										</View>
