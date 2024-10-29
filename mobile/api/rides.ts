@@ -88,6 +88,7 @@ const handleBookRide = ({ ride, user, isInRide }: { ride: Ride, user: User | nul
 							sender: null,
 							timestamp: Timestamp.now(),
 							type: MessageType.NEW_PASSENGER,
+							read_by: [user?.uid],
 						} as Message)
 					})
 						.then(() => {
@@ -135,6 +136,7 @@ const handleCancelBooking = ({ ride, user }: { ride: Ride, user: User | null }) 
 							sender: null,
 							timestamp: Timestamp.now(),
 							type: MessageType.PASSENGER_CANCELLATION,
+							read_by: [user?.uid],
 						} as Message)
 					})
 						.then(() => {
@@ -246,6 +248,7 @@ const handleStartRide = ({ ride, user }: { ride: Ride, user: User | null }) => {
 							sender: null,
 							timestamp: Timestamp.now(),
 							type: MessageType.RIDE_COMPLETION,
+							read_by: [user?.uid],
 						} as Message)
 					})
 						.then(() => {
@@ -292,6 +295,7 @@ const handleCompleteRide = ({ ride, user }: { ride: Ride, user: User | null }) =
 							sender: null,
 							timestamp: Timestamp.now(),
 							type: MessageType.RIDE_COMPLETION,
+							read_by: [user?.uid],
 						} as Message)
 					})
 						.then(() => {
@@ -307,7 +311,7 @@ const handleCompleteRide = ({ ride, user }: { ride: Ride, user: User | null }) =
 	)
 }
 
-const handleTriggerSOS = ({ ride }: { ride: Ride, user: User | null }) => {
+const handleTriggerSOS = ({ ride, user }: { ride: Ride, user: User | null }) => {
 	Alert.alert(
 		'SOS',
 		'Are you sure you want to send an SOS?',
@@ -340,6 +344,7 @@ const handleTriggerSOS = ({ ride }: { ride: Ride, user: User | null }) => {
 							sender: null,
 							timestamp: Timestamp.now(),
 							type: MessageType.SOS,
+							read_by: [user?.uid],
 						} as Message)
 					})
 						.then(() => {
@@ -389,6 +394,7 @@ const handleRespondSOS = ({ ride, user, car }: { ride: Ride, user: User | null, 
 							sender: null,
 							timestamp: Timestamp.now(),
 							type: MessageType.SOS_RESPONSE,
+							read_by: [user?.uid],
 						} as Message)
 					})
 						.then(() => {
@@ -435,6 +441,7 @@ const handleStartSOSRide = ({ ride, user }: { ride: Ride, user: User | null }) =
 							sender: null,
 							timestamp: Timestamp.now(),
 							type: MessageType.SOS,
+							read_by: [user?.uid],
 						} as Message)
 					})
 						.then(() => {
@@ -481,6 +488,7 @@ const handleCompleteSOSRide = ({ ride, user }: { ride: Ride, user: User | null }
 							sender: null,
 							timestamp: Timestamp.now(),
 							type: MessageType.SOS,
+							read_by: [user?.uid],
 						} as Message)
 					})
 						.then(() => {

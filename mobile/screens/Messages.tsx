@@ -251,7 +251,11 @@ const Messages = () => {
 					setRideUnreadCounts((prevState) => {
 						return {
 							...prevState,
-							[ride.id as string]: snapshot.docs.filter((doc) => !doc.data().read_by.includes(user.uid)).length,
+							// [ride.id as string]: snapshot.docs.filter((doc) => !doc.data().read_by.includes(user.uid)).length,
+							[ride.id as string]: snapshot.docs.filter((doc) => {
+								const message = doc.data() as Message
+								return !message.read_by?.includes(user.uid) && message.sender !== user.uid
+							}).length,
 						}
 					})
 				})

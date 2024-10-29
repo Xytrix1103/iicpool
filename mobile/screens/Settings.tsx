@@ -4,14 +4,11 @@ import { View } from 'react-native'
 import style from '../styles/shared'
 import CustomText from '../components/themed/CustomText'
 import { Switch } from 'react-native-paper'
-import FirebaseApp from '../components/FirebaseApp'
 import { useNotificationSettings } from '../components/contexts/NotificationContext'
 import { ProfileNotificationSettings } from '../database/schema'
 import { useNavigation } from '@react-navigation/native'
 import { logout } from '../api/auth'
 import CustomIconButton from '../components/themed/CustomIconButton'
-
-const { auth, db } = FirebaseApp
 
 const Settings = () => {
 	const { notificationSettings, setNotificationSettings } = useNotificationSettings()

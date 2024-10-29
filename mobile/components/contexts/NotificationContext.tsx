@@ -17,6 +17,28 @@ interface NotificationSettingsProviderProps {
 	children: ReactNode;
 }
 
+interface AreObjectsEqualProps<T extends object> {
+	obj1: T;
+	obj2: T;
+}
+
+const areObjectsEqual = <T extends object>({ obj1, obj2 }: AreObjectsEqualProps<T>): boolean => {
+	const keys1 = Object.keys(obj1) as (keyof T)[]
+	const keys2 = Object.keys(obj2) as (keyof T)[]
+	
+	if (keys1.length !== keys2.length) {
+		return false
+	}
+	
+	for (const key of keys1) {
+		if (obj1[key] !== obj2[key]) {
+			return false
+		}
+	}
+	
+	return true
+}
+
 const NotificationSettingsProvider: React.FC<
 	NotificationSettingsProviderProps
 > = ({ children }) => {
@@ -34,10 +56,15 @@ const NotificationSettingsProvider: React.FC<
 				)
 				
 				if (storedSettings) {
+					console.log('Loaded settings:', storedSettings)
 					//check if storedSettings matches the ProfileNotificationSettings interface
 					const parsedSettings = JSON.parse(storedSettings)
 					
-					if (JSON.stringify(Object.keys(parsedSettings).sort()) === JSON.stringify(Object.keys(notificationSettings).sort())) {
+					if (!areObjectsEqual<ProfileNotificationSettings>({
+						obj1: parsedSettings,
+						obj2: notificationSettings,
+					})) {
+						console.log('Settings match the ProfileNotificationSettings interface')
 						setNotificationSettings(parsedSettings)
 					} else {
 						console.error('Stored settings do not match the ProfileNotificationSettings interface')

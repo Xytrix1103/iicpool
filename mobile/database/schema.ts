@@ -46,7 +46,7 @@ type Message = {
 	message: string | null
 	timestamp: Timestamp
 	type: MessageType
-	read_by: string[]
+	read_by?: string[]
 }
 
 type Ride = {
