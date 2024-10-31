@@ -24,7 +24,7 @@ const { db } = FirebaseApp
 const ModeProvider = ({ children }: { children: any }) => {
 	const [mode, setMode] = useState<Role>(Role.PASSENGER)
 	const [isInRide, setIsInRide] = useState<string | null>(null)
-	const { user } = useContext(AuthContext)
+	const { user, profile } = useContext(AuthContext)
 	const ridesQuery = query(collection(db, 'rides'), and(or(where('driver', '==', user?.uid || ''), where('passengers', 'array-contains', user?.uid || ''), where('sos.responded_by', '==', user?.uid || '')), where('completed_at', '==', null), where('cancelled_at', '==', null)))
 	
 	useEffect(() => {
@@ -38,6 +38,12 @@ const ModeProvider = ({ children }: { children: any }) => {
 			}
 		})()
 	}, [])
+	
+	useEffect(() => {
+		if (profile?.roles && !profile.roles.includes(mode)) {
+			setMode(Role.PASSENGER)
+		}
+	}, [profile])
 	
 	useEffect(() => {
 		//write to expo secure store

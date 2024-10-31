@@ -13,6 +13,7 @@ type Profile = {
 	photo_url: string;
 	expoPushToken?: string;
 	notification_settings: ProfileNotificationSettings;
+	driver_license?: string;
 	created_at: Timestamp;
 	deleted_at: Timestamp | null;
 }

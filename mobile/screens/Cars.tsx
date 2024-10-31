@@ -55,7 +55,7 @@ const Cars = () => {
 			scrollable={true}
 			header={
 				<CustomHeader
-					title="My Cars"
+					title="Manage Cars"
 					navigation={navigation}
 					rightNode={
 						!isEditing &&

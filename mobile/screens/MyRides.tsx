@@ -136,7 +136,7 @@ const MyRides = () => {
 			scrollable={true}
 			header={
 				<CustomHeader
-					title="My Rides"
+					title="Manage Rides"
 					navigation={navigation}
 					rightNode={
 						<CustomIconButton

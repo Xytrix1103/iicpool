@@ -38,7 +38,7 @@ const PassengerHome = (
 		spent: null,
 	})
 	const { setLoadingOverlay } = useContext(LoadingOverlayContext)
-	const { user } = useContext(AuthContext)
+	const { user, userRecord, refreshUserRecord } = useContext(AuthContext)
 	
 	const ridesQuery = query(
 		collection(db, 'rides'),
@@ -109,11 +109,12 @@ const PassengerHome = (
 						// disabled={user?.emailVerified === false}
 						size={40}
 						onPress={async () => {
-							await auth.currentUser?.reload()
-							if (auth.currentUser?.emailVerified === false) {
-								alert('Please verify your email before you can find rides')
-								return
-							}
+							refreshUserRecord()
+							
+							// if (userRecord?.emailVerified === false) {
+							// 	alert('Please verify your email before you can find rides')
+							// 	return
+							// }
 							
 							navigation.navigate('FindRides')
 						}}

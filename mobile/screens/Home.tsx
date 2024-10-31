@@ -115,7 +115,7 @@ type PassengerRidesSummary = {
 }
 
 const Home = () => {
-	const { user } = useContext(AuthContext)
+	const { user, userRecord } = useContext(AuthContext)
 	const navigation = useNavigation()
 	const { mode, setMode, isInRide } = useContext(ModeContext)
 	const { profile } = useContext(AuthContext)
@@ -190,7 +190,7 @@ const Home = () => {
 		>
 			<View style={[style.mainContent, { gap: 20 }]}>
 				{
-					!user?.emailVerified &&
+					!userRecord?.emailVerified &&
 					<UnverifiedEmailAlert navigation={navigation} />
 				}
 				<CustomLayout scrollable={true} contentPadding={0}>

@@ -171,17 +171,18 @@ const FindRides = () => {
 		return (
 			<Pressable
 				style={[style.row, {
-					gap: 20,
-					elevation: 10,
-					borderRadius: 20,
+					gap: 15,
 					backgroundColor: 'white',
+					elevation: 5,
 					padding: 20,
+					borderRadius: 30,
 				}]}
-				onPress={() => {
-					// @ts-ignore
-					navigation.navigate('ViewRide', { rideId: ride.id })
-				}}
-				key={ride.id}
+				onPress={
+					() => {
+						// @ts-ignore
+						navigation.navigate('ViewRide', { rideId: ride.id })
+					}
+				}
 			>
 				<View style={[style.column, {
 					width: 'auto',
@@ -198,45 +199,52 @@ const FindRides = () => {
 						{ride.available_seats - ride.passengers.length}/{ride.available_seats}
 					</CustomText>
 				</View>
-				<View style={[style.column, { flex: 4, gap: 5 }]}>
+				<View style={[style.column, { gap: 20, flex: 1 }]}>
 					<View style={[style.row, { gap: 5 }]}>
-						<View style={[style.column, { flex: 1 }]}>
-							<CustomText size={14} bold numberOfLines={1}>
-								{`${ride.to_campus ? 'From' : 'To'} ${ride.location?.name}`}
+						<View style={[style.row, { gap: 5, flex: 1 }]}>
+							<Icon
+								name="map-marker"
+								size={20}
+							/>
+							<CustomText
+								size={14}
+								numberOfLines={1}
+								width="70%"
+							>
+								{ride.to_campus ? 'From' : 'To'} {ride.location.name}
 							</CustomText>
 						</View>
-						<View style={[style.column, { width: 'auto' }]}>
-							<CustomText size={14} bold numberOfLines={1}>
-								{`(${ride.distance.toFixed(2)} km)`}
+						<View style={[style.row, { gap: 5, width: 'auto' }]}>
+							<CustomText size={12} bold>
+								({ride.distance.toFixed(2)} km away)
 							</CustomText>
 						</View>
 					</View>
-					<View style={[style.row, { gap: 5 }]}>
-						<View style={[style.column, { flex: 1 }]}>
-							<CustomText size={14}>
+					<View style={[style.row, { gap: 10, justifyContent: 'space-between' }]}>
+						<View style={[style.row, { gap: 5, width: 'auto' }]}>
+							<Icon name="calendar" size={20} />
+							<CustomText size={12} bold>
 								{ride.datetime.toDate().toLocaleString('en-GB', {
 									day: 'numeric',
 									month: 'numeric',
 									year: 'numeric',
+								})}
+							</CustomText>
+						</View>
+						<View style={[style.row, { gap: 5, width: 'auto' }]}>
+							<Icon name="clock" size={20} />
+							<CustomText size={12} bold>
+								{ride.datetime.toDate().toLocaleString('en-GB', {
 									hour: '2-digit',
 									minute: '2-digit',
 									hour12: true,
 								})}
 							</CustomText>
 						</View>
-						<View style={[style.column, { width: 'auto' }]}>
-							<CustomText
-								size={14}
-								bold
-								color={
-									ride.passengers?.length === ride.available_seats || ride.passengers?.some((passenger) => passenger === user?.uid) ? 'red' : 'green'
-								}
-							>
-								{
-									isInRide ?
-										isInRide === ride.id ? 'Booked' : 'Available'
-										: ride.passengers?.length === ride.available_seats ? 'Full' : 'Available'
-								}
+						<View style={[style.row, { gap: 5, width: 'auto' }]}>
+							<Icon name="cash" size={20} />
+							<CustomText size={12} bold>
+								RM {ride.fare}
 							</CustomText>
 						</View>
 					</View>
@@ -251,50 +259,47 @@ const FindRides = () => {
 			contentPadding={0}
 			header={
 				<CustomHeader
-					title="Available Rides"
+					title="Find Rides"
 					navigation={navigation}
 				/>
 			}
 		>
 			<View style={style.mainContent}>
-				<View style={[style.row, { gap: 10, marginHorizontal: 20, marginVertical: 10, width: 'auto' }]}>
-					<View style={[style.column, { gap: 10 }]}>
-						<View style={[style.row, {
-							gap: 10,
-							alignItems: 'center',
-							justifyContent: 'center',
-							height: 'auto',
-						}]}>
-							<View style={[style.column]}>
-								{
-									location &&
-									(
-										locationInputFocused ?
-											<CustomInputAutoComplete
-												colors={colors}
-												autocompleteRef={autocompleteRef}
-												details={location}
-												toCampus={to_campus}
-												handleLocationSelect={handleLocationSelect}
-											/> : (
-												<Pressable
-													style={{ width: '100%' }}
-													onPress={() => setLocationInputFocused(true)}
-												>
-													<CustomInput
-														editable={false}
-														onPressIn={() => setLocationInputFocused(true)}
-														label={to_campus ? 'Pick-Up Location' : 'Drop-Off Location'}
-														value={location.name}
-														onChangeText={() => null}
-														onPress={() => setLocationInputFocused(true)}
-													/>
-												</Pressable>
-											)
+				<View style={[style.row, {
+					gap: 10,
+					marginHorizontal: 20,
+					marginVertical: 10,
+					width: 'auto',
+					height: 'auto',
+				}]}>
+					<View style={[style.column, { gap: 10, height: '100%' }]}>
+						{
+							location &&
+							(
+								locationInputFocused ?
+									<CustomInputAutoComplete
+										colors={colors}
+										autocompleteRef={autocompleteRef}
+										details={location}
+										toCampus={to_campus}
+										handleLocationSelect={handleLocationSelect}
+									/> : (
+										<Pressable
+											style={{ width: '100%' }}
+											onPress={() => setLocationInputFocused(true)}
+										>
+											<CustomInput
+												editable={false}
+												onPressIn={() => setLocationInputFocused(true)}
+												label={to_campus ? 'Pick-Up Location' : 'Drop-Off Location'}
+												value={location.name}
+												onChangeText={() => null}
+												onPress={() => setLocationInputFocused(true)}
+											/>
+										</Pressable>
 									)
-								}
-							</View>
-						</View>
+							)
+						}
 						<Controller
 							control={form.control}
 							render={({ field: { onChange, value } }) => (

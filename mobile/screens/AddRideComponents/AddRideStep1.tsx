@@ -54,7 +54,7 @@ const AddRideStep1 = (
 	
 	const handleLocationSelect = (details: GooglePlaceDetail | null) => {
 		if (!details) {
-			setValue(toCampus ? 'not_campus' : 'campus', {
+			setValue('not_campus', {
 				place_id: '',
 				formatted_address: '',
 				name: '',
@@ -66,7 +66,7 @@ const AddRideStep1 = (
 				},
 			})
 		} else {
-			setValue(toCampus ? 'not_campus' : 'campus', {
+			setValue('not_campus', {
 				place_id: details.place_id,
 				formatted_address: details.formatted_address,
 				name: details.name || details.formatted_address,

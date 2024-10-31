@@ -257,17 +257,12 @@ const linkEmailPassword = async (email: string, password: string) => {
 }
 
 const linkGoogle = async () => {
+	await GoogleSignin.signOut()
 	const userInfo = await GoogleSignin.signIn()
 	
-	//validate
-	if (!userInfo.user.email.endsWith('newinti.edu.my')) {
-		ToastAndroid.show('Please use your INTI email to login.', ToastAndroid.SHORT)
-		return null
-	}
-	
 	if (auth.currentUser?.email !== userInfo.user.email) {
-		Alert.alert('Error', 'The Google account email does not match the current user email.')
-		return null
+		await GoogleSignin.signOut()
+		throw new Error('The Google account email does not match the current user email.')
 	}
 	
 	const googleCredential = GoogleAuthProvider.credential(userInfo.idToken)
@@ -276,9 +271,9 @@ const linkGoogle = async () => {
 	
 	if (auth.currentUser) {
 		return await linkWithCredential(auth.currentUser, googleCredential)
+	} else {
+		throw new Error('User not signed in')
 	}
-	
-	return null
 }
 
 const unlinkEmailPassword = async () => {

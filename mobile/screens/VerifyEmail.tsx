@@ -16,7 +16,7 @@ import Icon from '@expo/vector-icons/MaterialCommunityIcons'
 const { auth } = FirebaseApp
 
 const VerifyEmail = () => {
-	const { user } = useContext(AuthContext)
+	const { user, userRecord, refreshUserRecord } = useContext(AuthContext)
 	const navigation = useNavigation()
 	const [canResend, setCanResend] = useState(true)
 	const [remainingTime, setRemainingTime] = useState(0)
@@ -24,7 +24,8 @@ const VerifyEmail = () => {
 	
 	useEffect(() => {
 		(async () => {
-			await auth.currentUser?.reload()
+			refreshUserRecord()
+			
 			const lastSent = await AsyncStorage.getItem('lastVerificationEmailSent')
 			if (lastSent) {
 				const timeElapsed = Date.now() - parseInt(lastSent, 10)
@@ -55,26 +56,27 @@ const VerifyEmail = () => {
 					setRemainingTime(cooldownPeriod / 1000)
 					setCanResend(false)
 					await AsyncStorage.setItem('lastVerificationEmailSent', Date.now().toString())
+					ToastAndroid.show('Verification email sent', ToastAndroid.SHORT)
 				})
 				.catch((error) => {
 					console.log('Error sending verification email:', error)
 					ToastAndroid.show(error.message, ToastAndroid.LONG)
 				})
-				.finally(async () => {
+				.finally(() => {
 					console.log('Reloading user...')
-					auth.currentUser && await auth.currentUser.reload()
+					refreshUserRecord()
 				})
 		}
 	}
 	
 	useEffect(() => {
 		//once the user is verified, go back after 3 seconds while showing loading overlay
-		if (user?.emailVerified) {
+		if (userRecord?.emailVerified) {
 			setTimeout(() => {
 				navigation.goBack()
 			}, 3000)
 		}
-	}, [user?.emailVerified])
+	}, [userRecord?.emailVerified])
 	
 	return (
 		<CustomLayout
@@ -96,7 +98,7 @@ const VerifyEmail = () => {
 								value={user?.email || ''}
 								onChangeText={() => null}
 								rightIcon={
-									auth.currentUser?.emailVerified ? (
+									userRecord?.emailVerified ? (
 										<Icon name="check" size={24} color="green" />
 									) : (
 										<Icon name="alert-circle" size={24} color="darkred" />
@@ -106,16 +108,16 @@ const VerifyEmail = () => {
 						</View>
 						<View style={style.row}>
 							{
-								auth.currentUser?.emailVerified ? (
+								userRecord?.emailVerified ? (
 									<CustomText size={12} color="green">
 										Email verified
 									</CustomText>
 								) : (
 									<CustomOutlinedButton
 										onPress={handleSendVerificationEmail}
-										disabled={!canResend || user?.emailVerified}
+										disabled={!canResend || userRecord?.emailVerified}
 									>
-										{canResend ? 'Resend Verification Email' : `Resend in ${remainingTime} seconds`}
+										{canResend ? 'Send Verification Email' : `Resend in ${remainingTime} seconds`}
 									</CustomOutlinedButton>
 								)
 							}

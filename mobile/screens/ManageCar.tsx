@@ -4,7 +4,7 @@ import { Image, Pressable, StyleSheet, ToastAndroid, View } from 'react-native'
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { Car } from '../database/schema'
 import FirebaseApp from '../components/FirebaseApp'
-import { doc, onSnapshot, runTransaction, setDoc } from 'firebase/firestore'
+import { doc, getDoc, onSnapshot, runTransaction, setDoc } from 'firebase/firestore'
 import { AuthContext } from '../components/contexts/AuthContext'
 import CustomLayout from '../components/themed/CustomLayout'
 import CustomHeader from '../components/themed/CustomHeader'
@@ -80,6 +80,7 @@ const ManageCar = () => {
 		
 		if (!data.new_photo_uri) {
 			ToastAndroid.show('Please select a photo', ToastAndroid.SHORT)
+			return
 		}
 		
 		setLoadingOverlay({
@@ -188,6 +189,20 @@ const ManageCar = () => {
 			}
 		} else {
 			const blob = await fetch(data.new_photo_uri as string).then(res => res.blob())
+			
+			//check if the car already exists
+			//if it does, show an error message
+			const carRef = doc(db, 'cars', data.plate)
+			const carSnapshot = await getDoc(carRef)
+			
+			if (carSnapshot.exists()) {
+				ToastAndroid.show('Car with this number plate already exists', ToastAndroid.SHORT)
+				setLoadingOverlay({
+					show: false,
+					message: '',
+				})
+				return
+			}
 			
 			const storage = storageRef(FirebaseApp.storage, `cars/${data.plate}`)
 			
@@ -364,6 +379,9 @@ const ManageCar = () => {
 								<Controller
 									control={form.control}
 									name="brand"
+									rules={{
+										required: 'Brand is required',
+									}}
 									render={({ field: { onChange, value } }) => (
 										<CustomInput
 											label="Please enter your car's brand"
@@ -386,6 +404,9 @@ const ManageCar = () => {
 								<Controller
 									control={form.control}
 									name="model"
+									rules={{
+										required: 'Model is required',
+									}}
 									render={({ field: { onChange, value } }) => (
 										<CustomInput
 											label="Please enter your car's model"
@@ -408,6 +429,9 @@ const ManageCar = () => {
 								<Controller
 									control={form.control}
 									name="color"
+									rules={{
+										required: 'Color is required',
+									}}
 									render={({ field: { onChange, value } }) => (
 										<CustomInput
 											label="Please enter your car's color"

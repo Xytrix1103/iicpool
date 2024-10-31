@@ -42,7 +42,7 @@ const ManageLicense = () => {
 		const result = await ImagePicker.launchImageLibraryAsync({
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
 			allowsEditing: true,
-			aspect: [1, 1],
+			aspect: [17, 11],
 			quality: 1,
 		})
 		
@@ -117,7 +117,7 @@ const ManageLicense = () => {
 		<CustomLayout
 			header={
 				<CustomHeader
-					title="Activate Driver"
+					title={isEditing ? 'Update License' : 'Manage License'}
 					navigation={navigation}
 					confirmationMessage={(isEditing && imageUri !== profile?.driver_license) ? 'You have unsaved changes. Are you sure you want to go back?' : undefined}
 					rightNode={

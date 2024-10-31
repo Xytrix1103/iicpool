@@ -110,6 +110,7 @@ const UpdatePassword = () => {
 										hideLabelOnFocus={true}
 										secureTextEntry={true}
 										value={value}
+										autoCapitalize="none"
 										onChangeText={onChange}
 										errorMessage={form.formState.errors.password?.message}
 									/>

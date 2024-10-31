@@ -64,9 +64,10 @@ const AuthProvider = ({ children }: any) => {
 	const refreshUserRecord = useCallback(async () => {
 		const checkResult = await checkUser({ email: user?.email })
 		
-		console.log('AuthProvider -> checkResult', checkResult)
+		console.log('AuthProvider -> checkResult', checkResult.data)
 		
 		if (!checkResult.data) {
+			console.log('AuthProvider -> user not found')
 			setUserRecord(null)
 			return
 		} else {

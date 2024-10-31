@@ -265,7 +265,7 @@ const Profile = () => {
 									value={user?.email || ''}
 									onChangeText={() => null}
 									rightIcon={
-										user?.emailVerified ? (
+										userRecord?.emailVerified ? (
 											<Icon name="check-decagram" size={24} color="green" />
 										) : (
 											<Icon name="alert-circle-outline" size={24} color="darkred" />
@@ -273,7 +273,7 @@ const Profile = () => {
 									}
 								/>
 								{
-									!user?.emailVerified &&
+									!userRecord?.emailVerified &&
 									<View style={[style.row, { alignItems: 'center' }]}>
 										<CustomText size={12}>
 											Secure your account by verifying your email{' '}
@@ -368,7 +368,7 @@ const Profile = () => {
 										</CustomText>
 									</View>
 									{
-										user?.emailVerified ?
+										userRecord?.emailVerified ?
 											<View
 												style={{
 													flexDirection: 'row',
@@ -545,7 +545,7 @@ const Profile = () => {
 														})
 														.catch((error) => {
 															console.error('Error linking Google: ', error)
-															ToastAndroid.show('An error occurred. Please try again later.', ToastAndroid.SHORT)
+															ToastAndroid.show(error.message, ToastAndroid.SHORT)
 														})
 														.finally(() => {
 															refreshUserRecord()
