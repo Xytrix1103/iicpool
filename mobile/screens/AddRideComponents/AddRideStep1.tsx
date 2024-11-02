@@ -192,7 +192,10 @@ const AddRideStep1 = (
 	return (
 		<CustomLayout scrollable={false} contentPadding={0}>
 			<View style={style.row}>
-				<View style={[style.column, { flex: showMap ? 9 : 1 }]}>
+				<View style={[style.column, {
+					flex: showMap ? 9 : 1,
+					flexDirection: toCampus ? 'column' : 'column-reverse',
+				}]}>
 					{
 						showMap ?
 							<Pressable
@@ -202,8 +205,8 @@ const AddRideStep1 = (
 								<CustomInput
 									editable={false}
 									onPressIn={() => setShowMap(false)}
-									label={toCampus ? 'Pick-Up Location' : 'Campus'}
-									value={(toCampus ? watchNotCampus : watchCampus).formatted_address}
+									label={toCampus ? 'Pick-Up Location' : 'Drop-Off Location'}
+									value={watchNotCampus.name || watchNotCampus.formatted_address}
 									onChangeText={() => null}
 									onPress={() => setShowMap(false)}
 									rightIcon={
@@ -238,49 +241,13 @@ const AddRideStep1 = (
 								/> : null
 					}
 					{
-						showMap ?
-							<Pressable
-								style={{ width: '100%' }}
-								onPress={() => toCampus ? null : setShowMap(false)}
-							>
-								<CustomInput
-									editable={false}
-									onPressIn={() => setShowMap(false)}
-									label={toCampus ? 'Campus' : 'Drop-Off Location'}
-									value={(toCampus ? watchCampus : watchNotCampus).formatted_address}
-									onChangeText={() => null}
-									onPress={() => setShowMap(false)}
-									rightIcon={
-										(!toCampus && watchNotCampus.place_id !== '') &&
-										<Icon
-											onPress={() => {
-												setValue('not_campus', {
-													place_id: '',
-													formatted_address: '',
-													name: '',
-													geometry: {
-														location: {
-															lat: 0,
-															lng: 0,
-														},
-													},
-												})
-											}}
-											name="close"
-											size={20}
-											// @ts-expect-error colors
-											color={colors.text}
-										/>
-									}
-								/>
-							</Pressable> : toCampus ?
-								null :
-								<CustomInputAutoComplete
-									colors={colors}
-									autocompleteRef={autocompleteRef}
-									details={watchNotCampus} toCampus={toCampus}
-									handleLocationSelect={handleLocationSelect}
-								/>
+						showMap &&
+						<CustomInput
+							editable={false}
+							label="Campus"
+							value={watchCampus.name || watchCampus.formatted_address}
+							onChangeText={() => null}
+						/>
 					}
 				</View>
 				{

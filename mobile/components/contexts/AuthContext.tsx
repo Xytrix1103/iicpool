@@ -82,6 +82,7 @@ const AuthProvider = ({ children }: any) => {
 			auth,
 			async (newUser) => {
 				if (newUser) {
+					await SecureStore.setItemAsync('userId', newUser.uid)
 					setLoading(true)
 					await newUser.reload()
 					refreshUserRecord().then(r => r)

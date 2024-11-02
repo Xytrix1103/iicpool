@@ -44,8 +44,8 @@ const AddRideStep2 = (
 									if (value) {
 										if (new Date(value).getTime() < new Date().getTime()) {
 											return 'Date and time cannot be in the past'
-										} else if (new Date(value).getTime() < new Date().getTime() + 3600000) {
-											return 'Date and time must be at least 1 hour from now'
+										} else if (new Date(value).getTime() < new Date().getTime() + 1800000) {
+											return 'Date and time must be at least 30 minutes from now'
 										}
 										
 										return true
@@ -92,7 +92,7 @@ const AddRideStep2 = (
 										if (new Date(value).getTime() < new Date().getTime()) {
 											return 'Date and time cannot be in the past'
 										} else if (new Date(value).getTime() < new Date().getTime() + 1800000) {
-											return 'Date and time must be at least 1 hour from now'
+											return 'Date and time must be at least 30 minutes from now'
 										}
 										
 										return true

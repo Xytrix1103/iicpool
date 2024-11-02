@@ -149,6 +149,8 @@ const fetchLocationByCoordinates = async ({ latitude, longitude }: { latitude: n
 		if (response) {
 			console.log('Location:', response.data.results[0])
 			return response.data.results[0]
+		} else {
+			return null
 		}
 	} catch (error) {
 		console.error('Error fetching address:', error)

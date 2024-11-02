@@ -18,6 +18,7 @@ import { RegisterProps } from '../screens/Register'
 import { httpsCallable } from 'firebase/functions'
 import { Profile, ProfileNotificationSettings, Role } from '../database/schema'
 import { Timestamp } from '@firebase/firestore'
+import * as SecureStore from 'expo-secure-store'
 import FirebaseError = firebase.FirebaseError
 
 GoogleSignin.configure({
@@ -62,6 +63,9 @@ const backgroundLogout = async ({ callback }: { callback?: () => void } = {}): P
 					expoPushToken: deleteField(),
 				})
 			}
+			
+			await SecureStore.deleteItemAsync('currentRide')
+			await SecureStore.deleteItemAsync('userId')
 			
 			if (callback) {
 				callback()

@@ -439,7 +439,7 @@ export const triggerSOSEvent = onDocumentUpdated('rides/{rideId}', async (event)
 					[driverData.expoPushToken],
 					{
 						title: 'SOS Triggered',
-						message: 'An SOS has been triggered. Your location is being tracked for safety purposes',
+						message: 'Another driver has triggered an SOS. If you are nearby, please assist if possible',
 					},
 				)
 			}
@@ -481,7 +481,7 @@ export const triggerSOSResponseEvent = onDocumentUpdated('rides/{rideId}', async
 				[driverData.expoPushToken],
 				{
 					title: 'SOS Response',
-					message: 'An SOS has been responded to. Your location is being tracked for safety purposes',
+					message: 'Another driver has responded to the SOS. Please wait patiently for the responder to arrive',
 				},
 			)
 		}
@@ -501,7 +501,7 @@ export const triggerSOSResponseEvent = onDocumentUpdated('rides/{rideId}', async
 					[passengerData.expoPushToken],
 					{
 						title: 'SOS Response',
-						message: 'An SOS has been responded to. Your location is being tracked for safety purposes',
+						message: 'Another driver has responded to the SOS. Please wait patiently for the responder to arrive',
 					},
 				)
 			}
@@ -543,7 +543,7 @@ export const triggerSOSStartedEvent = onDocumentUpdated('rides/{rideId}', async 
 				[driverData.expoPushToken],
 				{
 					title: 'SOS Started',
-					message: 'An SOS has been started. Your location is being tracked for safety purposes',
+					message: 'The SOS responder has started the ride. Your location is being tracked for safety purposes',
 				},
 			)
 		}
@@ -563,7 +563,7 @@ export const triggerSOSStartedEvent = onDocumentUpdated('rides/{rideId}', async 
 					[passengerData.expoPushToken],
 					{
 						title: 'SOS Started',
-						message: 'An SOS has been started. Your location is being tracked for safety purposes',
+						message: 'The SOS responder has started the ride. Your location is being tracked for safety purposes',
 					},
 				)
 			}

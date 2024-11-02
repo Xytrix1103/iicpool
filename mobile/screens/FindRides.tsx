@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Pressable, View } from 'react-native'
 import { collection, onSnapshot, query, where } from 'firebase/firestore'
 import CustomLayout from '../components/themed/CustomLayout'
@@ -104,11 +104,29 @@ const FindRides = () => {
 				const location = await Location.getCurrentPositionAsync({
 					accuracy: Location.Accuracy.Highest,
 				})
+					.then((location) => {
+						console.log(location)
+						return location
+					})
+					.catch(() => {
+						setLoadingOverlay({
+							show: false,
+							message: '',
+						})
+						
+						return null
+					})
 				setCurrentLocation(location)
 			},
 			type: 'location',
 			message: 'We need your location to find rides near you',
-		}).then()
+		})
+			.then(() => {
+				console.log('Location permission granted')
+			})
+			.catch(() => {
+				console.log('Location permission denied')
+			})
 	}, [])
 	
 	useEffect(() => {
@@ -141,7 +159,17 @@ const FindRides = () => {
 		}
 	}, [currentLocation])
 	
-	const ridesQuery = query(collection(db, 'rides'), where('driver', '!=', user?.uid), where('completed_at', '==', null), where('cancelled_at', '==', null), where('started_at', '==', null), where('datetime', '>=', Timestamp.fromDate(date)))
+	const ridesQuery = useMemo(
+		() => query(
+			collection(db, 'rides'),
+			where('driver', '!=', user?.uid),
+			where('completed_at', '==', null),
+			where('cancelled_at', '==', null),
+			where('started_at', '==', null),
+			where('to_campus', '==', to_campus),
+			where('datetime', '>=', Timestamp.fromDate(date)),
+		), [user, to_campus, date],
+	)
 	
 	useEffect(() => {
 		const unsubscribe = onSnapshot(ridesQuery, (snapshot) => {
@@ -156,16 +184,13 @@ const FindRides = () => {
 					longitude: doc.data().location.geometry.location.lng,
 				}, 1) / 1000,
 			})) as CustomRide[]
-			
-			//order by distance in ascending order first, then by datetime (positive) difference from selected date in ascending order
-			ridesData.sort((a, b) => a.distance - b.distance || Math.abs(a.datetime.toDate().getTime() - date.getTime()) - Math.abs(b.datetime.toDate().getTime() - date.getTime()))
 			setRides(ridesData)
 		})
 		
 		return () => {
 			unsubscribe()
 		}
-	}, [location, date, to_campus])
+	}, [user, to_campus, date, location])
 	
 	const renderItem = ({ ride }: { ride: CustomRide }) => {
 		return (
@@ -384,12 +409,18 @@ const FindRides = () => {
 					<View style={style.mainContent}>
 						<View style={[style.column, { gap: 10 }]}>
 							{
-								rides.filter(ride => ride.to_campus === to_campus).sort((a, b) => filter === 'datetime' ? Math.abs(a.datetime.toDate().getTime() - date.getTime()) - Math.abs(b.datetime.toDate().getTime() - date.getTime()) : a.distance - b.distance).map(ride => (
-									renderItem({ ride })
-								))
+								rides.sort(
+									(a, b) => filter === 'datetime' ?
+										Math.abs(a.datetime.toDate().getTime() - date.getTime()) - Math.abs(b.datetime.toDate().getTime() - date.getTime()) :
+										a.distance - b.distance,
+								).map(
+									ride => (
+										renderItem({ ride })
+									),
+								)
 							}
 							{
-								rides.filter(ride => ride.to_campus === to_campus).length === 0 &&
+								rides.length === 0 &&
 								<CustomText align="center" size={16}>
 									No rides found
 								</CustomText>

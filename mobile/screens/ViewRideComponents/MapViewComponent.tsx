@@ -122,23 +122,19 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 			}
 		})()
 		
-		if (isRideOngoing) {
-			unsubscribe = onSnapshot(query(collection(db, 'rides', ride.id || '', 'signals'), where('user', '==', ride.driver), orderBy('timestamp', 'desc')), (snapshot) => {
-				setSignals(snapshot.docs.map((doc) => ({
-					id: doc.id,
-					...doc.data(),
-				}) as Signal))
-			})
-			
-			if (ride.sos?.responded_by) {
-				unsubscribeSOS = onSnapshot(query(collection(db, 'rides', ride.id || '', 'signals'), where('user', '==', ride.sos?.responded_by), orderBy('timestamp', 'desc')), (snapshot) => {
-					setSOSResponderSignals(snapshot.docs.map((doc) => ({
-						id: doc.id,
-						...doc.data(),
-					}) as Signal))
-				})
-			}
-		}
+		unsubscribe = onSnapshot(query(collection(db, 'rides', ride.id || '', 'signals'), where('user', '==', ride.driver), orderBy('timestamp', 'desc')), (snapshot) => {
+			setSignals(snapshot.docs.map((doc) => ({
+				id: doc.id,
+				...doc.data(),
+			}) as Signal))
+		})
+		
+		unsubscribeSOS = onSnapshot(query(collection(db, 'rides', ride.id || '', 'signals'), where('user', '==', ride.sos?.responded_by || ''), orderBy('timestamp', 'desc')), (snapshot) => {
+			setSOSResponderSignals(snapshot.docs.map((doc) => ({
+				id: doc.id,
+				...doc.data(),
+			}) as Signal))
+		})
 		
 		return () => {
 			if (unsubscribe) {
@@ -342,7 +338,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 							{
 								ride.cancelled_at ? 'CANCELLED' :
 									ride.completed_at ? 'COMPLETED' :
-										ride.started_at ? ride.sos ? ride.sos.responded_by ? `SOS RESPONDED` : 'SOS TRIGGERED' : 'ONGOING' :
+										ride.started_at ? ride.sos ? ride.sos.responded_by ? ride.sos.started_at ? `SOS STARTED` : `SOS RESPONDED` : 'SOS TRIGGERED' : 'ONGOING' :
 											'PENDING'
 							}
 						</CustomText>
@@ -511,7 +507,8 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 															}}
 															tracksViewChanges={false}
 														>
-															<Icon name="map-marker" size={30} color={colors.primary} />
+															<Icon name={ride.to_campus ? 'school' : 'map-marker'}
+															      size={30} color={colors.primary} />
 														</Marker>
 														<Polyline
 															coordinates={decodePolyline(realTimeRoute.routes[0].overview_polyline.points)}
@@ -644,8 +641,8 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 															}}
 															tracksViewChanges={false}
 														>
-															<Icon name="map-marker" size={30}
-															      color={colors.primary} />
+															<Icon name={ride.to_campus ? 'school' : 'map-marker'}
+															      size={30} color={colors.primary} />
 														</Marker>
 														<Polyline
 															coordinates={decodePolyline(realTimeRoute.routes[0].overview_polyline.points)}
@@ -673,7 +670,8 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 													}}
 													tracksViewChanges={false}
 												>
-													<Icon name="map-marker" size={30} color={colors.primary} />
+													<Icon name={ride.to_campus ? 'school' : 'map-marker'}
+													      size={30} color={colors.primary} />
 												</Marker>
 												<Polyline
 													coordinates={decodePolyline(realTimeRoute.routes[0].overview_polyline.points)}
@@ -734,162 +732,164 @@ const MapViewComponent: React.FC<MapViewComponentProps> = (
 								)
 							}
 							{
-								mode === Role.PASSENGER ? (
-									<View style={[style.row, { gap: 10 }]}>
-										{
-											isInRide ? (
-												(isInRide === ride.id && passengers.some((passenger) => passenger?.id === user?.uid) && !isRideOngoing) ?
-													<CustomOutlinedButton
-														onPress={() => {
-															handleCancelBooking({ ride, user })
-														}}
-													>
-														Cancel Booking
-													</CustomOutlinedButton> :
-													null
-											) : null
-										}
-										{
-											passengers.every((passenger) => passenger?.id !== user?.uid) &&
-											<CustomSolidButton
-												onPress={() => {
-													handleBookRide({ ride, user, isInRide })
-												}}
-											>
-												Book Ride
-											</CustomSolidButton>
-										}
-									</View>
-								) : (
-									isRideOngoing ? (
-										ride.driver === user?.uid ? (
-											ride.sos ? null : (
+								!ride.completed_at && (
+									mode === Role.PASSENGER ? (
+										<View style={[style.row, { gap: 10 }]}>
+											{
+												isInRide ? (
+													(isInRide === ride.id && passengers.some((passenger) => passenger?.id === user?.uid) && !isRideOngoing) ?
+														<CustomOutlinedButton
+															onPress={() => {
+																handleCancelBooking({ ride, user })
+															}}
+														>
+															Cancel Booking
+														</CustomOutlinedButton> :
+														null
+												) : null
+											}
+											{
+												passengers.every((passenger) => passenger?.id !== user?.uid) &&
+												<CustomSolidButton
+													onPress={() => {
+														handleBookRide({ ride, user, isInRide })
+													}}
+												>
+													Book Ride
+												</CustomSolidButton>
+											}
+										</View>
+									) : (
+										isRideOngoing ? (
+											ride.driver === user?.uid ? (
+												ride.sos ? null : (
+													<View style={[style.row, { gap: 10 }]}>
+														<CustomSolidButton
+															onPress={() => {
+																handleCompleteRide({ ride, user })
+															}}
+														>
+															Complete
+														</CustomSolidButton>
+														<CustomOutlinedButton
+															onPress={() => {
+																handleTriggerSOS({ ride, user })
+															}}
+														>
+															SOS
+														</CustomOutlinedButton>
+													</View>
+												)
+											) : (
+												ride.sos ? (
+													ride.sos.triggered_at && !ride.sos.responded_by ? (
+														((cars?.length || 0) > 0 && selectedCar) ? (
+															<>
+																<View style={[style.row, { gap: 10 }]}>
+																	<View style={[style.column, {
+																		alignItems: 'flex-start',
+																		width: '100%',
+																	}]}>
+																		{cars?.map((car, index) => (
+																			<RadioButton.Item
+																				key={index}
+																				label={`${car.plate} - ${car.brand} ${car.model}`}
+																				value={car.id as string}
+																				color={colors.primary}
+																				status={selectedCar === car ? 'checked' : 'unchecked'}
+																				position="leading"
+																				style={{ paddingVertical: 0 }}
+																				onPress={() => {
+																					setSelectedCar(car)
+																				}}
+																			/>
+																		))}
+																	</View>
+																</View>
+																<View style={[style.row, { gap: 10 }]}>
+																	<CustomSolidButton
+																		onPress={() => {
+																			handleRespondSOS({
+																				ride,
+																				user,
+																				car: selectedCar,
+																			})
+																		}}
+																	>
+																		Respond to SOS
+																	</CustomSolidButton>
+																</View>
+															</>
+														) : (
+															<View style={[style.row, { gap: 10 }]}>
+																<CustomText
+																	size={14}
+																	align="center"
+																	width="100%"
+																>
+																	You must have a car to respond to SOS
+																</CustomText>
+															</View>
+														)
+													) : (
+														ride.sos.responded_by === user?.uid ? (
+															ride.sos.started_at ? (
+																<View style={[style.row, { gap: 10 }]}>
+																	<CustomSolidButton
+																		onPress={() => {
+																			handleCompleteSOSRide({
+																				ride,
+																				user,
+																			})
+																		}}
+																	>
+																		Complete SOS
+																	</CustomSolidButton>
+																</View>
+															) : (
+																<View style={[style.row, { gap: 10 }]}>
+																	<CustomSolidButton
+																		onPress={() => {
+																			handleStartSOSRide({ ride, user })
+																		}}
+																	>
+																		Start SOS
+																	</CustomSolidButton>
+																</View>
+															)
+														) : null
+													)
+												) : (
+													<View style={[style.row, { gap: 10 }]}>
+														<CustomSolidButton
+															onPress={() => {
+																handleTriggerSOS({ ride, user })
+															}}
+														>
+															Trigger SOS
+														</CustomSolidButton>
+													</View>
+												)
+											)
+										) : (
+											ride.cancelled_at || ride.completed_at ? null : (
 												<View style={[style.row, { gap: 10 }]}>
 													<CustomSolidButton
 														onPress={() => {
-															handleCompleteRide({ ride, user })
+															handleStartRide({ ride, user })
 														}}
 													>
-														Complete
+														Start Ride
 													</CustomSolidButton>
 													<CustomOutlinedButton
 														onPress={() => {
-															handleTriggerSOS({ ride, user })
+															handleCancelRide({ ride, user })
 														}}
 													>
-														SOS
+														Cancel Ride
 													</CustomOutlinedButton>
 												</View>
 											)
-										) : (
-											ride.sos ? (
-												ride.sos.triggered_at && !ride.sos.responded_by ? (
-													((cars?.length || 0) > 0 && selectedCar) ? (
-														<>
-															<View style={[style.row, { gap: 10 }]}>
-																<View style={[style.column, {
-																	alignItems: 'flex-start',
-																	width: '100%',
-																}]}>
-																	{cars?.map((car, index) => (
-																		<RadioButton.Item
-																			key={index}
-																			label={`${car.plate} - ${car.brand} ${car.model}`}
-																			value={car.id as string}
-																			color={colors.primary}
-																			status={selectedCar === car ? 'checked' : 'unchecked'}
-																			position="leading"
-																			style={{ paddingVertical: 0 }}
-																			onPress={() => {
-																				setSelectedCar(car)
-																			}}
-																		/>
-																	))}
-																</View>
-															</View>
-															<View style={[style.row, { gap: 10 }]}>
-																<CustomSolidButton
-																	onPress={() => {
-																		handleRespondSOS({
-																			ride,
-																			user,
-																			car: selectedCar,
-																		})
-																	}}
-																>
-																	Respond to SOS
-																</CustomSolidButton>
-															</View>
-														</>
-													) : (
-														<View style={[style.row, { gap: 10 }]}>
-															<CustomText
-																size={14}
-																align="center"
-																width="100%"
-															>
-																You must have a car to respond to SOS
-															</CustomText>
-														</View>
-													)
-												) : (
-													ride.sos.responded_by === user?.uid ? (
-														ride.sos.started_at ? (
-															<View style={[style.row, { gap: 10 }]}>
-																<CustomSolidButton
-																	onPress={() => {
-																		handleCompleteSOSRide({
-																			ride,
-																			user,
-																		})
-																	}}
-																>
-																	Complete SOS
-																</CustomSolidButton>
-															</View>
-														) : (
-															<View style={[style.row, { gap: 10 }]}>
-																<CustomSolidButton
-																	onPress={() => {
-																		handleStartSOSRide({ ride, user })
-																	}}
-																>
-																	Start SOS
-																</CustomSolidButton>
-															</View>
-														)
-													) : null
-												)
-											) : (
-												<View style={[style.row, { gap: 10 }]}>
-													<CustomSolidButton
-														onPress={() => {
-															handleTriggerSOS({ ride, user })
-														}}
-													>
-														Trigger SOS
-													</CustomSolidButton>
-												</View>
-											)
-										)
-									) : (
-										ride.cancelled_at || ride.completed_at ? null : (
-											<View style={[style.row, { gap: 10 }]}>
-												<CustomSolidButton
-													onPress={() => {
-														handleStartRide({ ride, user })
-													}}
-												>
-													Start Ride
-												</CustomSolidButton>
-												<CustomOutlinedButton
-													onPress={() => {
-														handleCancelRide({ ride, user })
-													}}
-												>
-													Cancel Ride
-												</CustomOutlinedButton>
-											</View>
 										)
 									)
 								)

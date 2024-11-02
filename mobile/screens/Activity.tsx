@@ -22,6 +22,7 @@ const RideComponent = ({ ride, colors, mode, navigation }: {
 	mode: 'driver' | 'passenger',
 	navigation: any
 }) => {
+	const { user } = useContext(AuthContext)
 	return (
 		<Pressable
 			style={[
@@ -47,15 +48,16 @@ const RideComponent = ({ ride, colors, mode, navigation }: {
 						width="auto"
 						color={colors.primary}
 					>
-						{mode === 'driver' ? 'Driver' : 'Passenger'}
+						{ride.driver === user?.uid ? 'Driver' : ride.passengers.includes(user?.uid || '') ? 'Passenger' : 'SOS Driver'}
 					</CustomText>
 					<View style={[style.row, { gap: 5, width: 'auto' }]}>
-						<CustomText size={12} bold
-						            color={ride.completed_at ? 'green' : ride.started_at ? 'blue' : 'black'}>
+						<CustomText size={12} bold align="center"
+						            color={(ride.cancelled_at || ride.sos) ? 'red' : ride.completed_at ? 'green' : ride.started_at ? 'blue' : 'black'}>
 							{
-								ride.completed_at ? 'Completed' :
-									ride.started_at ? 'Ongoing' :
-										'Pending'
+								ride.cancelled_at ? 'CANCELLED' :
+									ride.completed_at ? 'COMPLETED' :
+										ride.started_at ? ride.sos ? ride.sos.responded_by ? ride.sos.started_at ? `SOS STARTED` : `SOS RESPONDED` : 'SOS TRIGGERED' : 'ONGOING' :
+											'PENDING'
 							}
 						</CustomText>
 					</View>
@@ -129,6 +131,7 @@ const Activity = () => {
 			or(
 				where('driver', '==', user.uid),
 				where('passengers', 'array-contains', user.uid),
+				where('sos.responded_by', '==', user.uid),
 			),
 		)
 		

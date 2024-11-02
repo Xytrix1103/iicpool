@@ -57,19 +57,7 @@ const PassengersListComponent: React.FC<PassengersListComponentProps> = ({ ride,
 										size={50}
 										source={{ uri: passenger.photo_url }}
 									/>
-									<CustomText size={14} align="center">
-										{passenger.id === user?.uid ? 'You' : passenger.full_name}
-									</CustomText>
-								</View> :
-								passengers.every((passenger) => passenger?.id !== user?.uid) &&
-								<View key={index} style={[style.column, { gap: 5, width: 'auto' }]}>
-									{
-										passengers.some((passenger) => passenger != null) &&
-										<CustomText size={14} align="center">
-											{''}
-										</CustomText>
-									}
-								</View>
+								</View> : null
 						))
 					}
 				</View>

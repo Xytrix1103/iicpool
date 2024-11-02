@@ -93,10 +93,10 @@ export const RideProvider = ({ children }: { children: ReactNode }) => {
 							operation: async () => {
 								await Location.startLocationUpdatesAsync(BACKGROUND_UPDATE_LOCATION_TASK, {
 									accuracy: Location.Accuracy.BestForNavigation,
-									timeInterval: 5000,
-									distanceInterval: 5,
-									deferredUpdatesDistance: 5,
-									deferredUpdatesInterval: 5000,
+									timeInterval: 1000,
+									distanceInterval: 1,
+									deferredUpdatesDistance: 1,
+									deferredUpdatesInterval: 1000,
 									mayShowUserSettingsDialog: true,
 								})
 							},
