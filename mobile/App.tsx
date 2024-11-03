@@ -25,7 +25,7 @@ import Profile from './screens/Profile'
 import { PermissionProvider } from './components/contexts/PermissionContext'
 import { NotificationSettingsProvider, useNotificationSettings } from './components/contexts/NotificationContext'
 import { LoadingOverlayProvider } from './components/contexts/LoadingOverlayContext'
-import UpdatePassword from './screens/UpdatePassword'
+import LinkPasswordMethod from './screens/LinkPasswordMethod'
 import Cars from './screens/Cars'
 import ManageCar from './screens/ManageCar'
 import { ModeProvider } from './components/contexts/ModeContext'
@@ -52,6 +52,7 @@ import { Timestamp } from '@firebase/firestore'
 import Activity from './screens/Activity'
 import EmergencyRides from './screens/EmergencyRides'
 import ForgotPassword from './screens/ForgotPassword'
+import DeleteAccount from './screens/DeleteAccount'
 
 const Stack = createNativeStackNavigator()
 
@@ -519,8 +520,7 @@ const Routes = ({ expoPushToken }: { expoPushToken: string }) => {
 						<Stack.Screen name="Home" component={Home} />
 						<Stack.Screen name="AddRide" component={AddRide} />
 						<Stack.Screen name="Profile" component={Profile} />
-						<Stack.Screen name="UpdatePassword" component={UpdatePassword}
-						              initialParams={{ type: 'update' }} />
+						<Stack.Screen name="LinkPasswordMethod" component={LinkPasswordMethod} />
 						<Stack.Screen name="Cars" component={Cars} />
 						<Stack.Screen name="ManageCar" component={ManageCar} />
 						<Stack.Screen name="VerifyEmail" component={VerifyEmail} />
@@ -533,6 +533,8 @@ const Routes = ({ expoPushToken }: { expoPushToken: string }) => {
 						<Stack.Screen name="ManageLicense" component={ManageLicense} />
 						<Stack.Screen name="Activity" component={Activity} />
 						<Stack.Screen name="EmergencyRides" component={EmergencyRides} />
+						<Stack.Screen name="DeleteAccount" component={DeleteAccount} />
+						<Stack.Screen name="UpdatePassword" component={ForgotPassword} />
 					</> :
 					<Stack.Screen name="AccountSetup" component={AccountSetup} />
 			) : (

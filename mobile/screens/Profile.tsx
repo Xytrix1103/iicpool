@@ -454,7 +454,7 @@ const Profile = () => {
 											onPress={() => {
 												if (!linkedPassword) {
 													//@ts-ignore
-													navigation.navigate('UpdatePassword', { type: 'link' })
+													navigation.navigate('LinkPasswordMethod', { type: 'link' })
 												} else {
 													if ((userRecord?.providerData.length ?? 0) > 1) {
 														Alert.alert(

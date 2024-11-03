@@ -1,7 +1,7 @@
-import { StyleSheet, ToastAndroid, View } from 'react-native'
+import { ToastAndroid, View } from 'react-native'
 import CustomLayout from '../components/themed/CustomLayout'
 import CustomHeader from '../components/themed/CustomHeader'
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
+import { useNavigation } from '@react-navigation/native'
 import CustomSolidButton from '../components/themed/CustomSolidButton'
 import { Controller, useForm } from 'react-hook-form'
 import { AuthContext } from '../components/contexts/AuthContext'
@@ -11,18 +11,11 @@ import CustomText from '../components/themed/CustomText'
 import CustomInput from '../components/themed/CustomInput'
 import { linkEmailPassword } from '../api/auth'
 import firebase from 'firebase/compat'
+import style from '../styles/shared'
 import FirebaseError = firebase.FirebaseError
 
-type UpdatePasswordRouteProp = RouteProp<{
-	UpdatePassword: {
-		type: 'update' | 'link'
-	}
-}, 'UpdatePassword'>;
-
 // @ts-ignore
-const UpdatePassword = () => {
-	const route = useRoute<UpdatePasswordRouteProp>()
-	const type = route.params?.type as 'update' | 'link'
+const LinkPasswordMethod = () => {
 	const { user, refreshUserRecord } = useContext(AuthContext)
 	const navigation = useNavigation()
 	
@@ -45,24 +38,23 @@ const UpdatePassword = () => {
 	
 	const onSubmit = (data: { email: string, password: string }) => {
 		console.log(data)
-		if (type === 'link') {
-			linkEmailPassword(data.email, data.password)
-				.then((userCredential) => {
-					console.log('Link Email Password Success', userCredential)
-					ToastAndroid.show('Email linked successfully', ToastAndroid.SHORT)
-					navigation.goBack()
-				})
-				.catch((error: FirebaseError) => {
-					if (error.code === 'auth/provider-already-linked') {
-						ToastAndroid.show('Email sign-in has already been configured for this account.', ToastAndroid.SHORT)
-					} else {
-						ToastAndroid.show('An error occurred. Please try again later.', ToastAndroid.SHORT)
-					}
-				})
-				.finally(() => {
-					refreshUserRecord()
-				})
-		}
+		
+		linkEmailPassword(data.email, data.password)
+			.then((userCredential) => {
+				console.log('Link Email Password Success', userCredential)
+				ToastAndroid.show('Email linked successfully', ToastAndroid.SHORT)
+				navigation.goBack()
+			})
+			.catch((error: FirebaseError) => {
+				if (error.code === 'auth/provider-already-linked') {
+					ToastAndroid.show('Email sign-in has already been configured for this account.', ToastAndroid.SHORT)
+				} else {
+					ToastAndroid.show('An error occurred. Please try again later.', ToastAndroid.SHORT)
+				}
+			})
+			.finally(() => {
+				refreshUserRecord()
+			})
 	}
 	
 	return (
@@ -70,7 +62,7 @@ const UpdatePassword = () => {
 			scrollable={false}
 			header={
 				<CustomHeader
-					title={`${type === 'update' ? 'Update Password' : 'Link Email Sign-In'}`}
+					title="Link Email Sign-In"
 					navigation={navigation}
 				/>
 			}
@@ -102,7 +94,9 @@ const UpdatePassword = () => {
 					<View style={style.row}>
 						<View style={[style.column, { gap: 10 }]}>
 							<CustomText size={16}
-							            bold>{`${type === 'update' ? 'Current' : 'Set'} Password`}</CustomText>
+							            bold>
+								Password
+							</CustomText>
 							<Controller
 								control={form.control}
 								render={({ field: { onChange, value } }) => (
@@ -136,34 +130,4 @@ const UpdatePassword = () => {
 	)
 }
 
-
-const style = StyleSheet.create({
-	container: {
-		flex: 1,
-		width: '100%',
-		height: '100%',
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-	map: {
-		width: '100%',
-		height: '100%',
-		alignSelf: 'center',
-	},
-	row: {
-		flexDirection: 'row',
-		width: '100%',
-		alignItems: 'center',
-	},
-	column: {
-		flexDirection: 'column',
-		width: '100%',
-	},
-	mainContent: {
-		flex: 1,
-		width: '100%',
-		alignItems: 'center',
-	},
-})
-
-export default UpdatePassword
+export default LinkPasswordMethod

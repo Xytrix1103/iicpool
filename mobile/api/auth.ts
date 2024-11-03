@@ -1,14 +1,17 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin'
 import {
 	createUserWithEmailAndPassword,
+	deleteUser,
 	EmailAuthProvider,
 	GoogleAuthProvider,
 	linkWithCredential,
+	reauthenticateWithCredential,
 	sendEmailVerification,
 	sendPasswordResetEmail,
 	signInWithCredential,
 	signInWithEmailAndPassword,
 	unlink,
+	User,
 } from 'firebase/auth'
 import { deleteField, doc, getDoc, runTransaction, updateDoc } from 'firebase/firestore'
 import FirebaseApp from '../components/FirebaseApp'
@@ -302,24 +305,55 @@ const sendVerificationEmail = async () => {
 	}
 }
 
-const deleteAccount = async () => {
-	return await runTransaction(db, async (transaction) => {
-		const userRef = doc(db, 'users', auth.currentUser?.uid ?? '')
-		
-		transaction.update(userRef, {
-			deleted_at: Timestamp.now(),
-		})
-	})
-		.then(() => {
-			console.log('deleteAccount -> success')
-			
-			return auth.currentUser?.delete()
-		})
-		.catch(error => {
-			console.log('deleteAccount -> error', error)
-			
-			return
-		})
+const deleteAccount = async (password: string) => {
+	if (!auth.currentUser) {
+		return
+	}
+	
+	const credential = EmailAuthProvider.credential(
+		auth.currentUser?.email ?? '',
+		password,
+	)
+	
+	try {
+		await reauthenticateWithCredential(<User>auth.currentUser, credential)
+	} catch (error) {
+		Alert.alert('Error', 'Invalid password')
+		return
+	}
+	
+	Alert.alert(
+		'Delete Account',
+		'Are you sure you want to delete your account? This action is irreversible.',
+		[
+			{
+				text: 'Cancel',
+				style: 'cancel',
+			},
+			{
+				text: 'Delete Account',
+				onPress: async () => {
+					//soft delete user from db
+					await runTransaction(db, async (transaction) => {
+						const userRef = doc(
+							db,
+							'users',
+							auth.currentUser?.uid ?? '',
+						)
+						const userDoc = await transaction.get(userRef)
+						
+						if (userDoc.exists()) {
+							transaction.update(userRef, {
+								deletedAt: new Date(),
+							})
+						}
+						
+						await deleteUser(<User>auth.currentUser)
+					})
+				},
+			},
+		],
+	)
 }
 
 const forgotPassword = async (email: string) => {
@@ -348,4 +382,5 @@ export {
 	sendVerificationEmail,
 	backgroundLogout,
 	forgotPassword,
+	deleteAccount,
 }

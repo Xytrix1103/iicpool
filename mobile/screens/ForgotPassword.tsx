@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { ToastAndroid, View } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import CustomLayout from '../components/themed/CustomLayout'
@@ -10,6 +10,7 @@ import { useNavigation } from '@react-navigation/native'
 import style from '../styles/shared'
 import { forgotPassword } from '../api/auth'
 import { Controller, useForm } from 'react-hook-form'
+import { AuthContext } from '../components/contexts/AuthContext'
 
 const ForgotPassword = () => {
 	const navigation = useNavigation()
@@ -21,6 +22,13 @@ const ForgotPassword = () => {
 			email: '',
 		},
 	})
+	const { user } = useContext(AuthContext)
+	
+	useEffect(() => {
+		if (user) {
+			form.setValue('email', user.email || '')
+		}
+	}, [user])
 	
 	useEffect(() => {
 		(async () => {
@@ -89,6 +97,7 @@ const ForgotPassword = () => {
 										errorMessage={form.formState.errors.email && form.formState.errors.email.message}
 										onChangeText={onChange}
 										value={value}
+										editable={!user}
 									/>
 								)}
 								name="email"
