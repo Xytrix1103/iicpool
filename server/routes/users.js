@@ -5,7 +5,7 @@ import {Timestamp} from "firebase-admin/firestore";
 export const usersRouter = express.Router({mergeParams: true})
 
 usersRouter.get('/', async (req, res) => {
-	const users = await db.collection('users').get()
+	const users = await db.collection('users').where('deleted_at', '==', null).get()
 	const usersArray = []
 
 	await Promise.all(users.docs.map(async (doc) => {
@@ -28,7 +28,6 @@ usersRouter.post('/', async (req, res) => {
 	const {email, password, full_name, mobile_number} = req.body
 
 	try {
-
 		// check if user already exists
 		const existingUser = await auth.getUserByEmail(email).catch(() => null)
 

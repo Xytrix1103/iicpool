@@ -14,11 +14,9 @@ import {
 	VisibilityState,
 } from '@tanstack/react-table'
 import { Profile } from '../components/firebase/schema.ts'
-import { DialogContent } from '../components/themed/ui-kit/dialog.tsx'
 import { Button } from '../components/themed/ui-kit/button.tsx'
 import { ChevronFirstIcon, ChevronLastIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import SectionHeader from '../components/themed/components/SectionHeader.tsx'
-import { Dialog } from '@radix-ui/react-dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/themed/ui-kit/table.tsx'
 
 const Cars = () => {
@@ -32,7 +30,6 @@ const Cars = () => {
 		pageIndex: 0,
 		pageSize: 6,
 	})
-	const [selectedCarDialog, setSelectedCarDialog] = useState<string | null>(null)
 	
 	const tableColumns: ColumnDef<CarTableRow>[] = [
 		{
@@ -107,22 +104,6 @@ const Cars = () => {
 		<section className="w-full h-full flex flex-col gap-[1rem]">
 			<SectionHeader
 				text="Cars Management"
-				extra={
-					<div className="flex items-center gap-3">
-						<Dialog
-							open={selectedCarDialog !== null}
-							onOpenChange={(isOpen) => {
-								if (!isOpen) setSelectedCarDialog(null)
-							}}
-						>
-							<DialogContent
-								className="border border-input !rounded-3xl !min-w-[70vw] !max-w-screen max-h-screen overflow-y-auto gap-8"
-								aria-describedby={undefined}
-							>
-							</DialogContent>
-						</Dialog>
-					</div>
-				}
 			/>
 			<div className="w-full flex flex-col">
 				<div className="rounded-2xl border border-input">

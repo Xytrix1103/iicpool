@@ -25,10 +25,19 @@ import {
 	ChevronRightIcon,
 	PencilIcon,
 	PlusIcon,
+	TrashIcon,
 } from 'lucide-react'
 import SectionHeader from '../components/themed/components/SectionHeader.tsx'
 import { CaretDownIcon, CaretSortIcon, CaretUpIcon } from '@radix-ui/react-icons'
-import { addUser, AddUserData, refreshUsers, updateUser, UpdateUserData, UserTableRow } from '../api/users.ts'
+import {
+	addUser,
+	AddUserData,
+	refreshUsers,
+	updatePassword,
+	updateUser,
+	UpdateUserData,
+	UserTableRow,
+} from '../api/users.ts'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/themed/ui-kit/dialog.tsx'
 import { Controller, useForm } from 'react-hook-form'
 import { Label } from '../components/themed/ui-kit/label.tsx'
@@ -43,10 +52,6 @@ type FormData = {
 	mobile_number: string
 	email: string
 	password: string
-}
-
-type EmailFormData = {
-	email: string
 }
 
 type PasswordFormData = {
@@ -67,17 +72,11 @@ const Users = () => {
 	})
 	const { toast } = useToast()
 	const [selectedUserDialog, setSelectedUserDialog] = useState<string | null>(null)
-	const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
 	const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false)
 	const form = useForm<FormData>({
 		defaultValues: {
 			full_name: '',
 			mobile_number: '',
-			email: '',
-		},
-	})
-	const emailForm = useForm<EmailFormData>({
-		defaultValues: {
 			email: '',
 		},
 	})
@@ -90,13 +89,6 @@ const Users = () => {
 	
 	const { handleSubmit, formState: { errors }, setValue, control, reset } = form
 	const {
-		handleSubmit: handleEmailSubmit,
-		formState: { errors: emailErrors },
-		setValue: setEmailValue,
-		control: emailControl,
-		reset: resetEmail,
-	} = emailForm
-	const {
 		handleSubmit: handlePasswordSubmit,
 		formState: { errors: passwordErrors },
 		control: passwordControl,
@@ -104,10 +96,11 @@ const Users = () => {
 	} = passwordForm
 	
 	const onSubmit = (data: AddUserData | UpdateUserData) => {
-		console.log(data)
+		console.log(data, selectedUserDialog)
 		
-		if (selectedUserDialog) {
+		if (selectedUserDialog !== null) {
 			if (selectedUserDialog === '') {
+				console.log('add user')
 				addUser(data as AddUserData)
 					.then(r => {
 						console.log('add user', r)
@@ -139,12 +132,22 @@ const Users = () => {
 		}
 	}
 	
-	const onSubmitEmail = (data: EmailFormData) => {
-		console.log(data)
-	}
-	
 	const onSubmitPassword = (data: PasswordFormData) => {
 		console.log(data)
+		
+		updatePassword(selectedUserDialog as string, data)
+			.then(r => {
+				console.log('update password', r)
+				setIsPasswordDialogOpen(false)
+				callToast(toast, 'Success', 'Password updated successfully')
+			})
+			.catch(e => {
+				console.error(e)
+				callToast(toast, 'Error: ' + e.name, e.response?.data?.detail || e.message)
+			})
+			.finally(async () => {
+				await refreshUsers(setUsers)
+			})
 	}
 	
 	const tableColumns: ColumnDef<UserTableRow>[] = [
@@ -248,12 +251,20 @@ const Users = () => {
 			header: 'Actions',
 			cell: ({ row }) => {
 				return (
-					<div className="flex justify-center">
+					<div className="flex justify-center gap-2">
 						<Button
 							variant="ghost"
 							onClick={() => setSelectedUserDialog(row.getValue('id'))}
 						>
 							<PencilIcon size={16} />
+						</Button>
+						<Button
+							variant="ghost"
+							onClick={() => {
+								console.log('delete', row.getValue('id'))
+							}}
+						>
+							<TrashIcon size={16} color="red" />
 						</Button>
 					</div>
 				)
@@ -286,13 +297,11 @@ const Users = () => {
 			setValue('full_name', users?.find(user => user.id === selectedUserDialog)?.full_name || '')
 			setValue('mobile_number', users?.find(user => user.id === selectedUserDialog)?.mobile_number || '')
 			setValue('email', users?.find(user => user.id === selectedUserDialog)?.email || '')
-			setEmailValue('email', users?.find(user => user.id === selectedUserDialog)?.email || '')
 		} else {
 			reset()
-			resetEmail()
 			resetPassword()
 		}
-	}, [reset, resetEmail, resetPassword, selectedUserDialog, setEmailValue, setValue, users])
+	}, [reset, resetPassword, selectedUserDialog, setValue, users])
 	
 	return (
 		<section className="w-full h-full flex flex-col gap-[1rem]">
@@ -387,83 +396,6 @@ const Users = () => {
 												</div> :
 												
 												<div className="h-full w-auto flex flex-row max-w-sm items-end gap-1.5">
-													<Dialog
-														open={isEmailDialogOpen}
-														onOpenChange={(isOpen) => setIsEmailDialogOpen(isOpen)}
-													>
-														<DialogTrigger asChild>
-															<Button
-																variant="outline"
-																onClick={() => setIsEmailDialogOpen(true)}
-																className="px-3.5 py-1"
-															>
-																Change Email
-															</Button>
-														</DialogTrigger>
-														<DialogContent
-															className="border border-input !rounded-3xl !min-w-[70vw] !max-w-screen max-h-screen overflow-y-auto gap-8"
-															aria-describedby={undefined}
-														>
-															<DialogHeader>
-																<DialogTitle>
-																	Change Email
-																</DialogTitle>
-															</DialogHeader>
-															<div className="flex flex-col gap-10">
-																<div
-																	className="grid w-full max-w-sm items-center gap-1.5">
-																	<Controller
-																		name="email"
-																		control={emailControl}
-																		rules={{
-																			required: 'Email is required',
-																			pattern: {
-																				value: /@newinti.edu.my$/,
-																				message: 'INTI email is required',
-																			},
-																		}}
-																		render={({ field }) => (
-																			<>
-																				<Label htmlFor="email"
-																				       className="px-1">Email</Label>
-																				<Input
-																					{...field}
-																					type="text"
-																					id="email"
-																					className="rounded-2xl"
-																					placeholder=""
-																				/>
-																				{emailErrors.email && (
-																					<p className="text-red-500 text-sm font-medium">
-																						{emailErrors.email?.message}
-																					</p>
-																				)}
-																			</>
-																		)}
-																	/>
-																</div>
-																<div className="flex justify-end gap-3">
-																	<Button
-																		variant="ghost"
-																		onClick={() => setIsEmailDialogOpen(false)}
-																		className="px-3.5 py-1 text-primary"
-																	>
-																		Cancel
-																	</Button>
-																	<Button
-																		variant="outline"
-																		onClick={handleEmailSubmit(onSubmitEmail)}
-																		className="px-3.5 py-1"
-																	>
-																		<div className="flex gap-1.5 items-center">
-																			<CheckIcon size={16} />
-																			<span>Save</span>
-																		</div>
-																	</Button>
-																</div>
-															</div>
-														</DialogContent>
-													</Dialog>
 													<Dialog
 														open={isPasswordDialogOpen}
 														onOpenChange={(isOpen) => setIsPasswordDialogOpen(isOpen)}

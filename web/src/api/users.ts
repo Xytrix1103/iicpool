@@ -19,6 +19,15 @@ const updateUser = async (id: string, data: UpdateUserData) => {
 	}
 }
 
+const updatePassword = async (id: string, data: { password: string }) => {
+	try {
+		return await post(`/users/${id}/updatePassword`, data).then((response) => response)
+	} catch (error) {
+		console.error(error)
+		return null
+	}
+}
+
 const addUser = async (data: AddUserData) => {
 	try {
 		return await post('/users', data)
@@ -43,5 +52,5 @@ type UserTableRow = Profile & {
 	provider_data: ('google.com' | 'password')[]
 }
 
-export { refreshUsers, updateUser, addUser }
+export { refreshUsers, updateUser, addUser, updatePassword }
 export type { UserTableRow, AddUserData, UpdateUserData }

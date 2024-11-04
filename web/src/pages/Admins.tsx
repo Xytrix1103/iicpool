@@ -41,10 +41,6 @@ type FormData = {
 	password: string
 }
 
-type EmailFormData = {
-	email: string
-}
-
 type PasswordFormData = {
 	password: string
 }
@@ -63,17 +59,11 @@ const Admins = () => {
 	})
 	const { toast } = useToast()
 	const [selectedAdminDialog, setSelectedAdminDialog] = useState<string | null>(null)
-	const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
 	const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false)
 	const form = useForm<FormData>({
 		defaultValues: {
 			full_name: '',
 			mobile_number: '',
-			email: '',
-		},
-	})
-	const emailForm = useForm<EmailFormData>({
-		defaultValues: {
 			email: '',
 		},
 	})
@@ -86,13 +76,6 @@ const Admins = () => {
 	
 	const { handleSubmit, formState: { errors }, setValue, control, reset } = form
 	const {
-		handleSubmit: handleEmailSubmit,
-		formState: { errors: emailErrors },
-		setValue: setEmailValue,
-		control: emailControl,
-		reset: resetEmail,
-	} = emailForm
-	const {
 		handleSubmit: handlePasswordSubmit,
 		formState: { errors: passwordErrors },
 		control: passwordControl,
@@ -102,7 +85,7 @@ const Admins = () => {
 	const onSubmit = (data: AddAdminData | UpdateAdminData) => {
 		console.log(data)
 		
-		if (selectedAdminDialog) {
+		if (selectedAdminDialog !== null) {
 			if (selectedAdminDialog === '') {
 				addAdmin(data as AddAdminData)
 					.then(r => {
@@ -133,10 +116,6 @@ const Admins = () => {
 					})
 			}
 		}
-	}
-	
-	const onSubmitEmail = (data: EmailFormData) => {
-		console.log(data)
 	}
 	
 	const onSubmitPassword = (data: PasswordFormData) => {
@@ -251,13 +230,11 @@ const Admins = () => {
 			setValue('full_name', admins?.find(admin => admin.id === selectedAdminDialog)?.full_name || '')
 			setValue('mobile_number', admins?.find(admin => admin.id === selectedAdminDialog)?.mobile_number || '')
 			setValue('email', admins?.find(admin => admin.id === selectedAdminDialog)?.email || '')
-			setEmailValue('email', admins?.find(admin => admin.id === selectedAdminDialog)?.email || '')
 		} else {
 			reset()
-			resetEmail()
 			resetPassword()
 		}
-	}, [reset, resetEmail, resetPassword, selectedAdminDialog, setEmailValue, setValue, admins])
+	}, [reset, resetPassword, selectedAdminDialog, setValue, admins])
 	
 	return (
 		<section className="w-full h-full flex flex-col gap-[1rem]">
@@ -352,83 +329,6 @@ const Admins = () => {
 												</div> :
 												
 												<div className="h-full w-auto flex flex-row max-w-sm items-end gap-1.5">
-													<Dialog
-														open={isEmailDialogOpen}
-														onOpenChange={(isOpen) => setIsEmailDialogOpen(isOpen)}
-													>
-														<DialogTrigger asChild>
-															<Button
-																variant="outline"
-																onClick={() => setIsEmailDialogOpen(true)}
-																className="px-3.5 py-1"
-															>
-																Change Email
-															</Button>
-														</DialogTrigger>
-														<DialogContent
-															className="border border-input !rounded-3xl !min-w-[70vw] !max-w-screen max-h-screen overflow-y-auto gap-8"
-															aria-describedby={undefined}
-														>
-															<DialogHeader>
-																<DialogTitle>
-																	Change Email
-																</DialogTitle>
-															</DialogHeader>
-															<div className="flex flex-col gap-10">
-																<div
-																	className="grid w-full max-w-sm items-center gap-1.5">
-																	<Controller
-																		name="email"
-																		control={emailControl}
-																		rules={{
-																			required: 'Email is required',
-																			pattern: {
-																				value: /@newinti.edu.my$/,
-																				message: 'INTI email is required',
-																			},
-																		}}
-																		render={({ field }) => (
-																			<>
-																				<Label htmlFor="email"
-																				       className="px-1">Email</Label>
-																				<Input
-																					{...field}
-																					type="text"
-																					id="email"
-																					className="rounded-2xl"
-																					placeholder=""
-																				/>
-																				{emailErrors.email && (
-																					<p className="text-red-500 text-sm font-medium">
-																						{emailErrors.email?.message}
-																					</p>
-																				)}
-																			</>
-																		)}
-																	/>
-																</div>
-																<div className="flex justify-end gap-3">
-																	<Button
-																		variant="ghost"
-																		onClick={() => setIsEmailDialogOpen(false)}
-																		className="px-3.5 py-1 text-primary"
-																	>
-																		Cancel
-																	</Button>
-																	<Button
-																		variant="outline"
-																		onClick={handleEmailSubmit(onSubmitEmail)}
-																		className="px-3.5 py-1"
-																	>
-																		<div className="flex gap-1.5 items-center">
-																			<CheckIcon size={16} />
-																			<span>Save</span>
-																		</div>
-																	</Button>
-																</div>
-															</div>
-														</DialogContent>
-													</Dialog>
 													<Dialog
 														open={isPasswordDialogOpen}
 														onOpenChange={(isOpen) => setIsPasswordDialogOpen(isOpen)}

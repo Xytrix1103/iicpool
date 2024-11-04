@@ -24,7 +24,7 @@ type CustomMessage = Message & {
 	ride_id: string
 }
 
-type RideStatistics = {
+interface RideStatistics {
 	ongoing: number
 	today_ongoing: number
 	completed: number
@@ -33,6 +33,8 @@ type RideStatistics = {
 	today_cancelled: number
 	sos_triggered: number
 	today_sos_triggered: number
+	sos_responded: number
+	today_sos_responded: number
 	sos_ongoing: number
 	today_sos_ongoing: number
 	today_arrived_cars: number
@@ -100,11 +102,14 @@ const Dashboard = () => {
 		today_cancelled: 0,
 		sos_triggered: 0,
 		today_sos_triggered: 0,
+		sos_responded: 0,
+		today_sos_responded: 0,
 		sos_ongoing: 0,
 		today_sos_ongoing: 0,
 		today_arrived_cars: 0,
 		today_departed_cars: 0,
 	})
+	const [rides, setRides] = useState<Ride[]>([])
 	const [weekChartFilter, setWeekChartFilter] = useState<WeekChartFilterProps>({
 		type: WeekChartFilter.LIFETIME,
 	})
@@ -152,218 +157,456 @@ const Dashboard = () => {
 		const unsubscribeFuncs: (() => void)[] = []
 		
 		unsubscribeFuncs.push(onSnapshot(query(collection(db, 'rides')), (snapshot) => {
-			const todayRides = snapshot.docs as QueryDocumentSnapshot<Ride>[]
+			const allRides = snapshot.docs as QueryDocumentSnapshot<Ride>[]
 			
-			const tempValues = weekChartFilter.type === WeekChartFilter.LIFETIME ? undefined : todayRides.map((doc) => {
-				const datetimeDate = new Date(doc.data().datetime.toDate())
-				const year = datetimeDate.getFullYear()
-				const month = datetimeDate.getMonth()
-				
-				if (weekChartFilter.type === WeekChartFilter.YEAR) {
-					return { year } as YearlyWeekChartValue
-				} else if (weekChartFilter.type === WeekChartFilter.MONTH) {
-					return { year, month } as MonthlyWeekChartValue
-				}
-			})
-			
-			//only get unique values
-			const values = tempValues ? Array.from(new Set(tempValues.map(value => JSON.stringify(value)))).map(value => JSON.parse(value)) : undefined
-			
-			const value = values && values.length > 0 ? values[0] : undefined
-			
-			setWeekChartFilter((prev) => ({
-				...prev,
-				values,
-				value,
+			setRides(allRides.map((doc) => {
+				return { ...doc.data(), id: doc.id } as Ride
 			}))
-			
-			setDayTimeChartFilter((prev) => ({
-				...prev,
-				values,
-				value,
-			}))
-			
-			const dayOfWeekCountTo = Array(5).fill(0)
-			const dayOfWeekCountFrom = Array(5).fill(0)
-			
-			if (weekChartFilter.type !== WeekChartFilter.LIFETIME && !weekChartFilter.values && !weekChartFilter.value) {
-				return
-			}
-			
-			const tempRides = todayRides.filter((doc) => {
-				const datetimeDate = new Date(doc.data().datetime.toDate())
-				const year = datetimeDate.getFullYear()
-				const month = datetimeDate.getMonth()
-				
-				if (weekChartFilter.type === WeekChartFilter.LIFETIME) {
-					return doc.data().cancelled_at === null
-				} else if (weekChartFilter.type === WeekChartFilter.YEAR) {
-					return year === (weekChartFilter.value as YearlyWeekChartValue).year && doc.data().cancelled_at === null
-				} else if (weekChartFilter.type === WeekChartFilter.MONTH) {
-					return year === (weekChartFilter.value as MonthlyWeekChartValue).year &&
-						month === (weekChartFilter.value as MonthlyWeekChartValue).month && doc.data().cancelled_at === null
-				}
-			})
-			
-			// get the day of the week for each ride
-			const dayOfWeek = tempRides.map((doc) => {
-				return {
-					day: new Date(doc.data().datetime.toDate()).getDay(),
-					direction: doc.data().to_campus ? 'to' : 'from',
-				}
-			})
-			
-			// count the number of rides for each day of the week except Sunday (0) and Saturday (6)
-			dayOfWeek.forEach(({ day, direction }) => {
-				if (day !== 0 && day !== 6) {
-					if (direction === 'to') {
-						dayOfWeekCountTo[day]++
-					} else {
-						dayOfWeekCountFrom[day]++
-					}
-				}
-			})
-			
-			//fill in the days that have no rides with 0
-			for (let i = 1; i <= 5; i++) {
-				if (dayOfWeekCountTo[i] === 0) {
-					dayOfWeekCountTo[i] = 0
-				}
-				if (dayOfWeekCountFrom[i] === 0) {
-					dayOfWeekCountFrom[i] = 0
-				}
-			}
-			
-			console.log(dayOfWeekCountTo)
-			
-			const scheduleTimes: DayTimeChartData = {
-				to: {
-					1: Array(14).fill(0),
-					2: Array(14).fill(0),
-					3: Array(14).fill(0),
-					4: Array(14).fill(0),
-					5: Array(14).fill(0),
-				},
-				from: {
-					1: Array(14).fill(0),
-					2: Array(14).fill(0),
-					3: Array(14).fill(0),
-					4: Array(14).fill(0),
-					5: Array(14).fill(0),
-				},
-			}
-			
-			const tempRides2 = todayRides.filter((doc) => {
-				const datetimeDate = new Date(doc.data().datetime.toDate())
-				const year = datetimeDate.getFullYear()
-				const month = datetimeDate.getMonth()
-				
-				if (dayTimeChartFilter.type === WeekChartFilter.LIFETIME) {
-					return doc.data().cancelled_at === null
-				} else if (dayTimeChartFilter.type === WeekChartFilter.YEAR) {
-					return year === (weekChartFilter.value as YearlyWeekChartValue).year && doc.data().cancelled_at === null
-				} else if (dayTimeChartFilter.type === WeekChartFilter.MONTH) {
-					return year === (dayTimeChartFilter.value as MonthlyWeekChartValue).year &&
-						month === (dayTimeChartFilter.value as MonthlyWeekChartValue).month && doc.data().cancelled_at === null
-				}
-			})
-			
-			const x_steps = Array(14).fill(0).map((_, i) => i + 6)
-			
-			tempRides2.forEach((doc) => {
-				const datetimeDate = new Date(doc.data().datetime.toDate())
-				const time = datetimeDate.getHours()
-				const weekday = datetimeDate.getDay()
-				
-				if ([1, 2, 3, 4, 5].includes(weekday)) {
-					if (x_steps.indexOf(time) === -1) {
-						return
-					}
-					
-					if (doc.data().to_campus) {
-						scheduleTimes.to[weekday as 1 | 2 | 3 | 4 | 5][x_steps.indexOf(time)]++
-					} else {
-						scheduleTimes.from[weekday as 1 | 2 | 3 | 4 | 5][x_steps.indexOf(time)]++
-					}
-				}
-			})
-			
-			setDayTimeChartData(scheduleTimes)
-			
-			setWeekChartData({
-				to: dayOfWeekCountTo,
-				from: dayOfWeekCountFrom,
-			})
-			
-			setRideStatistics({
-				ongoing: todayRides.filter((doc) => {
-					const data = doc.data()
-					return data.started_at !== null && data.completed_at === null && data.sos?.triggered_at === null
-				}).length,
-				today_ongoing: todayRides.filter((doc) => {
-					const data = doc.data()
-					const datetimeDate = new Date(data.datetime.toDate())
-					console.log(datetimeDate)
-					return data.started_at !== null && data.completed_at === null && data.sos?.triggered_at === null && datetimeDate.toLocaleDateString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }) === today
-				}).length,
-				sos_triggered: todayRides.filter((doc) => {
-					const data = doc.data()
-					return data.sos?.triggered_at !== null && data.sos?.responded_at === null
-				}).length,
-				today_sos_triggered: todayRides.filter((doc) => {
-					const data = doc.data()
-					const datetimeDate = new Date(data.datetime.toDate())
-					return data.sos?.triggered_at !== null && data.sos?.responded_at === null && datetimeDate.toLocaleDateString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }) === today
-				}).length,
-				completed: todayRides.filter((doc) => {
-					const data = doc.data()
-					return data.completed_at !== null
-				}).length,
-				today_completed: todayRides.filter((doc) => {
-					const data = doc.data()
-					const datetimeDate = new Date(data.datetime.toDate())
-					return data.completed_at !== null && datetimeDate.toLocaleDateString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }) === today
-				}).length,
-				cancelled: todayRides.filter((doc) => {
-					const data = doc.data()
-					return data.cancelled_at !== null
-				}).length,
-				today_cancelled: todayRides.filter((doc) => {
-					const data = doc.data()
-					const datetimeDate = new Date(data.datetime.toDate())
-					return data.cancelled_at !== null && datetimeDate.toLocaleDateString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }) === today
-				}).length,
-				sos_ongoing: todayRides.filter((doc) => {
-					const data = doc.data()
-					return data.sos?.responded_at !== null && data.sos?.started_at === null && data.completed_at === null
-				}).length,
-				today_sos_ongoing: todayRides.filter((doc) => {
-					const data = doc.data()
-					const datetimeDate = new Date(data.datetime.toDate())
-					return data.sos?.responded_at !== null && data.sos?.started_at === null && data.completed_at === null && datetimeDate.toLocaleDateString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }) === today
-				}).length,
-				today_arrived_cars: todayRides.filter((doc) => {
-					const data = doc.data()
-					return data.completed_at !== null && data.to_campus
-				}).length,
-				today_departed_cars: todayRides.filter((doc) => {
-					const data = doc.data()
-					return data.completed_at !== null && !data.to_campus
-				}).length,
-			})
 		}))
+		
+		// 	const weekChartFilterValues = weekChartFilter.type === WeekChartFilter.LIFETIME ? undefined : allRides.map((doc) => {
+		// 		const datetimeDate = new Date(doc.data().datetime.toDate())
+		// 		const year = datetimeDate.getFullYear()
+		// 		const month = datetimeDate.getMonth()
+		//
+		// 		if (weekChartFilter.type === WeekChartFilter.YEAR) {
+		// 			return { year } as YearlyWeekChartValue
+		// 		} else if (weekChartFilter.type === WeekChartFilter.MONTH) {
+		// 			return { year, month } as MonthlyWeekChartValue
+		// 		}
+		// 	})
+		//
+		// 	//only get unique values
+		// 	const values = weekChartFilterValues ? Array.from(new Set(weekChartFilterValues.map(value => JSON.stringify(value)))).map(value => JSON.parse(value)) : undefined
+		//
+		// 	const value = values && values.length > 0 ? values[0] : undefined
+		//
+		// 	setWeekChartFilter((prev) => ({
+		// 		...prev,
+		// 		values,
+		// 		value,
+		// 	}))
+		//
+		// 	setDayTimeChartFilter((prev) => ({
+		// 		...prev,
+		// 		values,
+		// 		value,
+		// 	}))
+		//
+		// 	const dayOfWeekCountTo = Array(5).fill(0)
+		// 	const dayOfWeekCountFrom = Array(5).fill(0)
+		//
+		// 	if (weekChartFilter.type !== WeekChartFilter.LIFETIME && !weekChartFilter.values && !weekChartFilter.value) {
+		// 		return
+		// 	}
+		//
+		// 	const weekChartFilteredRides = allRides.filter((doc) => {
+		// 		const datetimeDate = new Date(doc.data().datetime.toDate())
+		// 		const year = datetimeDate.getFullYear()
+		// 		const month = datetimeDate.getMonth()
+		//
+		// 		if (weekChartFilter.type === WeekChartFilter.LIFETIME) {
+		// 			return doc.data().cancelled_at === null
+		// 		} else if (weekChartFilter.type === WeekChartFilter.YEAR) {
+		// 			return year === (weekChartFilter.value as YearlyWeekChartValue).year && doc.data().cancelled_at === null
+		// 		} else if (weekChartFilter.type === WeekChartFilter.MONTH) {
+		// 			return year === (weekChartFilter.value as MonthlyWeekChartValue).year &&
+		// 				month === (weekChartFilter.value as MonthlyWeekChartValue).month && doc.data().cancelled_at === null
+		// 		}
+		// 	})
+		//
+		// 	// get the day of the week for each ride
+		// 	const dayOfWeek = weekChartFilteredRides.map((doc) => {
+		// 		return {
+		// 			day: new Date(doc.data().datetime.toDate()).getDay(),
+		// 			direction: doc.data().to_campus ? 'to' : 'from',
+		// 		}
+		// 	})
+		//
+		// 	// count the number of rides for each day of the week except Sunday (0) and Saturday (6)
+		// 	dayOfWeek.forEach(({ day, direction }) => {
+		// 		if (day !== 0 && day !== 6) {
+		// 			if (direction === 'to') {
+		// 				dayOfWeekCountTo[day - 1]++
+		// 			} else {
+		// 				dayOfWeekCountFrom[day - 1]++
+		// 			}
+		// 		}
+		// 	})
+		//
+		// 	console.log(dayOfWeekCountTo)
+		// 	console.log(dayOfWeekCountFrom)
+		//
+		// 	//fill in the days that have no rides with 0
+		// 	for (let i = 1; i <= 5; i++) {
+		// 		if (dayOfWeekCountTo[i] === 0) {
+		// 			dayOfWeekCountTo[i] = 0
+		// 		}
+		// 		if (dayOfWeekCountFrom[i] === 0) {
+		// 			dayOfWeekCountFrom[i] = 0
+		// 		}
+		// 	}
+		//
+		// 	console.log(dayOfWeekCountTo)
+		//
+		// 	const scheduleTimes: DayTimeChartData = {
+		// 		to: {
+		// 			1: Array(14).fill(0),
+		// 			2: Array(14).fill(0),
+		// 			3: Array(14).fill(0),
+		// 			4: Array(14).fill(0),
+		// 			5: Array(14).fill(0),
+		// 		},
+		// 		from: {
+		// 			1: Array(14).fill(0),
+		// 			2: Array(14).fill(0),
+		// 			3: Array(14).fill(0),
+		// 			4: Array(14).fill(0),
+		// 			5: Array(14).fill(0),
+		// 		},
+		// 	}
+		//
+		// 	const dayTimeChartFilteredRides = allRides.filter((doc) => {
+		// 		const datetimeDate = new Date(doc.data().datetime.toDate())
+		// 		const year = datetimeDate.getFullYear()
+		// 		const month = datetimeDate.getMonth()
+		//
+		// 		if (dayTimeChartFilter.type === WeekChartFilter.LIFETIME) {
+		// 			return doc.data().cancelled_at === null
+		// 		} else if (dayTimeChartFilter.type === WeekChartFilter.YEAR) {
+		// 			return year === (weekChartFilter.value as YearlyWeekChartValue).year && doc.data().cancelled_at === null
+		// 		} else if (dayTimeChartFilter.type === WeekChartFilter.MONTH) {
+		// 			return year === (dayTimeChartFilter.value as MonthlyWeekChartValue).year &&
+		// 				month === (dayTimeChartFilter.value as MonthlyWeekChartValue).month && doc.data().cancelled_at === null
+		// 		}
+		// 	})
+		//
+		// 	const x_steps = Array(14).fill(0).map((_, i) => i + 6)
+		//
+		// 	dayTimeChartFilteredRides.forEach((doc) => {
+		// 		const datetimeDate = new Date(doc.data().datetime.toDate())
+		// 		const time = datetimeDate.getHours()
+		// 		const weekday = datetimeDate.getDay()
+		//
+		// 		if ([1, 2, 3, 4, 5].includes(weekday)) {
+		// 			if (x_steps.indexOf(time) === -1) {
+		// 				return
+		// 			}
+		//
+		// 			if (doc.data().to_campus) {
+		// 				console.log('Ride to campus is on the weekday: ', weekday)
+		// 				scheduleTimes.to[weekday as 1 | 2 | 3 | 4 | 5][x_steps.indexOf(time)]++
+		// 			} else {
+		// 				console.log('Ride from campus is on the weekday: ', weekday)
+		// 				scheduleTimes.from[weekday as 1 | 2 | 3 | 4 | 5][x_steps.indexOf(time)]++
+		// 			}
+		// 		}
+		// 	})
+		//
+		// 	console.log(scheduleTimes)
+		//
+		// 	setDayTimeChartData(scheduleTimes)
+		//
+		// 	setWeekChartData({
+		// 		to: dayOfWeekCountTo,
+		// 		from: dayOfWeekCountFrom,
+		// 	})
+		//
+		// 	const rideStats = allRides.reduce((stats, doc) => {
+		// 		const data = doc.data()
+		// 		const datetimeDate = new Date(data.datetime.toDate())
+		// 		const isToday = datetimeDate.toLocaleDateString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }) === today
+		//
+		// 		if (data.started_at !== null && data.completed_at === null && data.sos?.triggered_at === null) {
+		// 			stats.ongoing++
+		// 			if (isToday) stats.today_ongoing++
+		// 		}
+		// 		if (data.sos?.triggered_at !== null && data.sos?.responded_at === null) {
+		// 			stats.sos_triggered++
+		// 			if (isToday) stats.today_sos_triggered++
+		// 		}
+		// 		if (data.sos?.responded_at !== null && data.sos?.started_at === null) {
+		// 			stats.sos_responded++
+		// 			if (isToday) stats.today_sos_responded++
+		// 		}
+		// 		if (data.completed_at !== null) {
+		// 			stats.completed++
+		// 			if (isToday) stats.today_completed++
+		// 			if (data.to_campus) {
+		// 				stats.today_arrived_cars++
+		// 			} else {
+		// 				stats.today_departed_cars++
+		// 			}
+		// 		}
+		// 		if (data.cancelled_at !== null) {
+		// 			stats.cancelled++
+		// 			if (isToday) stats.today_cancelled++
+		// 		}
+		// 		if (data.sos?.responded_at !== null && data.sos?.started_at === null && data.completed_at === null) {
+		// 			stats.sos_ongoing++
+		// 			if (isToday) stats.today_sos_ongoing++
+		// 		}
+		//
+		// 		return stats
+		// 	}, {
+		// 		ongoing: 0,
+		// 		today_ongoing: 0,
+		// 		completed: 0,
+		// 		today_completed: 0,
+		// 		cancelled: 0,
+		// 		today_cancelled: 0,
+		// 		sos_triggered: 0,
+		// 		today_sos_triggered: 0,
+		// 		sos_responded: 0,
+		// 		today_sos_responded: 0,
+		// 		sos_ongoing: 0,
+		// 		today_sos_ongoing: 0,
+		// 		today_arrived_cars: 0,
+		// 		today_departed_cars: 0,
+		// 	})
+		//
+		// 	setRideStatistics(rideStats)
+		// }))
 		
 		return () => {
 			unsubscribeFuncs.forEach((unsubscribe) => unsubscribe())
 		}
-	}, [today, weekChartFilter.type, dayTimeChartFilter.type])
+	}, [today])
+	
+	useEffect(() => {
+		// perform the filtering and counting of rides for the week chart
+		const weekChartFilterValues = weekChartFilter.type === WeekChartFilter.LIFETIME ? undefined : rides.map((ride) => {
+			const datetimeDate = new Date(ride.datetime.toDate())
+			const year = datetimeDate.getFullYear()
+			const month = datetimeDate.getMonth()
+			
+			if (weekChartFilter.type === WeekChartFilter.YEAR) {
+				return { year } as YearlyWeekChartValue
+			} else if (weekChartFilter.type === WeekChartFilter.MONTH) {
+				return { year, month } as MonthlyWeekChartValue
+			}
+		})
+		
+		//only get unique values
+		const values = weekChartFilterValues ? Array.from(new Set(weekChartFilterValues.map(value => JSON.stringify(value)))).map(value => JSON.parse(value)) : undefined
+		
+		const value = values && values.length > 0 ? values[0] : undefined
+		
+		setWeekChartFilter((prev) => ({
+			...prev,
+			values,
+			value,
+		}))
+	}, [rides, weekChartFilter.type])
+	
+	useEffect(() => {
+		// perform the filtering and counting of rides for the day time chart
+		const dayTimeChartFilterValues = dayTimeChartFilter.type === WeekChartFilter.LIFETIME ? undefined : rides.map((ride) => {
+			const datetimeDate = new Date(ride.datetime.toDate())
+			const year = datetimeDate.getFullYear()
+			const month = datetimeDate.getMonth()
+			
+			if (dayTimeChartFilter.type === WeekChartFilter.YEAR) {
+				return { year } as YearlyWeekChartValue
+			} else if (dayTimeChartFilter.type === WeekChartFilter.MONTH) {
+				return { year, month } as MonthlyWeekChartValue
+			}
+		})
+		
+		//only get unique values
+		const values = dayTimeChartFilterValues ? Array.from(new Set(dayTimeChartFilterValues.map(value => JSON.stringify(value)))).map(value => JSON.parse(value)) : undefined
+		
+		const value = values && values.length > 0 ? values[0] : undefined
+		
+		setDayTimeChartFilter((prev) => ({
+			...prev,
+			values,
+			value,
+		}))
+	}, [rides, dayTimeChartFilter.type])
+	
+	useEffect(() => {
+		// update data for the week chart when the filter changes
+		const dayOfWeekCountTo = Array(5).fill(0)
+		const dayOfWeekCountFrom = Array(5).fill(0)
+		
+		if (weekChartFilter.type !== WeekChartFilter.LIFETIME && !weekChartFilter.values && !weekChartFilter.value) {
+			return
+		}
+		
+		const weekChartFilteredRides = rides.filter((ride) => {
+			const datetimeDate = new Date(ride.datetime.toDate())
+			const year = datetimeDate.getFullYear()
+			const month = datetimeDate.getMonth()
+			
+			if (weekChartFilter.type === WeekChartFilter.LIFETIME) {
+				return ride.cancelled_at === null
+			} else if (weekChartFilter.type === WeekChartFilter.YEAR) {
+				return year === (weekChartFilter.value as YearlyWeekChartValue).year && ride.cancelled_at === null
+			} else if (weekChartFilter.type === WeekChartFilter.MONTH) {
+				return year === (weekChartFilter.value as MonthlyWeekChartValue).year &&
+					month === (weekChartFilter.value as MonthlyWeekChartValue).month && ride.cancelled_at === null
+			}
+		})
+		
+		// get the day of the week for each ride
+		const dayOfWeek = weekChartFilteredRides.map((ride) => {
+			return {
+				day: new Date(ride.datetime.toDate()).getDay(),
+				direction: ride.to_campus ? 'to' : 'from',
+			}
+		})
+		
+		// count the number of rides for each day of the week except Sunday (0) and Saturday (6)
+		dayOfWeek.forEach(({ day, direction }) => {
+			if (day !== 0 && day !== 6) {
+				if (direction === 'to') {
+					dayOfWeekCountTo[day - 1]++
+				} else {
+					dayOfWeekCountFrom[day - 1]++
+				}
+			}
+		})
+		
+		//fill in the days that have no rides with 0
+		for (let i = 1; i <= 5; i++) {
+			if (dayOfWeekCountTo[i] === 0) {
+				dayOfWeekCountTo[i] = 0
+			}
+			if (dayOfWeekCountFrom[i] === 0) {
+				dayOfWeekCountFrom[i] = 0
+			}
+		}
+		
+		setWeekChartData({
+			to: dayOfWeekCountTo,
+			from: dayOfWeekCountFrom,
+		})
+	}, [rides, weekChartFilter])
+	
+	useEffect(() => {
+		// update data for the day time chart when the filter changes
+		const scheduleTimes: DayTimeChartData = {
+			to: {
+				1: Array(14).fill(0),
+				2: Array(14).fill(0),
+				3: Array(14).fill(0),
+				4: Array(14).fill(0),
+				5: Array(14).fill(0),
+			},
+			from: {
+				1: Array(14).fill(0),
+				2: Array(14).fill(0),
+				3: Array(14).fill(0),
+				4: Array(14).fill(0),
+				5: Array(14).fill(0),
+			},
+		}
+		
+		if (dayTimeChartFilter.type !== WeekChartFilter.LIFETIME && !dayTimeChartFilter.values && !dayTimeChartFilter.value) {
+			return
+		}
+		
+		const dayTimeChartFilteredRides = rides.filter((ride) => {
+			const datetimeDate = new Date(ride.datetime.toDate())
+			const year = datetimeDate.getFullYear()
+			const month = datetimeDate.getMonth()
+			
+			if (dayTimeChartFilter.type === WeekChartFilter.LIFETIME) {
+				return ride.cancelled_at === null
+			} else if (dayTimeChartFilter.type === WeekChartFilter.YEAR) {
+				return year === (dayTimeChartFilter.value as YearlyWeekChartValue).year && ride.cancelled_at === null
+			} else if (dayTimeChartFilter.type === WeekChartFilter.MONTH) {
+				return year === (dayTimeChartFilter.value as MonthlyWeekChartValue).year &&
+					month === (dayTimeChartFilter.value as MonthlyWeekChartValue).month && ride.cancelled_at === null
+			}
+		})
+		
+		const x_steps = Array(14).fill(0).map((_, i) => i + 6)
+		
+		dayTimeChartFilteredRides.forEach((ride) => {
+			const datetimeDate = new Date(ride.datetime.toDate())
+			const time = datetimeDate.getHours()
+			const weekday = datetimeDate.getDay()
+			
+			if ([1, 2, 3, 4, 5].includes(weekday)) {
+				if (x_steps.indexOf(time) === -1) {
+					return
+				}
+				
+				if (ride.to_campus) {
+					scheduleTimes.to[weekday as 1 | 2 | 3 | 4 | 5][x_steps.indexOf(time)]++
+				} else {
+					scheduleTimes.from[weekday as 1 | 2 | 3 | 4 | 5][x_steps.indexOf(time)]++
+				}
+			}
+		})
+		
+		setDayTimeChartData(scheduleTimes)
+	}, [rides, dayTimeChartFilter])
+	
+	useEffect(() => {
+		const rideStats = rides.reduce((stats, ride) => {
+			const datetimeDate = new Date(ride.datetime.toDate())
+			const isToday = datetimeDate.toLocaleDateString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }) === today
+			
+			if (ride.started_at !== null && ride.completed_at === null && ride.sos?.triggered_at === null) {
+				stats.ongoing++
+				if (isToday) stats.today_ongoing++
+			}
+			if (ride.sos?.triggered_at !== null && ride.sos?.responded_at === null) {
+				stats.sos_triggered++
+				if (isToday) stats.today_sos_triggered++
+			}
+			if (ride.sos?.responded_at !== null && ride.sos?.started_at === null) {
+				stats.sos_responded++
+				if (isToday) stats.today_sos_responded++
+			}
+			if (ride.completed_at !== null) {
+				stats.completed++
+				if (isToday) stats.today_completed++
+				if (ride.to_campus) {
+					stats.today_arrived_cars++
+				} else {
+					stats.today_departed_cars++
+				}
+			}
+			if (ride.cancelled_at !== null) {
+				stats.cancelled++
+				if (isToday) stats.today_cancelled++
+			}
+			if (ride.sos?.responded_at !== null && ride.sos?.started_at === null && ride.completed_at === null) {
+				stats.sos_ongoing++
+				if (isToday) stats.today_sos_ongoing++
+			}
+			
+			return stats
+		}, {
+			ongoing: 0,
+			today_ongoing: 0,
+			completed: 0,
+			today_completed: 0,
+			cancelled: 0,
+			today_cancelled: 0,
+			sos_triggered: 0,
+			today_sos_triggered: 0,
+			sos_responded: 0,
+			today_sos_responded: 0,
+			sos_ongoing: 0,
+			today_sos_ongoing: 0,
+			today_arrived_cars: 0,
+			today_departed_cars: 0,
+		})
+		
+		setRideStatistics(rideStats)
+	}, [rides, today])
 	
 	useEffect(() => {
 		const unsubscribeFuncs: (() => void)[] = []
 		
 		unsubscribeFuncs.push(onSnapshot(query(collectionGroup(db, 'messages'), where('type', '!=', MessageType.MESSAGE), orderBy('timestamp', 'desc')), async (snapshot) => {
 			const tempRideLogs: CustomMessage[] = await Promise.all(snapshot.docs.map(async (snapshotDoc) => {
-				const data = snapshotDoc.data() as CustomMessage
+				const data = { ...snapshotDoc.data(), id: snapshotDoc.id } as Message
 				
 				const parentRide = (await getDoc(snapshotDoc.ref.parent.parent!)).data() as Ride
 				
@@ -428,6 +671,9 @@ const Dashboard = () => {
 						<OverallStat status_text="SOS Triggered" color="red"
 						             number={rideStatistics.sos_triggered}
 						             subtitle={`(${rideStatistics.today_sos_triggered} today)`} />
+						<OverallStat status_text="SOS Responded" color="red"
+						             number={rideStatistics.sos_responded}
+						             subtitle={`(${rideStatistics.today_sos_responded} today)`} />
 						<OverallStat status_text="SOS Ongoing" color="red"
 						             number={rideStatistics.sos_ongoing}
 						             subtitle={`(${rideStatistics.today_sos_ongoing} today)`} />
@@ -496,34 +742,37 @@ const Dashboard = () => {
 														))}
 													</DropdownMenuContent>
 												</DropdownMenu>
-												Month:
 												{
 													weekChartFilter.type === WeekChartFilter.MONTH ? (
-														<DropdownMenu>
-															<DropdownMenuTrigger asChild>
-																<Button variant="outline" className="px-3.5 py-1">
-																	<div className="flex gap-1.5 items-center">
-																		<div className="text-sm">
-																			{(weekChartFilter.value as MonthlyWeekChartValue).month + 1}
+														<>
+															Month:
+															<DropdownMenu>
+																<DropdownMenuTrigger asChild>
+																	<Button variant="outline" className="px-3.5 py-1">
+																		<div className="flex gap-1.5 items-center">
+																			<div className="text-sm">
+																				{(weekChartFilter.value as MonthlyWeekChartValue).month + 1}
+																			</div>
+																			<ChevronDownIcon size={14}
+																			                 color="#303030" />
 																		</div>
-																		<ChevronDownIcon size={14} color="#303030" />
-																	</div>
-																</Button>
-															</DropdownMenuTrigger>
-															<DropdownMenuContent>
-																{weekChartFilter.values.map((value) => (
-																	<DropdownMenuItem
-																		key={(value as MonthlyWeekChartValue).month}
-																		onSelect={() => setWeekChartFilter((prev) => ({
-																			...prev,
-																			value,
-																		}))}
-																	>
-																		{(value as MonthlyWeekChartValue).month + 1}
-																	</DropdownMenuItem>
-																))}
-															</DropdownMenuContent>
-														</DropdownMenu>
+																	</Button>
+																</DropdownMenuTrigger>
+																<DropdownMenuContent>
+																	{weekChartFilter.values.map((value) => (
+																		<DropdownMenuItem
+																			key={(value as MonthlyWeekChartValue).month}
+																			onSelect={() => setWeekChartFilter((prev) => ({
+																				...prev,
+																				value,
+																			}))}
+																		>
+																			{(value as MonthlyWeekChartValue).month + 1}
+																		</DropdownMenuItem>
+																	))}
+																</DropdownMenuContent>
+															</DropdownMenu>
+														</>
 													) : null
 												}
 											</>
@@ -627,34 +876,37 @@ const Dashboard = () => {
 														))}
 													</DropdownMenuContent>
 												</DropdownMenu>
-												Month:
 												{
 													dayTimeChartFilter.type === WeekChartFilter.MONTH ? (
-														<DropdownMenu>
-															<DropdownMenuTrigger asChild>
-																<Button variant="outline" className="px-3.5 py-1">
-																	<div className="flex gap-1.5 items-center">
-																		<div className="text-sm">
-																			{(dayTimeChartFilter.value as MonthlyWeekChartValue).month + 1}
+														<>
+															Month:
+															<DropdownMenu>
+																<DropdownMenuTrigger asChild>
+																	<Button variant="outline" className="px-3.5 py-1">
+																		<div className="flex gap-1.5 items-center">
+																			<div className="text-sm">
+																				{(dayTimeChartFilter.value as MonthlyWeekChartValue).month + 1}
+																			</div>
+																			<ChevronDownIcon size={14}
+																			                 color="#303030" />
 																		</div>
-																		<ChevronDownIcon size={14} color="#303030" />
-																	</div>
-																</Button>
-															</DropdownMenuTrigger>
-															<DropdownMenuContent>
-																{dayTimeChartFilter.values.map((value) => (
-																	<DropdownMenuItem
-																		key={(value as MonthlyWeekChartValue).month}
-																		onSelect={() => setDayTimeChartFilter((prev) => ({
-																			...prev,
-																			value,
-																		}))}
-																	>
-																		{(value as MonthlyWeekChartValue).month + 1}
-																	</DropdownMenuItem>
-																))}
-															</DropdownMenuContent>
-														</DropdownMenu>
+																	</Button>
+																</DropdownMenuTrigger>
+																<DropdownMenuContent>
+																	{dayTimeChartFilter.values.map((value) => (
+																		<DropdownMenuItem
+																			key={(value as MonthlyWeekChartValue).month}
+																			onSelect={() => setDayTimeChartFilter((prev) => ({
+																				...prev,
+																				value,
+																			}))}
+																		>
+																			{(value as MonthlyWeekChartValue).month + 1}
+																		</DropdownMenuItem>
+																	))}
+																</DropdownMenuContent>
+															</DropdownMenu>
+														</>
 													) : null
 												}
 											</>

@@ -34,12 +34,12 @@ const RealtimeMap = () => {
 	const infoWindow = useRef(new google.maps.InfoWindow({
 		headerDisabled: true,
 	})).current
-
+	
 	const createMarker = useCallback((signal: Signal, photoUrl: string, markerLibrary: google.maps.MarkerLibrary, driver: boolean) => {
 		return new Promise<google.maps.marker.AdvancedMarkerElement>((resolve) => {
 			const ride = rides?.find((ride) => driver ? ride.driver === signal.user : ride.sos?.responded_by === signal.user)
 			const isAwaitingSOSResponse = driver && ride?.sos?.triggered_at && !ride.sos?.responded_by
-
+			
 			const pinHTMLElement = () => {
 				const content = document.createElement('div')
 				content.innerHTML = `
@@ -49,11 +49,11 @@ const RealtimeMap = () => {
 				`
 				return content
 			}
-
+			
 			const pinElement = new markerLibrary.PinElement({
 				glyph: pinHTMLElement(),
 			})
-
+			
 			const name = rides?.find((ride) => driver ? ride.driver === signal.user : ride.sos?.responded_by === signal.user)?.[driver ? 'driverData' : 'sosResponderData']?.full_name
 			const marker = new markerLibrary.AdvancedMarkerElement({
 				position: {
@@ -66,7 +66,7 @@ const RealtimeMap = () => {
 				zIndex: 999,
 				gmpClickable: true,
 			})
-
+			
 			marker.addListener('click', () => {
 				const content = document.createElement('div')
 				content.innerHTML = `
@@ -82,12 +82,12 @@ const RealtimeMap = () => {
 				infoWindow.setContent(content)
 				infoWindow.open(map, marker)
 			})
-
+			
 			console.log('Adding marker:', marker)
 			resolve(marker)
 		})
 	}, [infoWindow, map, rides])
-
+	
 	const createPinMarker = useCallback((location: {
 		lat: number,
 		lng: number
@@ -106,13 +106,13 @@ const RealtimeMap = () => {
 				`
 				return content
 			}
-
+			
 			const pinElement = new markerLibrary.PinElement({
 				glyph: pinHTMLElement(),
 				background: 'white',
 				borderColor: 'darkred',
 			})
-
+			
 			const marker = new markerLibrary.AdvancedMarkerElement({
 				position: {
 					lat: location.lat,
@@ -121,12 +121,12 @@ const RealtimeMap = () => {
 				map,
 				content: pinElement.element,
 			})
-
+			
 			console.log('Adding marker:', marker)
 			resolve(marker)
 		})
 	}, [map])
-
+	
 	useEffect(() => {
 		const unsubscribe = onSnapshot(query(collection(db, 'rides'), where('completed_at', '==', null), where('started_at', '!=', null)), async (snapshot) => {
 			const rides = snapshot.docs.map((doc) => {
@@ -135,19 +135,19 @@ const RealtimeMap = () => {
 					id: doc.id,
 				} as CustomRide
 			})
-
+			
 			const finalRides = await Promise.all(rides.map(async (ride) => {
 				const passengersData = await Promise.all(ride.passengers.map(async (passenger) => {
 					const passengerDoc = await getDoc(doc(db, 'users', passenger))
 					return { ...passengerDoc.data(), id: passenger } as Profile
 				}))
-
+				
 				const driverDoc = await getDoc(doc(db, 'users', ride.driver))
 				const driverData = { ...driverDoc.data(), id: ride.driver } as Profile
-
+				
 				const driverCarDoc = await getDoc(doc(db, 'cars', ride.car))
 				const driverCarData = { ...driverCarDoc.data(), id: ride.car } as Car
-
+				
 				const sosResponderData = ride.sos?.responded_by ?
 					await getDoc(doc(db, 'users', ride.sos?.responded_by)).then((doc) => ({
 						...doc.data(),
@@ -158,7 +158,7 @@ const RealtimeMap = () => {
 						...doc.data(),
 						id: ride.sos?.car,
 					} as Car)) : null
-
+				
 				return {
 					...ride,
 					passengersData,
@@ -168,38 +168,38 @@ const RealtimeMap = () => {
 					sosResponderCarData,
 				} as CustomRide
 			}))
-
+			
 			setMarkers((markers) => {
 				markers.forEach((marker) => (marker.map = null))
 				return []
 			})
 			setRides(finalRides)
 		})
-
+		
 		return () => unsubscribe()
 	}, [])
-
+	
 	useEffect(() => {
 		if (!rides) return
 		const unsubscribes: (() => void)[] = []
-
+		
 		rides.forEach((ride) => {
 			console.log('Subscribing to ride:', ride.id)
 			const unsubscribe = onSnapshot(query(collection(db, 'rides', ride.id || '', 'signals'), orderBy('timestamp', 'desc')), (snapshot) => {
 				const latestSignals = snapshot.docs.map((doc) => doc.data() as Signal)
-
+				
 				//get latest signal for driver and sosResponder, if any
 				const driver = latestSignals.find((signal) => signal.user === ride.driver)
 				const sosResponder = latestSignals.find((signal) => signal.user === ride.sos?.responded_by)
-
+				
 				console.log('Latest signals:', driver, sosResponder)
-
+				
 				// Remove all markers
 				setMarkers((markers) => {
 					markers.forEach((marker) => (marker.map = null))
 					return []
 				})
-
+				
 				console.log('Removing all markers')
 				
 				setLatestSignals((prevSignals) => ({
@@ -210,17 +210,17 @@ const RealtimeMap = () => {
 					},
 				}))
 			})
-
+			
 			unsubscribes.push(unsubscribe)
 		})
-
+		
 		return () => unsubscribes.forEach((unsubscribe) => unsubscribe())
 	}, [rides])
-
+	
 	//show route on map if selectedRide is changed
 	useEffect(() => {
 		if (!directionsService || !directionsRenderer || !rides || !campusLocation || !latestSignals) return
-
+		
 		if (!selectedRide) {
 			directionsRenderer?.setMap(null)
 			map?.setCenter({
@@ -231,19 +231,19 @@ const RealtimeMap = () => {
 			return
 		} else {
 			const ride = rides.find((ride) => ride.id === selectedRide)
-
+			
 			if (!ride) {
 				return
 			}
-
+			
 			let waypoints: google.maps.DirectionsWaypoint[] | undefined = []
-
+			
 			const payload = {
 				origin: ride.to_campus ? ride.location.geometry.location : campusLocation.geometry.location,
 				destination: ride.to_campus ? campusLocation.geometry.location : ride.location.geometry.location,
 				travelMode: google.maps.TravelMode.DRIVING,
 			} as google.maps.DirectionsRequest
-
+			
 			if (ride.completed_at || ride.cancelled_at || !ride.started_at) {
 				payload.waypoints = undefined
 			} else {
@@ -266,14 +266,14 @@ const RealtimeMap = () => {
 						} as google.maps.DirectionsWaypoint)
 					}
 				}
-
+				
 				waypoints = waypoints.length > 0 ? waypoints : undefined
 			}
-
+			
 			if (waypoints) {
 				payload.waypoints = waypoints
 			}
-
+			
 			directionsService.route(payload, (response, status) => {
 				if (status === 'OK') {
 					directionsRenderer.setDirections(response)
@@ -286,38 +286,38 @@ const RealtimeMap = () => {
 				console.error('Error fetching directions:', e)
 			}).finally(() => {
 				console.log('Directions request completed')
-
+				
 				//add changes to map
 				directionsRenderer.setMap(map)
 			})
 		}
 	}, [campusLocation, directionsRenderer, directionsService, latestSignals, map, rides, selectedRide])
-
+	
 	useEffect(() => {
 		if (!rides || !latestSignals || !map || !markerLibrary) return
-
+		
 		if (selectedRide) {
 			// Add markers for selectedRide
 			const ride = rides.find((ride) => ride.id === selectedRide)
 			if (!ride) return
-
+			
 			const driverSignal = latestSignals?.[selectedRide]?.driver
 			const sosResponderSignal = latestSignals?.[selectedRide]?.sosResponder
-
+			
 			console.log('Signals:', driverSignal, sosResponderSignal)
-
+			
 			const markerPromises = []
-
+			
 			if (driverSignal) {
 				console.log('Adding driver marker:', driverSignal)
 				markerPromises.push(createMarker(driverSignal, ride.driverData.photo_url, markerLibrary, true))
 			}
-
+			
 			if (sosResponderSignal) {
 				console.log('Adding sosResponder marker:', sosResponderSignal)
 				markerPromises.push(createMarker(sosResponderSignal, ride.sosResponderData?.photo_url as string, markerLibrary, false))
 			}
-
+			
 			markerPromises.push(Promise.resolve(createPinMarker({
 				lat: ride.to_campus ? ride.location.geometry.location.lat : campusLocation.geometry.location.lat,
 				lng: ride.to_campus ? ride.location.geometry.location.lng : campusLocation.geometry.location.lng,
@@ -326,7 +326,7 @@ const RealtimeMap = () => {
 				lat: ride.to_campus ? campusLocation.geometry.location.lat : ride.location.geometry.location.lat,
 				lng: ride.to_campus ? campusLocation.geometry.location.lng : ride.location.geometry.location.lng,
 			} as { lat: number, lng: number }, true, markerLibrary)))
-
+			
 			Promise.all(markerPromises).then((tempMarkers) => {
 				console.log('Markers:', tempMarkers)
 				setMarkers(tempMarkers)
@@ -336,23 +336,23 @@ const RealtimeMap = () => {
 		} else {
 			//add markers for all drivers and sosResponders in latestSignals
 			const markerPromises: Promise<google.maps.marker.AdvancedMarkerElement>[] = []
-
+			
 			Object.keys(latestSignals).forEach((rideId) => {
 				const ride = rides.find((ride) => ride.id === rideId)
 				if (!ride) return
-
+				
 				const driverSignal = latestSignals?.[rideId]?.driver
 				const sosResponderSignal = latestSignals?.[rideId]?.sosResponder
-
+				
 				if (driverSignal) {
 					markerPromises.push(createMarker(driverSignal, ride.driverData.photo_url, markerLibrary, true))
 				}
-
+				
 				if (sosResponderSignal) {
 					markerPromises.push(createMarker(sosResponderSignal, ride.sosResponderData?.photo_url as string, markerLibrary, false))
 				}
 			})
-
+			
 			Promise.all(markerPromises).then((tempMarkers) => {
 				console.log('Markers:', tempMarkers)
 				setMarkers(tempMarkers)
@@ -361,11 +361,11 @@ const RealtimeMap = () => {
 			})
 		}
 	}, [campusLocation, createMarker, createPinMarker, latestSignals, map, markerLibrary, rides, selectedRide])
-
+	
 	useEffect(() => {
 		console.log(latestSignals)
 	}, [latestSignals])
-
+	
 	return (
 		<section className="w-full h-full flex flex-col gap-[1rem]">
 			<SectionHeader
