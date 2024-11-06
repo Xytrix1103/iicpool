@@ -56,6 +56,12 @@ const AuthProvider = ({ children }: any) => {
 					if (snapshot.exists()) {
 						setProfile(snapshot.data() as Profile)
 						setLoading(false)
+					} else {
+						await logout({
+							callback: () => {
+								setUser(null)
+							},
+						})
 					}
 				},
 				async (error) => {

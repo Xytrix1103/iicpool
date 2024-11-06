@@ -5,7 +5,7 @@ import NavigationContainer from '@react-navigation/native/src/NavigationContaine
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { AppState, Linking, LogBox, Platform, StyleSheet } from 'react-native'
-import { Profile as ProfileType, ProfileNotificationSettings, Signal } from './database/schema'
+import { Profile as ProfileType, ProfileNotificationSettings, Role, Signal } from './database/schema'
 import {
 	Poppins_400Regular as Poppins,
 	Poppins_500Medium as Poppins_Medium,
@@ -28,7 +28,7 @@ import { LoadingOverlayProvider } from './components/contexts/LoadingOverlayCont
 import LinkPasswordMethod from './screens/LinkPasswordMethod'
 import Cars from './screens/Cars'
 import ManageCar from './screens/ManageCar'
-import { ModeProvider } from './components/contexts/ModeContext'
+import { ModeContext, ModeProvider } from './components/contexts/ModeContext'
 import AccountSetup from './screens/AccountSetup'
 import VerifyEmail from './screens/VerifyEmail'
 import FirebaseApp from './components/FirebaseApp'
@@ -444,6 +444,7 @@ const App = (): ReactElement => {
 
 const Routes = ({ expoPushToken }: { expoPushToken: string }) => {
 	const { loading, user, profile } = useContext(AuthContext)
+	const { mode } = useContext(ModeContext)
 	const needsAccountSetup = !profile?.full_name || !profile?.mobile_number || !profile?.photo_url
 	const { notificationSettings } = useNotificationSettings()
 	
@@ -518,23 +519,33 @@ const Routes = ({ expoPushToken }: { expoPushToken: string }) => {
 				!needsAccountSetup ?
 					<>
 						<Stack.Screen name="Home" component={Home} />
-						<Stack.Screen name="AddRide" component={AddRide} />
 						<Stack.Screen name="Profile" component={Profile} />
 						<Stack.Screen name="LinkPasswordMethod" component={LinkPasswordMethod} />
-						<Stack.Screen name="Cars" component={Cars} />
-						<Stack.Screen name="ManageCar" component={ManageCar} />
-						<Stack.Screen name="VerifyEmail" component={VerifyEmail} />
 						<Stack.Screen name="Settings" component={Settings} />
-						<Stack.Screen name="MyRides" component={MyRides} />
-						<Stack.Screen name="FindRides" component={FindRides} />
+						<Stack.Screen name="VerifyEmail" component={VerifyEmail} />
 						<Stack.Screen name="ViewRide" component={ViewRide} />
 						<Stack.Screen name="Messages" component={Messages} />
 						<Stack.Screen name="Chat" component={Chat} />
 						<Stack.Screen name="ManageLicense" component={ManageLicense} />
 						<Stack.Screen name="Activity" component={Activity} />
-						<Stack.Screen name="EmergencyRides" component={EmergencyRides} />
 						<Stack.Screen name="DeleteAccount" component={DeleteAccount} />
 						<Stack.Screen name="UpdatePassword" component={ForgotPassword} />
+						{
+							mode === Role.DRIVER &&
+							<>
+								<Stack.Screen name="AddRide" component={AddRide} />
+								<Stack.Screen name="Cars" component={Cars} />
+								<Stack.Screen name="ManageCar" component={ManageCar} />
+								<Stack.Screen name="MyRides" component={MyRides} />
+								<Stack.Screen name="EmergencyRides" component={EmergencyRides} />
+							</>
+						}
+						{
+							mode === Role.PASSENGER &&
+							<>
+								<Stack.Screen name="FindRides" component={FindRides} />
+							</>
+						}
 					</> :
 					<Stack.Screen name="AccountSetup" component={AccountSetup} />
 			) : (
